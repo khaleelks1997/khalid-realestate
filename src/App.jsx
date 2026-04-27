@@ -1,122 +1,777 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState, useEffect, useCallback, useRef } from "react";
 
-function App() {
-  const [count, setCount] = useState(0)
+const STORAGE_KEY = "khalid-final-v2";
+const USERS = [{ username: "Khalil", password: "1234" }];
+const WA_NUMBER = "966568300022";
+const PHONE = "0568300022";
+
+const PROPERTY_TYPES = ["شقة","فيلا","محل تجاري","مكتب","استوديو","دوبلكس","أرض"];
+const STATUS_OPTIONS  = ["متوفر","مؤجر","مباع","قريب الانتهاء","صيانة"];
+const DEAL_TYPES      = ["إيجار","بيع","إيجار وبيع"];
+
+const SC = {
+  "متوفر":         { c:"#4ade80", bg:"#4ade8015" },
+  "مؤجر":          { c:"#93c5fd", bg:"#93c5fd15" },
+  "مباع":          { c:"#f87171", bg:"#f8717115" },
+  "قريب الانتهاء": { c:"#fbbf24", bg:"#fbbf2415" },
+  "صيانة":         { c:"#e879f9", bg:"#e879f915" },
+};
+
+const emptyForm = {
+  name:"", address:"", type:"شقة", dealType:"إيجار",
+  salePrice:"", rentPrice:"", minPrice:"",
+  area:"", builtArea:"", ownerName:"", ownerPhone:"",
+  furnished:false, aptCode:"", buildingCode:"",
+  status:"متوفر", notes:"", images:[], mapUrl:"",
+  marketingContractNo:"", adLicenseNo:"", refNo:"",
+};
+
+const today = () => new Date().toLocaleDateString("ar-SA");
+
+const demo = [
+  { id:"d1", name:"شقة العليا 12", address:"الرياض، حي العليا، برج النخيل", type:"شقة", dealType:"إيجار", salePrice:"", rentPrice:"8000", minPrice:"7000", area:"120", builtArea:"110", ownerName:"فهد الغامدي", ownerPhone:"0501234567", furnished:true, aptCode:"1204", buildingCode:"N88", status:"متوفر", notes:"شقة مجددة بالكامل، إطلالة مميزة على المدينة", images:[], mapUrl:"https://maps.google.com/?q=24.6877,46.7219", marketingContractNo:"MC-2024-001", adLicenseNo:"1010123456", refNo:"REF-001", views:24, createdAt:"١٤٤٦/٠١/١٠", updatedAt:"١٤٤٦/٠٢/٠٥" },
+  { id:"d2", name:"فيلا الورود", address:"جدة، حي الورود", type:"فيلا", dealType:"بيع", salePrice:"2200000", rentPrice:"", minPrice:"2000000", area:"450", builtArea:"380", ownerName:"سلطان المطيري", ownerPhone:"0557654321", furnished:false, aptCode:"", buildingCode:"", status:"مؤجر", notes:"فيلا راقية مع مسبح خاص وحديقة", images:[], mapUrl:"https://maps.google.com/?q=21.5433,39.1728", marketingContractNo:"MC-2024-002", adLicenseNo:"1010234567", refNo:"REF-002", views:18, createdAt:"١٤٤٦/٠١/١٥", updatedAt:"١٤٤٦/٠١/٢٠" },
+  { id:"d3", name:"محل الأندلس", address:"مكة، شارع التحلية", type:"محل تجاري", dealType:"إيجار وبيع", salePrice:"950000", rentPrice:"12000", minPrice:"10500", area:"80", builtArea:"80", ownerName:"تركي الشمري", ownerPhone:"0531112222", furnished:false, aptCode:"G01", buildingCode:"A22", status:"متوفر", notes:"موقع تجاري ممتاز في قلب المدينة", images:[], mapUrl:"https://maps.google.com/?q=21.3891,39.8579", marketingContractNo:"MC-2024-003", adLicenseNo:"1010345678", refNo:"REF-003", views:41, createdAt:"١٤٤٦/٠٢/٠١", updatedAt:"١٤٤٦/٠٢/٠١" },
+  { id:"d4", name:"استوديو النزهة", address:"الرياض، حي النزهة", type:"استوديو", dealType:"إيجار", salePrice:"", rentPrice:"3500", minPrice:"3000", area:"55", builtArea:"50", ownerName:"منى العتيبي", ownerPhone:"0509876543", furnished:true, aptCode:"305", buildingCode:"B12", status:"متوفر", notes:"استوديو مفروش بالكامل قريب من الخدمات", images:[], mapUrl:"", marketingContractNo:"MC-2024-004", adLicenseNo:"", refNo:"REF-004", views:9, createdAt:"١٤٤٦/٠٢/١٠", updatedAt:"١٤٤٦/٠٢/١٠" },
+];
+
+// ── WA Icon ───────────────────────────────────────────────────────────────────
+const WaIcon = ({size=14,color="#25d366"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+  </svg>
+);
+
+// ── Share Modal ───────────────────────────────────────────────────────────────
+function ShareModal({ p, onClose }) {
+  const [copied, setCopied] = useState(false);
+  const text = `🏠 ${p.name}\n📍 ${p.address}\n🏷️ ${p.type} | ${p.dealType}${p.rentPrice?"\n💰 إيجار: "+Number(p.rentPrice).toLocaleString()+" ر.س/شهر":""}${p.salePrice?"\n💰 بيع: "+Number(p.salePrice).toLocaleString()+" ر.س":""}${p.area?"\n📐 المساحة: "+p.area+" م²":""}${p.furnished?"\n🛋️ مفروش":""}${p.adLicenseNo?"\n🏛️ رخصة إعلانية: "+p.adLicenseNo:""}\n📞 للتواصل: ${PHONE}\n💬 واتساب: wa.me/${WA_NUMBER}`;
+  const waMsg = encodeURIComponent(text);
+
+  const copy = () => { navigator.clipboard.writeText(text).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),2000); }); };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div style={{position:"fixed",inset:0,background:"#000c",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
+      <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:"1px solid #2563c7",borderRadius:20,padding:26,maxWidth:420,width:"100%"}} onClick={e=>e.stopPropagation()}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+          <div style={{fontWeight:900,fontSize:16,color:"#fff"}}>📤 مشاركة العقار</div>
+          <button onClick={onClose} style={{background:"#1e3a7a",border:"none",color:"#aaa",width:30,height:30,borderRadius:"50%",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
 
-      <div className="ticks"></div>
+        {/* Preview */}
+        <div style={{background:"#03102e",border:"1px solid #1e3a7a",borderRadius:13,padding:"14px 16px",marginBottom:16,fontSize:12,color:"#93c5fd",lineHeight:1.8,whiteSpace:"pre-line"}}>{text}</div>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+        {/* Share buttons */}
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          <a href={`https://wa.me/?text=${waMsg}`} target="_blank" rel="noopener noreferrer"
+            style={{display:"flex",alignItems:"center",gap:10,background:"#25d36620",border:"1px solid #25d36640",color:"#25d366",borderRadius:12,padding:"12px 18px",textDecoration:"none",fontWeight:700,fontSize:14,justifyContent:"center"}}>
+            <WaIcon size={18}/> مشاركة عبر واتساب
+          </a>
+          <button onClick={copy}
+            style={{display:"flex",alignItems:"center",gap:10,background:copied?"#4ade8020":"#1a4faa22",border:`1px solid ${copied?"#4ade8040":"#2563c740"}`,color:copied?"#4ade80":"#93c5fd",borderRadius:12,padding:"12px 18px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",justifyContent:"center"}}>
+            {copied?"✅ تم النسخ!":"📋 نسخ النص"}
+          </button>
+          <a href={`https://t.me/share/url?url=wa.me/${WA_NUMBER}&text=${waMsg}`} target="_blank" rel="noopener noreferrer"
+            style={{display:"flex",alignItems:"center",gap:10,background:"#0088cc20",border:"1px solid #0088cc40",color:"#60c8ff",borderRadius:12,padding:"12px 18px",textDecoration:"none",fontWeight:700,fontSize:14,justifyContent:"center"}}>
+            ✈️ مشاركة عبر تيليغرام
+          </a>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      </div>
+    </div>
+  );
 }
 
-export default App
+// ── Lightbox ──────────────────────────────────────────────────────────────────
+function Lightbox({ images, startIndex, onClose }) {
+  const [idx, setIdx] = useState(startIndex);
+  useEffect(() => {
+    const h = e => { if(e.key==="Escape") onClose(); if(e.key==="ArrowLeft") setIdx(i=>(i+1)%images.length); if(e.key==="ArrowRight") setIdx(i=>(i-1+images.length)%images.length); };
+    window.addEventListener("keydown",h); return () => window.removeEventListener("keydown",h);
+  },[images,onClose]);
+  return (
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"#000e",zIndex:3000,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+      <div style={{position:"relative"}} onClick={e=>e.stopPropagation()}>
+        <img src={images[idx]} alt="" style={{maxWidth:"88vw",maxHeight:"75vh",borderRadius:14,objectFit:"contain",display:"block"}}/>
+        <button onClick={onClose} style={{position:"absolute",top:-12,left:-12,width:32,height:32,background:"#ef4444",border:"none",borderRadius:"50%",color:"#fff",fontSize:17,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+        {images.length>1&&<><button onClick={()=>setIdx(i=>(i-1+images.length)%images.length)} style={{position:"absolute",top:"50%",right:-50,transform:"translateY(-50%)",background:"#1a4faa",border:"1px solid #2563c7",color:"#fff",width:40,height:40,borderRadius:"50%",fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button><button onClick={()=>setIdx(i=>(i+1)%images.length)} style={{position:"absolute",top:"50%",left:-50,transform:"translateY(-50%)",background:"#1a4faa",border:"1px solid #2563c7",color:"#fff",width:40,height:40,borderRadius:"50%",fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>›</button></>}
+        <div style={{textAlign:"center",marginTop:8,color:"#93c5fd",fontSize:12}}>{idx+1} / {images.length}</div>
+      </div>
+      {images.length>1&&(<div style={{display:"flex",gap:6,marginTop:10,overflowX:"auto",maxWidth:"88vw"}}>{images.map((img,i)=>(<img key={i} src={img} onClick={e=>{e.stopPropagation();setIdx(i);}} alt="" style={{width:54,height:54,objectFit:"cover",borderRadius:8,cursor:"pointer",flexShrink:0,border:i===idx?"2px solid #60a5fa":"2px solid transparent",opacity:i===idx?1:.5,transition:"all .2s"}}/>))}</div>)}
+    </div>
+  );
+}
+
+// ── Image Uploader ────────────────────────────────────────────────────────────
+function ImageUploader({ images, onChange }) {
+  const ref = useRef(); const [drag, setDrag] = useState(false);
+  const process = files => { Array.from(files).filter(f=>f.type.startsWith("image/")).forEach(f=>{ const r=new FileReader(); r.onload=e=>onChange(p=>[...p,e.target.result]); r.readAsDataURL(f); }); };
+  return (
+    <div>
+      <div onDragOver={e=>{e.preventDefault();setDrag(true);}} onDragLeave={()=>setDrag(false)} onDrop={e=>{e.preventDefault();setDrag(false);process(e.dataTransfer.files);}} onClick={()=>ref.current.click()}
+        style={{border:`2px dashed ${drag?"#60a5fa":"#1e3a7a"}`,borderRadius:12,padding:"16px",textAlign:"center",cursor:"pointer",background:drag?"#60a5fa0d":"transparent",transition:"all .2s",marginBottom:10}}>
+        <div style={{fontSize:24,marginBottom:4}}>📸</div>
+        <div style={{color:"#6b8cc4",fontSize:13}}>اسحب الصور أو <span style={{color:"#60a5fa",fontWeight:700}}>اضغط للاختيار</span></div>
+        <input ref={ref} type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>process(e.target.files)}/>
+      </div>
+      {images.length>0&&(<div style={{display:"flex",flexWrap:"wrap",gap:8}}>{images.map((img,i)=>(<div key={i} style={{position:"relative",width:72,height:72}}><img src={img} alt="" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:9,border:"2px solid #1e3a7a"}}/><button onClick={()=>onChange(images.filter((_,j)=>j!==i))} style={{position:"absolute",top:-5,right:-5,width:18,height:18,background:"#ef4444",border:"none",borderRadius:"50%",color:"#fff",fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>{i===0&&<div style={{position:"absolute",bottom:0,left:0,right:0,background:"#1a4faa",fontSize:9,color:"#fff",textAlign:"center",borderRadius:"0 0 7px 7px",fontWeight:900}}>رئيسية</div>}</div>))}</div>)}
+    </div>
+  );
+}
+
+function CodeInput({ label, value, onChange }) {
+  const [show, setShow] = useState(false);
+  return (<div><div style={{fontSize:11,color:"#6b8cc4",marginBottom:5,fontWeight:600}}>{label}</div><div style={{position:"relative"}}><input type={show?"text":"password"} value={value} onChange={onChange} placeholder="—" style={{width:"100%",boxSizing:"border-box",background:"#071840",border:"1px solid #fbbf2444",borderRadius:10,padding:"9px 36px 9px 12px",color:"#fbbf24",fontFamily:"inherit",fontSize:13,fontWeight:700}}/><button onClick={()=>setShow(s=>!s)} style={{position:"absolute",top:"50%",left:9,transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:14,padding:0}}>{show?"🙈":"👁️"}</button></div></div>);
+}
+
+// ── NAVBAR ────────────────────────────────────────────────────────────────────
+function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang, scrolled }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const isEn = lang === "en";
+
+  const navItems = isEn
+    ? [["home","🏠 Home"],["properties","🏘️ Properties"],["services","✦ Services"],["about","ℹ️ About"]]
+    : [["home","🏠 الرئيسية"],["properties","🏘️ العقارات"],["services","✦ خدماتنا"],["about","ℹ️ عن المؤسسة"]];
+
+  return (
+    <div style={{position:"fixed",top:0,left:0,right:0,zIndex:200,background:scrolled?"rgba(7,16,58,.98)":"rgba(7,16,58,.9)",backdropFilter:"blur(18px)",borderBottom:"1px solid rgba(255,255,255,.08)",transition:"background .3s"}}>
+      <div style={{maxWidth:1200,margin:"0 auto",padding:"0 20px",display:"flex",alignItems:"center",justifyContent:"space-between",height:64}}>
+
+        {/* Brand */}
+        <button onClick={()=>setPage("home")} style={{display:"flex",alignItems:"center",gap:11,background:"none",border:"none",cursor:"pointer",padding:0,flexShrink:0}}>
+          <div style={{width:40,height:40,borderRadius:11,background:"linear-gradient(135deg,#1a4faa,#2563c7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:19,flexShrink:0}}>🏛️</div>
+          <div style={{textAlign:"right"}}>
+            <div style={{fontWeight:900,fontSize:12,color:"#fff",fontFamily:"'Cairo',sans-serif",lineHeight:1.2,whiteSpace:"nowrap"}}>
+              {isEn ? "Khalid Al-Shaikh Est." : "مؤسسة خالد الغفور الشيخ"}
+            </div>
+            <div style={{fontSize:9,color:"rgba(255,255,255,.4)",fontFamily:"'Cairo',sans-serif"}}>
+              {isEn ? "Real Estate Services" : "للخدمات العقارية"}
+            </div>
+          </div>
+        </button>
+
+        {/* Nav links */}
+        <div style={{display:"flex",gap:2}}>
+          {navItems.map(([p,label])=>(
+            <button key={p} onClick={()=>setPage(p)} style={{background:page===p?"rgba(255,255,255,.1)":"none",border:"none",color:page===p?"#fff":"rgba(255,255,255,.45)",borderRadius:8,padding:"6px 12px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11,cursor:"pointer",transition:"all .2s",whiteSpace:"nowrap"}}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Right actions */}
+        <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
+          {/* Lang toggle */}
+          <button onClick={()=>setLang(isEn?"ar":"en")} style={{background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.13)",color:"#fff",borderRadius:8,padding:"5px 11px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11,cursor:"pointer"}}>
+            {isEn?"🇸🇦 عربي":"🇬🇧 EN"}
+          </button>
+
+          <a href={`tel:${PHONE}`} style={{background:"#1a4faa",color:"#fff",borderRadius:8,padding:"6px 12px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11,cursor:"pointer",textDecoration:"none",whiteSpace:"nowrap"}}>📞 {PHONE}</a>
+
+          <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer" style={{background:"#25d36622",border:"1px solid #25d36640",color:"#25d366",borderRadius:8,padding:"6px 10px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11,textDecoration:"none",display:"flex",alignItems:"center",gap:4}}><WaIcon size={12}/></a>
+
+          {/* ADMIN LOGIN — prominent */}
+          {isAdmin ? (
+            <button onClick={onLogout} style={{background:"#ef444422",border:"1px solid #ef444444",color:"#f87171",borderRadius:8,padding:"6px 12px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11,cursor:"pointer",whiteSpace:"nowrap"}}>
+              {isEn?"🔓 Logout":"🔓 خروج"}
+            </button>
+          ) : (
+            <button onClick={onLoginClick} style={{background:"linear-gradient(135deg,#1a4faa,#2563c7)",border:"none",color:"#fff",borderRadius:8,padding:"7px 14px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer",boxShadow:"0 2px 12px #1a4faa55",whiteSpace:"nowrap"}}>
+              🔐 {isEn?"Admin":"دخول الإدارة"}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Admin banner */}
+      {isAdmin && (
+        <div style={{background:"linear-gradient(90deg,#1a4faa33,#2563c722)",borderTop:"1px solid #2563c733",padding:"5px 20px",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+          <span style={{fontSize:11,color:"#93c5fd",fontWeight:600}}>🔒 {isEn?"Admin Mode — All information visible":"وضع الإدارة — جميع المعلومات ظاهرة"}</span>
+          {page==="properties"&&<button onClick={()=>window.__openAdd&&window.__openAdd()} style={{background:"linear-gradient(135deg,#1a4faa,#2563c7)",color:"#fff",border:"none",borderRadius:7,padding:"4px 14px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11,cursor:"pointer",marginRight:"auto"}}>+ {isEn?"Add Property":"إضافة عقار"}</button>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── LOGIN MODAL ───────────────────────────────────────────────────────────────
+function LoginModal({ onSuccess, onClose, lang }) {
+  const isEn = lang==="en";
+  const [un,setUn]=useState(""); const [pw,setPw]=useState(""); const [show,setShow]=useState(false); const [err,setErr]=useState(""); const [loading,setLoading]=useState(false);
+  const login=()=>{ setLoading(true); setTimeout(()=>{ const ok=USERS.find(u=>u.username===un&&u.password===pw); if(ok) onSuccess(); else { setErr(isEn?"Incorrect username or password":"بيانات الدخول غير صحيحة"); setLoading(false); } },600); };
+  const IST={width:"100%",boxSizing:"border-box",background:"#071840",border:"1px solid #1e3a7a",borderRadius:10,padding:"10px 13px",color:"#e8eef8",fontFamily:"'Cairo',sans-serif",fontSize:14};
+  return (
+    <div style={{position:"fixed",inset:0,background:"#000c",zIndex:1500,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
+      <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:"2px solid #2563c7",borderRadius:22,padding:32,maxWidth:380,width:"100%",boxShadow:"0 24px 60px #1a4faa33"}} onClick={e=>e.stopPropagation()}>
+        <div style={{textAlign:"center",marginBottom:24}}>
+          <div style={{width:60,height:60,borderRadius:16,background:"linear-gradient(135deg,#1a4faa,#2563c7)",margin:"0 auto 14px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,boxShadow:"0 8px 24px #1a4faa44"}}>🏛️</div>
+          <div style={{fontWeight:900,fontSize:18,color:"#fff",marginBottom:4}}>{isEn?"Admin Login":"دخول الإدارة"}</div>
+          <div style={{fontSize:11,color:"#4a6fa5"}}>Khalid M. A. Ghafour Al-Shaikh Est.</div>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:14,marginBottom:18}}>
+          <div>
+            <div style={{fontSize:12,color:"#6b8cc4",marginBottom:6,fontWeight:600}}>{isEn?"Username":"اسم المستخدم"}</div>
+            <input value={un} onChange={e=>setUn(e.target.value)} onKeyDown={e=>e.key==="Enter"&&login()} style={IST} placeholder={isEn?"Enter username":"Khalil"}/>
+          </div>
+          <div>
+            <div style={{fontSize:12,color:"#6b8cc4",marginBottom:6,fontWeight:600}}>{isEn?"Password":"كلمة السر"}</div>
+            <div style={{position:"relative"}}>
+              <input type={show?"text":"password"} value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&login()} style={{...IST,paddingLeft:42}} placeholder="••••••••"/>
+              <button onClick={()=>setShow(s=>!s)} style={{position:"absolute",top:"50%",left:12,transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:16,padding:0}}>{show?"🙈":"👁️"}</button>
+            </div>
+          </div>
+        </div>
+        {err&&<div style={{background:"#ef444418",border:"1px solid #ef444430",color:"#f87171",borderRadius:10,padding:"9px 14px",fontSize:13,fontWeight:600,marginBottom:14,textAlign:"center"}}>⚠️ {err}</div>}
+        <button onClick={login} disabled={loading} style={{width:"100%",background:"linear-gradient(135deg,#1a4faa,#2563c7)",color:"#fff",border:"none",borderRadius:12,padding:"13px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:15,cursor:"pointer",boxShadow:"0 4px 20px #1a4faa44",opacity:loading?.7:1}}>
+          {loading?(isEn?"Verifying...":"⏳ جاري التحقق..."):(isEn?"Login 🔓":"دخول 🔓")}
+        </button>
+        <div style={{textAlign:"center",marginTop:12,fontSize:11,color:"#2a4a7a"}}>{isEn?"Public site doesn't require login":"الصفحة العامة لا تحتاج تسجيل دخول"}</div>
+      </div>
+    </div>
+  );
+}
+
+// ── Property Card (Public) ────────────────────────────────────────────────────
+function PublicCard({ p, setLightbox, onShare, lang }) {
+  const [hov, setHov] = useState(false);
+  const isEn = lang==="en";
+  const imgs = p.images||[]; const sc = SC[p.status]||SC["متوفر"];
+  const waMsg = encodeURIComponent(`${isEn?"Hello, I'd like to inquire about":"مرحباً، أود الاستفسار عن"} ${p.name} ${isEn?"in":"في"} ${p.address}${p.rentPrice?" — "+Number(p.rentPrice).toLocaleString()+" SAR/month":""}${p.salePrice?" — "+Number(p.salePrice).toLocaleString()+" SAR":""}`);
+
+  const statusEn = {"متوفر":"Available","مؤجر":"Rented","مباع":"Sold","قريب الانتهاء":"Expiring","صيانة":"Maintenance"};
+  const dealEn   = {"إيجار":"Rent","بيع":"Sale","إيجار وبيع":"Rent/Sale"};
+  const typeEn   = {"شقة":"Apartment","فيلا":"Villa","محل تجاري":"Commercial","مكتب":"Office","استوديو":"Studio","دوبلكس":"Duplex","أرض":"Land"};
+
+  return (
+    <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:`1px solid ${sc.c}25`,borderRadius:18,overflow:"hidden",transition:"all .15s",transform:hov?"translateY(-3px)":"none",boxShadow:hov?`0 12px 36px ${sc.c}18`:"none"}}
+      onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
+
+      {/* Image */}
+      <div style={{position:"relative",height:185,background:"#03102e",cursor:imgs.length>0?"pointer":"default"}} onClick={()=>imgs.length>0&&setLightbox({images:imgs,idx:0})}>
+        {imgs.length>0?(<><img src={imgs[0]} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/><div style={{position:"absolute",inset:0,background:"linear-gradient(to top,#07184088,transparent 55%)",pointerEvents:"none"}}/>{imgs.length>1&&<div style={{position:"absolute",bottom:10,left:10,background:"#000a",color:"#fff",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:18}}>📷 {imgs.length}</div>}</>):(
+          <div style={{width:"100%",height:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:"#1e3a7a",gap:8}}><span style={{fontSize:38}}>🏠</span></div>
+        )}
+        <div style={{position:"absolute",top:10,right:10}}>
+          <span style={{display:"inline-flex",alignItems:"center",gap:5,padding:"4px 11px",borderRadius:20,background:sc.bg,color:sc.c,fontSize:11,fontWeight:700,border:`1px solid ${sc.c}33`}}>
+            <span style={{width:6,height:6,borderRadius:"50%",background:sc.c}}/>{isEn?statusEn[p.status]:p.status}
+          </span>
+        </div>
+        {p.furnished&&<div style={{position:"absolute",top:10,left:10,background:"#fbbf2420",color:"#fbbf24",fontSize:10,fontWeight:700,padding:"3px 9px",borderRadius:18,border:"1px solid #fbbf2440"}}>🛋️ {isEn?"Furnished":"مفروش"}</div>}
+        {p.refNo&&<div style={{position:"absolute",bottom:10,right:10,background:"#000a",color:"#93c5fd",fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:12}}>{p.refNo}</div>}
+        {/* Share button on image */}
+        <button onClick={e=>{e.stopPropagation();onShare(p);}} style={{position:"absolute",bottom:10,left:10,background:"#1a4faa",border:"none",color:"#fff",borderRadius:20,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>📤 {isEn?"Share":"مشاركة"}</button>
+      </div>
+
+      <div style={{padding:"14px 16px"}}>
+        <div style={{fontWeight:900,fontSize:15,color:"#e8eef8",marginBottom:3}}>{p.name}</div>
+        <div style={{fontSize:11,color:"#4a6fa5",marginBottom:8}}>📍 {p.address}</div>
+
+        {/* Ad license */}
+        <div style={{marginBottom:9}}>
+          {p.adLicenseNo
+            ? <span style={{display:"inline-flex",alignItems:"center",gap:5,background:"#1a4faa22",border:"1px solid #2563c744",color:"#93c5fd",borderRadius:8,padding:"3px 10px",fontSize:10,fontWeight:700}}>🏛️ {isEn?"Ad License:":"رخصة إعلانية:"} {p.adLicenseNo}</span>
+            : <span style={{display:"inline-flex",alignItems:"center",gap:5,background:"#ef444418",border:"1px solid #ef444430",color:"#f87171",borderRadius:8,padding:"3px 10px",fontSize:10,fontWeight:700}}>⚠️ {isEn?"Pending License":"قيد الترخيص"}</span>}
+        </div>
+
+        <div style={{display:"flex",gap:5,marginBottom:9,flexWrap:"wrap"}}>
+          <span style={{background:"#1a4faa22",color:"#93c5fd",fontSize:10,fontWeight:700,padding:"3px 9px",borderRadius:16,border:"1px solid #2563c722"}}>{isEn?typeEn[p.type]:p.type}</span>
+          <span style={{background:"#1a4faa22",color:"#93c5fd",fontSize:10,fontWeight:700,padding:"3px 9px",borderRadius:16,border:"1px solid #2563c722"}}>{isEn?dealEn[p.dealType]:p.dealType}</span>
+        </div>
+
+        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:9}}>
+          {p.rentPrice&&<div style={{background:"#4ade8015",border:"1px solid #4ade8028",borderRadius:9,padding:"5px 10px",fontSize:11,color:"#4ade80",fontWeight:700}}>🏠 {Number(p.rentPrice).toLocaleString()} {isEn?"SAR/mo":"ر.س/شهر"}</div>}
+          {p.salePrice&&<div style={{background:"#fbbf2415",border:"1px solid #fbbf2428",borderRadius:9,padding:"5px 10px",fontSize:11,color:"#fbbf24",fontWeight:700}}>💰 {Number(p.salePrice).toLocaleString()} {isEn?"SAR":"ر.س"}</div>}
+        </div>
+
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:10}}>
+          {p.area&&<div style={{background:"#071840",borderRadius:8,padding:"5px 9px",fontSize:11,color:"#6b8cc4"}}>📐 {p.area} m²</div>}
+          {p.builtArea&&<div style={{background:"#071840",borderRadius:8,padding:"5px 9px",fontSize:11,color:"#6b8cc4"}}>🏗️ {p.builtArea} m²</div>}
+        </div>
+
+        {p.notes&&<div style={{fontSize:11,color:"#4a6fa5",background:"#071840",borderRadius:8,padding:"6px 10px",marginBottom:10}}>💬 {p.notes}</div>}
+
+        {/* Action buttons */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:7,marginBottom:p.mapUrl?8:0}}>
+          <a href={`tel:${PHONE}`} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"linear-gradient(135deg,#1a4faa,#2563c7)",color:"#fff",borderRadius:10,padding:"9px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11}}>📞 {isEn?"Call":"اتصال"}</a>
+          <a href={`https://wa.me/${WA_NUMBER}?text=${waMsg}`} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"#25d36618",border:"1px solid #25d36640",color:"#25d366",borderRadius:10,padding:"9px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11}}><WaIcon size={12}/> {isEn?"WhatsApp":"واتساب"}</a>
+          <button onClick={()=>onShare(p)} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"#6366f118",border:"1px solid #6366f140",color:"#a5b4fc",borderRadius:10,padding:"9px 6px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11,cursor:"pointer"}}>📤 {isEn?"Share":"شارك"}</button>
+        </div>
+
+        {p.mapUrl&&<a href={p.mapUrl} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"#16a34a18",border:"1px solid #16a34a40",color:"#4ade80",borderRadius:10,padding:"8px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,width:"100%",boxSizing:"border-box"}}>📍 {isEn?"View on Google Maps":"عرض موقع العقار على الخريطة"}</a>}
+      </div>
+    </div>
+  );
+}
+
+// ── Admin Card ────────────────────────────────────────────────────────────────
+function AdminCard({ p, onEdit, onDelete, onChangeStatus, setLightbox, onShare }) {
+  const [hov, setHov] = useState(false);
+  const imgs = p.images||[]; const sc = SC[p.status]||SC["متوفر"];
+  return (
+    <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:`1px solid ${!p.adLicenseNo?"#ef444435":sc.c+"25"}`,borderRadius:18,overflow:"hidden",transition:"all .15s",transform:hov?"translateY(-3px)":"none"}}
+      onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
+      {!p.adLicenseNo&&<div style={{background:"#ef444415",borderBottom:"1px solid #ef444428",padding:"5px 12px",fontSize:10,color:"#f87171",fontWeight:700}}>⚠️ يجب إضافة رقم الترخيص الإعلاني</div>}
+      <div style={{position:"relative",height:148,background:"#03102e",cursor:imgs.length>0?"pointer":"default"}} onClick={()=>imgs.length>0&&setLightbox({images:imgs,idx:0})}>
+        {imgs.length>0?(<><img src={imgs[0]} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/><div style={{position:"absolute",inset:0,background:"linear-gradient(to top,#07184088,transparent 55%)",pointerEvents:"none"}}/></>):(
+          <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",color:"#1e3a7a",fontSize:32}}>🏠</div>
+        )}
+        <div style={{position:"absolute",top:8,right:8}}><span style={{display:"inline-flex",alignItems:"center",gap:4,padding:"3px 10px",borderRadius:20,background:sc.bg,color:sc.c,fontSize:10,fontWeight:700,border:`1px solid ${sc.c}33`}}><span style={{width:5,height:5,borderRadius:"50%",background:sc.c}}/>{p.status}</span></div>
+        <div style={{position:"absolute",bottom:8,right:8,background:"#000a",color:"#fff",fontSize:9,padding:"2px 7px",borderRadius:12,fontWeight:700}}>👁 {p.views||0}</div>
+        {p.refNo&&<div style={{position:"absolute",bottom:8,left:8,background:"#1a4faa",color:"#fff",fontSize:9,padding:"2px 7px",borderRadius:12,fontWeight:700}}>{p.refNo}</div>}
+      </div>
+      <div style={{padding:"11px 13px"}}>
+        <div style={{fontWeight:900,fontSize:13,color:"#e8eef8",marginBottom:2}}>{p.name}</div>
+        <div style={{fontSize:10,color:"#4a6fa5",marginBottom:7}}>📍 {p.address}</div>
+        <div style={{background:"#03102e",borderRadius:9,padding:"8px 10px",marginBottom:7,border:"1px solid #0e2050"}}>
+          <div style={{fontSize:9,color:p.adLicenseNo?"#4ade80":"#f87171",marginBottom:2}}>🏛️ رخصة: {p.adLicenseNo||"غير مُدخل ⚠️"}</div>
+          <div style={{fontSize:9,color:"#6b8cc4",marginBottom:2}}>📋 عقد تسويق: {p.marketingContractNo||"—"}</div>
+          {p.ownerName&&<div style={{fontSize:9,color:"#93c5fd"}}>👤 {p.ownerName} {p.ownerPhone&&"— "+p.ownerPhone}</div>}
+        </div>
+        <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:7}}>
+          {p.rentPrice&&<div style={{background:"#4ade8015",border:"1px solid #4ade8025",borderRadius:7,padding:"3px 8px",fontSize:9,color:"#4ade80",fontWeight:700}}>إيجار: {Number(p.rentPrice).toLocaleString()}</div>}
+          {p.salePrice&&<div style={{background:"#fbbf2415",border:"1px solid #fbbf2425",borderRadius:7,padding:"3px 8px",fontSize:9,color:"#fbbf24",fontWeight:700}}>بيع: {Number(p.salePrice).toLocaleString()}</div>}
+          {p.minPrice&&<div style={{background:"#f8717115",border:"1px solid #f8717125",borderRadius:7,padding:"3px 8px",fontSize:9,color:"#f87171",fontWeight:700}}>أدنى: {Number(p.minPrice).toLocaleString()}</div>}
+        </div>
+        <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:8}}>
+          {STATUS_OPTIONS.map(s=>(<button key={s} onClick={()=>onChangeStatus(p.id,s)} style={{padding:"3px 8px",borderRadius:6,border:"none",cursor:"pointer",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:9,background:p.status===s?"linear-gradient(135deg,#1a4faa,#2563c7)":"#0e2050",color:p.status===s?"#fff":"#4a6fa5"}}>{s}</button>))}
+        </div>
+        <div style={{display:"flex",gap:6}}>
+          <button onClick={()=>onEdit(p)} style={{flex:1,background:"#0e2563",border:"1px solid #2563c7",color:"#93c5fd",borderRadius:8,padding:"7px",fontFamily:"'Cairo',sans-serif",fontWeight:600,fontSize:11,cursor:"pointer"}}>✏️ تعديل</button>
+          <button onClick={()=>onShare(p)} style={{background:"#6366f118",border:"1px solid #6366f130",color:"#a5b4fc",borderRadius:8,padding:"7px 10px",cursor:"pointer",fontSize:11}}>📤</button>
+          {imgs.length>0&&<button onClick={()=>setLightbox({images:imgs,idx:0})} style={{background:"#1a4faa22",border:"1px solid #2563c740",color:"#93c5fd",borderRadius:8,padding:"7px 10px",cursor:"pointer",fontSize:11}}>🖼️</button>}
+          {p.mapUrl&&<a href={p.mapUrl} target="_blank" rel="noopener noreferrer" style={{background:"#16a34a18",border:"1px solid #16a34a40",color:"#4ade80",borderRadius:8,padding:"7px 10px",fontSize:11,textDecoration:"none",display:"flex",alignItems:"center"}}>📍</a>}
+          <button onClick={()=>onDelete(p.id)} style={{background:"#ef444414",border:"1px solid #ef444428",color:"#f87171",borderRadius:8,padding:"7px 10px",cursor:"pointer",fontSize:11}}>🗑️</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── PROP FORM ─────────────────────────────────────────────────────────────────
+function PropForm({ form, setForm, onSave, onClose, editId }) {
+  const f=key=>e=>setForm(p=>({...p,[key]:e.target.value}));
+  const IST={width:"100%",boxSizing:"border-box",background:"#071840",border:"1px solid #1e3a7a",borderRadius:10,padding:"9px 12px",color:"#e8eef8",fontFamily:"'Cairo',sans-serif",fontSize:13};
+  const Lbl=({c})=><div style={{fontSize:11,color:"#6b8cc4",marginBottom:5,fontWeight:600}}>{c}</div>;
+  const Sec=({c})=><div style={{fontSize:11,color:"#60a5fa",fontWeight:700,marginBottom:10,padding:"6px 12px",background:"#1a4faa18",borderRadius:9,border:"1px solid #1a4faa33"}}>{c}</div>;
+  return (
+    <div style={{position:"fixed",inset:0,background:"#000b",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={onClose}>
+      <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:"1px solid #1a4faa",borderRadius:22,padding:24,maxWidth:600,width:"100%",maxHeight:"93vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20,paddingBottom:14,borderBottom:"1px solid #1e3a7a"}}>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <div style={{width:36,height:36,borderRadius:10,background:"linear-gradient(135deg,#1a4faa,#2563c7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>🏢</div>
+            <div><div style={{fontWeight:900,fontSize:14,color:"#e8eef8"}}>{editId?"تعديل العقار":"إضافة عقار جديد"}</div><div style={{fontSize:10,color:"#4a6fa5"}}>مؤسسة خالد محمد عبدالغفور الشيخ</div></div>
+          </div>
+          <button onClick={onClose} style={{background:"#1e3a7a",border:"none",color:"#aaa",width:30,height:30,borderRadius:"50%",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+        </div>
+
+        <Sec c="📋 معلومات أساسية"/>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:16}}>
+          <div style={{gridColumn:"1/-1"}}><Lbl c="اسم العقار *"/><input value={form.name} onChange={f("name")} style={IST}/></div>
+          <div style={{gridColumn:"1/-1"}}><Lbl c="العنوان"/><input value={form.address} onChange={f("address")} style={IST}/></div>
+          {[["نوع العقار","type",PROPERTY_TYPES],["نوع الصفقة","dealType",DEAL_TYPES],["الحالة","status",STATUS_OPTIONS]].map(([lbl,key,opts])=>(<div key={key}><Lbl c={lbl}/><select value={form[key]} onChange={f(key)} style={IST}>{opts.map(o=><option key={o}>{o}</option>)}</select></div>))}
+          <div><Lbl c="مفروش؟"/><div style={{display:"flex",gap:7}}>{["نعم","لا"].map(opt=>(<button key={opt} onClick={()=>setForm(p=>({...p,furnished:opt==="نعم"}))} style={{flex:1,padding:"8px",borderRadius:9,border:`1px solid ${(opt==="نعم")===form.furnished?"#2563c7":"#1e3a7a"}`,background:(opt==="نعم")===form.furnished?"#1a4faa":"#071840",color:(opt==="نعم")===form.furnished?"#fff":"#4a6fa5",cursor:"pointer",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12}}>{opt==="نعم"?"🛋️ نعم":"❌ لا"}</button>))}</div></div>
+          <div><Lbl c="الرقم المرجعي"/><input value={form.refNo} onChange={f("refNo")} style={IST} placeholder="REF-001"/></div>
+        </div>
+
+        <Sec c="🏛️ الأرقام الرسمية (اشتراطات الهيئة العامة للعقار)"/>
+        <div style={{background:"#ef444408",border:"1px solid #ef444420",borderRadius:9,padding:"8px 12px",marginBottom:11,fontSize:11,color:"#f87171"}}>⚠️ رقم الترخيص الإعلاني إلزامي بموجب اشتراطات الهيئة العامة للعقار</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:16}}>
+          <div><Lbl c="رقم الترخيص الإعلاني *"/><input value={form.adLicenseNo} onChange={f("adLicenseNo")} style={{...IST,borderColor:form.adLicenseNo?"#4ade8040":"#ef444440",color:form.adLicenseNo?"#4ade80":"#f87171"}} placeholder="1010123456"/></div>
+          <div><Lbl c="رقم عقد التسويق"/><input value={form.marketingContractNo} onChange={f("marketingContractNo")} style={IST} placeholder="MC-2024-001"/></div>
+        </div>
+
+        <Sec c="💰 الأسعار"/>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:11,marginBottom:16}}>
+          {[["سعر البيع (ر.س)","salePrice"],["قيمة الإيجار (ر.س)","rentPrice"],["الحد الأدنى (ر.س)","minPrice"]].map(([lbl,key])=>(<div key={key}><Lbl c={lbl}/><input type="number" value={form[key]} onChange={f(key)} style={IST}/></div>))}
+        </div>
+
+        <Sec c="📐 المساحات"/>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:16}}>
+          {[["المساحة الصافية (م²)","area"],["المسطح البنائي (م²)","builtArea"]].map(([lbl,key])=>(<div key={key}><Lbl c={lbl}/><input type="number" value={form[key]} onChange={f(key)} style={IST}/></div>))}
+        </div>
+
+        <Sec c="👤 المالك"/>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:16}}>
+          {[["اسم المالك","ownerName"],["رقم الجوال","ownerPhone"]].map(([lbl,key])=>(<div key={key}><Lbl c={lbl}/><input value={form[key]} onChange={f(key)} style={IST}/></div>))}
+        </div>
+
+        <Sec c="🔐 رموز الدخول"/>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:16}}>
+          <CodeInput label="رمز دخول الشقة"  value={form.aptCode}      onChange={f("aptCode")}/>
+          <CodeInput label="رمز دخول المبنى" value={form.buildingCode} onChange={f("buildingCode")}/>
+        </div>
+
+        <Sec c="📍 موقع العقار على الخريطة"/>
+        <div style={{marginBottom:14}}>
+          <Lbl c="رابط قوقل ماب"/>
+          <input value={form.mapUrl} onChange={f("mapUrl")} placeholder="https://maps.google.com/?q=..." style={{...IST,borderColor:"#16a34a33",color:"#4ade80"}}/>
+          <div style={{fontSize:10,color:"#4a6fa5",marginTop:5}}>💡 قوقل ماب → ابحث عن الموقع → مشاركة → نسخ الرابط</div>
+        </div>
+
+        <div style={{marginBottom:14}}><Lbl c="📝 ملاحظات"/><textarea value={form.notes} onChange={f("notes")} rows={2} style={{...IST,resize:"none"}}/></div>
+
+        <Sec c="🖼️ صور العقار"/>
+        <div style={{marginBottom:20}}><ImageUploader images={form.images||[]} onChange={imgs=>setForm(p=>({...p,images:typeof imgs==="function"?imgs(p.images||[]):imgs}))}/></div>
+
+        <div style={{display:"flex",gap:10}}>
+          <button onClick={onSave} style={{flex:1,background:"linear-gradient(135deg,#1a4faa,#2563c7)",color:"#fff",border:"none",borderRadius:11,padding:"12px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",boxShadow:"0 4px 18px #1a4faa44"}}>{editId?"حفظ التعديلات":"إضافة العقار"}</button>
+          <button onClick={onClose} style={{background:"#071840",border:"1px solid #1e3a7a",color:"#6b8cc4",borderRadius:11,padding:"12px 18px",fontFamily:"'Cairo',sans-serif",cursor:"pointer",fontWeight:600}}>إلغاء</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── PAGES ─────────────────────────────────────────────────────────────────────
+function HomePage({ setPage, lang }) {
+  const isEn = lang==="en";
+  const services = isEn ? [
+    {icon:"🏢",t:"Buy & Rent Properties",d:"Best real estate opportunities for sale and rent — apartments, villas, commercial spaces at competitive prices"},
+    {icon:"🗝️",t:"Property Management",d:"Full management — rent collection, contracts, tenant relations, and periodic reporting to owners"},
+    {icon:"📊",t:"Property Valuation",d:"Professional valuation per Real Estate General Authority standards for informed investment decisions"},
+    {icon:"💡",t:"Real Estate Consulting",d:"Specialized consulting including market analysis, investment opportunity evaluation, and client guidance"},
+    {icon:"🔧",t:"Property Maintenance",d:"Comprehensive maintenance services to preserve property value — routine and emergency"},
+    {icon:"🛋️",t:"Furnished Rental",d:"Fully furnished units for short and long-term rental, ready to move in immediately"},
+    {icon:"📋",t:"Property Registration",d:"Subdivisions, mergers, deed updates, and all official real estate registry services"},
+    {icon:"🏛️",t:"Ejar Platform & Contracts",d:"Lease contract documentation on Ejar platform, legal contract preparation, and renewal services"},
+  ] : [
+    {icon:"🏢",t:"بيع وإيجار العقارات",d:"أفضل الفرص العقارية من شقق وفلل ومحلات بأسعار تنافسية وشفافية كاملة"},
+    {icon:"🗝️",t:"إدارة العقارات",d:"إدارة متكاملة — تحصيل الإيجارات، إدارة العقود، متابعة المستأجرين، وتقارير دورية للملاك"},
+    {icon:"📊",t:"تقييم العقارات",d:"تقييم احترافي وفق معايير الهيئة العامة للعقار لاتخاذ قرارات استثمارية مدروسة"},
+    {icon:"💡",t:"الاستشارات العقارية",d:"استشارات متخصصة تشمل تحليل السوق وتقييم الفرص الاستثمارية وتوجيه العملاء"},
+    {icon:"🔧",t:"صيانة العقارات",d:"خدمات صيانة شاملة للحفاظ على قيمة عقاراتكم — دورية وطارئة"},
+    {icon:"🛋️",t:"تأجير المفروش",d:"وحدات مفروشة متكاملة للإيجار قصير وطويل الأمد، جاهزة للسكن فوراً"},
+    {icon:"📋",t:"فرز ودمج العقارات",d:"إجراءات فرز العقارات ودمجها وتحديث الصكوك وفق الأنظمة المعتمدة"},
+    {icon:"🏛️",t:"خدمات السجل العقاري",d:"إفراغات، تحديث صكوك، عقود إيجار في منصة إيجار، وجميع خدمات السجل الرسمية"},
+  ];
+
+  return (
+    <div style={{paddingTop:64}}>
+      {/* Hero */}
+      <div style={{minHeight:"calc(100vh - 64px)",background:"linear-gradient(160deg,#07103a 0%,#0e2563 55%,#1a4faa 100%)",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",padding:"60px 24px"}}>
+        <div style={{position:"absolute",width:700,height:700,borderRadius:"50%",background:"#2563c7",opacity:.05,top:-250,right:-200}}/>
+        <div style={{position:"absolute",inset:0,backgroundImage:"linear-gradient(rgba(255,255,255,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.015) 1px,transparent 1px)",backgroundSize:"48px 48px"}}/>
+        <div style={{position:"relative",zIndex:2,textAlign:"center",maxWidth:780}}>
+          <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.13)",borderRadius:30,padding:"6px 18px",fontSize:12,color:"rgba(255,255,255,.65)",marginBottom:28}}>
+            <span style={{width:7,height:7,borderRadius:"50%",background:"#4ade80",boxShadow:"0 0 8px #4ade80",display:"inline-block"}}/>
+            {isEn?"Licensed by Real Estate General Authority":"مرخصون من الهيئة العامة للعقار"}
+          </div>
+          <h1 style={{fontSize:"clamp(28px,5vw,54px)",fontWeight:900,color:"#fff",lineHeight:1.15,marginBottom:10}}>
+            {isEn?"Khalid M. A. Ghafour":"مؤسسة خالد محمد"}<br/>
+            <span style={{background:"linear-gradient(135deg,#60a5fa,#93c5fd)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>
+              {isEn?"Al-Shaikh Est.":"عبدالغفور الشيخ"}
+            </span>
+          </h1>
+          <p style={{fontSize:13,color:"rgba(255,255,255,.45)",marginBottom:14,letterSpacing:.5}}>
+            {isEn?"للخدمات العقارية | Real Estate Services":"Khalid M. A. Ghafour Al-Shaikh Est. | Real Estate Services"}
+          </p>
+          <p style={{fontSize:15,color:"rgba(255,255,255,.62)",lineHeight:1.8,maxWidth:580,margin:"0 auto 36px"}}>
+            {isEn?"Your trusted partner for all real estate services — from buying and renting to property management, consulting, and registry services."
+            :"شريكك الموثوق في جميع الخدمات العقارية — من البيع والإيجار إلى إدارة العقارات والاستشارات وخدمات السجل العقاري"}
+          </p>
+          <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
+            <button onClick={()=>setPage("properties")} style={{background:"linear-gradient(135deg,#1a4faa,#2563c7)",color:"#fff",border:"none",borderRadius:13,padding:"13px 28px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:15,cursor:"pointer",boxShadow:"0 8px 28px #1a4faa44"}}>
+              🏘️ {isEn?"Browse Properties":"تصفح العقارات"}
+            </button>
+            <a href={`tel:${PHONE}`} style={{background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.18)",color:"#fff",borderRadius:13,padding:"13px 24px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:15,display:"flex",alignItems:"center",gap:7}}>
+              📞 {isEn?"Contact Us":"تواصل الآن"}
+            </a>
+          </div>
+          <div style={{display:"flex",justifyContent:"center",gap:40,marginTop:52,paddingTop:36,borderTop:"1px solid rgba(255,255,255,.07)",flexWrap:"wrap"}}>
+            {[[isEn?"8+":"٨+",isEn?"Real Estate Services":"خدمة عقارية"],[isEn?"100%":"١٠٠٪",isEn?"Authority Compliant":"امتثال للهيئة"],[isEn?"24/7":"٢٤/٧",isEn?"Always Available":"تواصل مستمر"]].map(([n,l])=>(
+              <div key={l} style={{textAlign:"center"}}><div style={{fontSize:28,fontWeight:900,color:"#fff"}}>{n}</div><div style={{fontSize:11,color:"rgba(255,255,255,.4)",marginTop:3}}>{l}</div></div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Services */}
+      <div style={{background:"#07103a",padding:"70px 24px"}}>
+        <div style={{maxWidth:1100,margin:"0 auto"}}>
+          <div style={{textAlign:"center",marginBottom:46}}>
+            <div style={{display:"inline-block",background:"#1a4faa22",border:"1px solid #1a4faa44",color:"#93c5fd",borderRadius:20,padding:"5px 16px",fontSize:11,fontWeight:700,marginBottom:12}}>{isEn?"Our Services":"خدماتنا"}</div>
+            <h2 style={{fontSize:"clamp(20px,3.5vw,32px)",fontWeight:900,color:"#fff",marginBottom:8}}>{isEn?"Complete Real Estate Services":"خدمات عقارية متكاملة تحت سقف واحد"}</h2>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:14}}>
+            {services.map((s,i)=>(
+              <div key={i} style={{background:"linear-gradient(140deg,#0e2050,#12286a)",border:"1px solid rgba(255,255,255,.06)",borderRadius:17,padding:"24px 20px",transition:"all .25s"}}
+                onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.borderColor="rgba(37,99,199,.3)";}}
+                onMouseLeave={e=>{e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.borderColor="rgba(255,255,255,.06)";}}>
+                <div style={{width:46,height:46,borderRadius:13,background:"#1a4faa22",border:"1px solid #1a4faa33",display:"flex",alignItems:"center",justifyContent:"center",fontSize:21,marginBottom:14}}>{s.icon}</div>
+                <div style={{fontSize:14,fontWeight:800,color:"#fff",marginBottom:7}}>{s.t}</div>
+                <div style={{fontSize:12,color:"#6b8cc4",lineHeight:1.7}}>{s.d}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* CTA */}
+      <div style={{background:"linear-gradient(135deg,#0e2563,#1a4faa)",padding:"66px 24px",textAlign:"center",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",width:500,height:500,borderRadius:"50%",background:"rgba(255,255,255,.03)",top:-150,right:-150}}/>
+        <div style={{position:"relative",zIndex:2,maxWidth:700,margin:"0 auto"}}>
+          <h2 style={{fontSize:"clamp(20px,3.5vw,34px)",fontWeight:900,color:"#fff",marginBottom:10}}>
+            {isEn?"Looking for a property or want to rent yours?":"هل تبحث عن عقار أو تريد تأجير ملكك؟"}
+          </h2>
+          <p style={{color:"rgba(255,255,255,.6)",fontSize:14,marginBottom:30,lineHeight:1.8}}>
+            {isEn?"Our team is ready to help you 24/7":"فريقنا جاهز لمساعدتك على مدار الساعة"}
+          </p>
+          <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
+            <a href={`tel:${PHONE}`} style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(255,255,255,.14)",border:"1px solid rgba(255,255,255,.28)",color:"#fff",borderRadius:13,padding:"12px 26px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:900,fontSize:16}}>📞 {PHONE}</a>
+            <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:8,background:"#25d36620",border:"1px solid #25d36650",color:"#25d366",borderRadius:13,padding:"12px 24px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:15}}><WaIcon size={18}/> WhatsApp</a>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div style={{background:"#040d28",borderTop:"1px solid #0e2050",padding:"28px 24px"}}>
+        <div style={{maxWidth:1100,margin:"0 auto",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:14}}>
+          <div style={{display:"flex",alignItems:"center",gap:11}}>
+            <div style={{width:36,height:36,borderRadius:10,background:"linear-gradient(135deg,#1a4faa,#2563c7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>🏛️</div>
+            <div><div style={{fontWeight:800,fontSize:12,color:"#fff"}}>مؤسسة خالد محمد عبدالغفور الشيخ</div><div style={{fontSize:10,color:"#4a6fa5"}}>Khalid M. A. Ghafour Al-Shaikh Est.</div></div>
+          </div>
+          <div style={{fontSize:11,color:"#2a3a6a"}}>© 2025 | {isEn?"Licensed by Real Estate General Authority":"مرخصة من الهيئة العامة للعقار"}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PropertiesPage({ props, isAdmin, onEdit, onDelete, onChangeStatus, setLightbox, onShare, lang }) {
+  const isEn = lang==="en";
+  const [filter,setFilter]=useState("الكل"); const [search,setSearch]=useState(""); const [dealF,setDealF]=useState("الكل");
+  const filtered=props.filter(p=>(filter==="الكل"||p.status===filter)&&(dealF==="الكل"||p.dealType===dealF)&&(p.name.includes(search)||p.address.includes(search)||(p.ownerName||"").includes(search)));
+
+  return (
+    <div style={{paddingTop:isAdmin?96:64,minHeight:"100vh",background:"#07103a"}}>
+      <div style={{background:"linear-gradient(135deg,#0e2563,#1a4faa)",padding:"28px 24px 24px"}}>
+        <div style={{maxWidth:1200,margin:"0 auto"}}>
+          <div style={{fontWeight:900,fontSize:22,color:"#fff",marginBottom:3}}>{isAdmin?(isEn?"🔒 Admin Panel":"🔒 لوحة الإدارة"):(isEn?"🏘️ Available Properties":"🏘️ العقارات المتاحة")}</div>
+          <div style={{fontSize:12,color:"rgba(255,255,255,.5)"}}>Khalid M. A. Ghafour Al-Shaikh Est. | للخدمات العقارية</div>
+        </div>
+      </div>
+      <div style={{maxWidth:1200,margin:"0 auto",padding:"22px"}}>
+        {isAdmin&&(()=>{const st={total:props.length,available:props.filter(p=>p.status==="متوفر").length,rented:props.filter(p=>p.status==="مؤجر").length,income:props.filter(p=>p.rentPrice).reduce((s,p)=>s+Number(p.rentPrice),0),noLicense:props.filter(p=>!p.adLicenseNo).length,views:props.reduce((s,p)=>s+(p.views||0),0)};return(<div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:9,marginBottom:20}}>{[{l:isEn?"Total":"الإجمالي",v:st.total,i:"🏢",c:"#93c5fd"},{l:isEn?"Available":"متوفر",v:st.available,i:"✅",c:"#4ade80"},{l:isEn?"Rented":"مؤجر",v:st.rented,i:"🔑",c:"#a5b4fc"},{l:isEn?"Monthly Income":"الدخل الشهري",v:st.income.toLocaleString()+" ر.س",i:"💰",c:"#fbbf24"},{l:isEn?"No License":"بدون ترخيص",v:st.noLicense,i:"⚠️",c:"#f87171"},{l:isEn?"Views":"المشاهدات",v:st.views,i:"👁",c:"#e879f9"}].map((s,i)=>(<div key={i} style={{background:"linear-gradient(135deg,#071840,#0e2563)",border:`1px solid ${s.c}22`,borderRadius:12,padding:"12px 10px",position:"relative",overflow:"hidden"}}><div style={{position:"absolute",top:-8,left:-8,width:32,height:32,background:s.c+"15",borderRadius:"50%"}}/><div style={{fontSize:17,marginBottom:5}}>{s.i}</div><div style={{fontWeight:900,fontSize:15,color:s.c}}>{s.v}</div><div style={{fontSize:10,color:"#4a6fa5",marginTop:1}}>{s.l}</div></div>))}</div>);})()}
+        <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap",alignItems:"center"}}>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={isEn?"🔍 Search by name or address...":"🔍 ابحث بالاسم أو العنوان..."}
+            style={{flex:1,minWidth:180,background:"#071840",border:"1px solid #1e3a7a",borderRadius:10,padding:"8px 13px",color:"#e8eef8",fontFamily:"'Cairo',sans-serif",fontSize:13}}/>
+          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+            {["الكل",...STATUS_OPTIONS].map(f=>(<button key={f} onClick={()=>setFilter(f)} style={{padding:"7px 12px",borderRadius:8,cursor:"pointer",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11,background:filter===f?"linear-gradient(135deg,#1a4faa,#2563c7)":"#071840",color:filter===f?"#fff":"#4a6fa5",border:filter===f?"none":"1px solid #1e3a7a"}}>{f}</button>))}
+          </div>
+          <div style={{display:"flex",gap:5}}>
+            {["الكل","إيجار","بيع","إيجار وبيع"].map(f=>(<button key={f} onClick={()=>setDealF(f)} style={{padding:"7px 12px",borderRadius:8,cursor:"pointer",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11,background:dealF===f?"#fbbf2433":"#071840",color:dealF===f?"#fbbf24":"#4a6fa5",border:dealF===f?"1px solid #fbbf2444":"1px solid #1e3a7a"}}>{f}</button>))}
+          </div>
+        </div>
+        <div style={{fontSize:11,color:"#4a6fa5",marginBottom:12}}>{isEn?`${filtered.length} properties found`:`${filtered.length} عقار`}</div>
+        {filtered.length===0?(<div style={{textAlign:"center",padding:"60px 0",color:"#1e3a7a"}}><div style={{fontSize:46,marginBottom:10}}>🏚️</div><div style={{fontSize:13,fontWeight:600}}>{isEn?"No results found":"لا توجد نتائج"}</div></div>):(
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(295px,1fr))",gap:15}}>
+            {filtered.map(p=>isAdmin
+              ? <AdminCard key={p.id} p={p} onEdit={onEdit} onDelete={onDelete} onChangeStatus={onChangeStatus} setLightbox={setLightbox} onShare={onShare}/>
+              : <PublicCard key={p.id} p={p} setLightbox={setLightbox} onShare={onShare} lang={lang}/>
+            )}
+          </div>
+        )}
+        {!isAdmin&&(
+          <div style={{marginTop:36,background:"linear-gradient(135deg,#0e2563,#1a4faa)",borderRadius:18,padding:"26px 28px",textAlign:"center",border:"1px solid #2563c744"}}>
+            <div style={{fontWeight:900,fontSize:18,color:"#fff",marginBottom:6}}>{isEn?"Can't find what you're looking for?":"لم تجد ما تبحث عنه؟"}</div>
+            <div style={{color:"rgba(255,255,255,.6)",fontSize:13,marginBottom:18}}>Khalid M. A. Ghafour Al-Shaikh Est.</div>
+            <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
+              <a href={`tel:${PHONE}`} style={{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(255,255,255,.14)",border:"1px solid rgba(255,255,255,.28)",color:"#fff",borderRadius:12,padding:"10px 22px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:900,fontSize:15}}>📞 {PHONE}</a>
+              <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:7,background:"#25d36620",border:"1px solid #25d36644",color:"#25d366",borderRadius:12,padding:"10px 20px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14}}><WaIcon size={16}/> WhatsApp</a>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ServicesPage({ lang }) {
+  const isEn = lang==="en";
+  const groups = isEn ? [
+    {icon:"🏢",t:"Sales & Rentals",items:["Residential & commercial property sales","Furnished & unfurnished unit rentals","Commercial space & office rentals","Negotiation and deal completion"]},
+    {icon:"🗝️",t:"Property Management",items:["Monthly rent collection","Contract & tenant management","Maintenance follow-up","Periodic owner reports"]},
+    {icon:"📊",t:"Valuation & Consulting",items:["Property valuation per REGA standards","Real estate market analysis","Investment consulting","Feasibility studies"]},
+    {icon:"🔧",t:"Maintenance",items:["Preventive periodic maintenance","24/7 emergency maintenance","Finishing works supervision","Service provider management"]},
+    {icon:"🏛️",t:"Registry Services",items:["Property transfers","Deed updates & consolidation","Property subdivision & merging","Real estate registry procedures"]},
+    {icon:"📋",t:"Ejar Platform",items:["Lease documentation on Ejar","Legal contract preparation","Lease renewal & termination","Contract compliance monitoring"]},
+  ] : [
+    {icon:"🏢",t:"البيع والإيجار",items:["بيع العقارات السكنية والتجارية","إيجار الوحدات المفروشة وغير المفروشة","إيجار المحلات والمكاتب","التفاوض وإتمام الصفقات"]},
+    {icon:"🗝️",t:"إدارة العقارات",items:["تحصيل الإيجارات الشهرية","إدارة العقود والمستأجرين","متابعة الصيانة","تقارير دورية للملاك"]},
+    {icon:"📊",t:"التقييم والاستشارات",items:["تقييم عقاري وفق معايير الهيئة","تحليل السوق العقاري","الاستشارات الاستثمارية","دراسات الجدوى"]},
+    {icon:"🔧",t:"الصيانة",items:["صيانة دورية وقائية","صيانة طارئة على مدار الساعة","إشراف على أعمال التشطيب","إدارة مزودي الخدمات"]},
+    {icon:"🏛️",t:"السجل العقاري",items:["إفراغات عقارية","تحديث وتوحيد الصكوك","فرز العقارات ودمجها","الإجراءات الرسمية"]},
+    {icon:"📋",t:"منصة إيجار",items:["توثيق عقود الإيجار","إعداد العقود القانونية","تجديد وإنهاء العقود","متابعة الالتزام بالشروط"]},
+  ];
+  return (
+    <div style={{paddingTop:64,minHeight:"100vh",background:"#07103a"}}>
+      <div style={{background:"linear-gradient(135deg,#0e2563,#1a4faa)",padding:"28px 24px 24px"}}><div style={{maxWidth:1100,margin:"0 auto"}}><div style={{fontWeight:900,fontSize:22,color:"#fff",marginBottom:3}}>✦ {isEn?"Our Services":"خدماتنا"}</div><div style={{fontSize:12,color:"rgba(255,255,255,.5)"}}>{isEn?"Comprehensive licensed real estate services":"طيف متكامل من الخدمات العقارية المرخصة"}</div></div></div>
+      <div style={{maxWidth:1100,margin:"0 auto",padding:"32px 24px"}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(290px,1fr))",gap:14}}>
+          {groups.map((g,i)=>(<div key={i} style={{background:"linear-gradient(140deg,#0e2050,#12286a)",border:"1px solid rgba(255,255,255,.06)",borderRadius:17,padding:"24px 20px"}}>
+            <div style={{width:46,height:46,borderRadius:13,background:"#1a4faa22",border:"1px solid #1a4faa33",display:"flex",alignItems:"center",justifyContent:"center",fontSize:21,marginBottom:14}}>{g.icon}</div>
+            <div style={{fontSize:15,fontWeight:800,color:"#fff",marginBottom:12}}>{g.t}</div>
+            {g.items.map((item,j)=>(<div key={j} style={{display:"flex",alignItems:"center",gap:7,padding:"5px 0",borderBottom:"1px solid #1e3a7a22"}}><span style={{width:5,height:5,borderRadius:"50%",background:"#2563c7",flexShrink:0,display:"inline-block"}}/><span style={{fontSize:12,color:"#6b8cc4"}}>{item}</span></div>))}
+          </div>))}
+        </div>
+        <div style={{marginTop:30,background:"linear-gradient(135deg,#1a4faa18,#2563c718)",border:"1px solid #2563c740",borderRadius:16,padding:"24px",textAlign:"center"}}>
+          <div style={{fontWeight:900,fontSize:16,color:"#fff",marginBottom:6}}>{isEn?"Need a service not listed?":"هل تحتاج خدمة لم تجدها هنا؟"}</div>
+          <div style={{display:"flex",gap:10,justifyContent:"center",marginTop:14,flexWrap:"wrap"}}>
+            <a href={`tel:${PHONE}`} style={{display:"inline-flex",alignItems:"center",gap:6,background:"linear-gradient(135deg,#1a4faa,#2563c7)",color:"#fff",borderRadius:11,padding:"10px 20px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14}}>📞 {PHONE}</a>
+            <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:7,background:"#25d36620",border:"1px solid #25d36644",color:"#25d366",borderRadius:11,padding:"10px 18px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14}}><WaIcon size={15}/> WhatsApp</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AboutPage({ lang }) {
+  const isEn = lang==="en";
+  return (
+    <div style={{paddingTop:64,minHeight:"100vh",background:"#07103a"}}>
+      <div style={{background:"linear-gradient(135deg,#0e2563,#1a4faa)",padding:"28px 24px 24px"}}><div style={{maxWidth:900,margin:"0 auto"}}><div style={{fontWeight:900,fontSize:22,color:"#fff",marginBottom:3}}>ℹ️ {isEn?"About Us":"عن المؤسسة"}</div><div style={{fontSize:12,color:"rgba(255,255,255,.5)"}}>Khalid M. A. Ghafour Al-Shaikh Est.</div></div></div>
+      <div style={{maxWidth:900,margin:"0 auto",padding:"36px 24px"}}>
+        <div style={{background:"linear-gradient(140deg,#0e2050,#12286a)",border:"1px solid rgba(255,255,255,.07)",borderRadius:20,padding:"32px",marginBottom:18}}>
+          <div style={{display:"flex",alignItems:"center",gap:18,marginBottom:22,flexWrap:"wrap"}}>
+            <div style={{width:68,height:68,borderRadius:17,background:"linear-gradient(135deg,#1a4faa,#2563c7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,flexShrink:0}}>🏛️</div>
+            <div>
+              <div style={{fontWeight:900,fontSize:19,color:"#fff",marginBottom:3}}>مؤسسة خالد محمد عبدالغفور الشيخ</div>
+              <div style={{fontSize:13,color:"#6b8cc4"}}>Khalid M. A. Ghafour Al-Shaikh Est. | للخدمات العقارية</div>
+            </div>
+          </div>
+          <p style={{fontSize:14,color:"#93c5fd",lineHeight:1.9,marginBottom:22}}>
+            {isEn
+              ? "A specialized real estate establishment providing a comprehensive range of licensed real estate services across Saudi Arabia. We are committed to the highest standards of quality and professionalism, placing our clients' interests first."
+              : "مؤسسة عقارية متخصصة تقدم طيفاً شاملاً من الخدمات العقارية المرخصة في المملكة العربية السعودية. نلتزم بأعلى معايير الجودة والمهنية ونضع مصلحة عملائنا في المقام الأول."}
+          </p>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+            {[[`📞 ${isEn?"Phone":"الهاتف"}`,PHONE],[`💬 WhatsApp`,"0568300022"],[`🏛️ ${isEn?"License":"الترخيص"}`,isEn?"Real Estate Gen. Authority":"هيئة العقار"],[`✅ ${isEn?"Compliance":"الامتثال"}`,isEn?"Fully Compliant":"متوافق بالكامل"]].map(([l,v])=>(
+              <div key={l} style={{background:"#03102e",borderRadius:11,padding:"13px 15px",border:"1px solid #1e3a7a"}}>
+                <div style={{fontSize:11,color:"#4a6fa5",marginBottom:4}}>{l}</div>
+                <div style={{fontSize:13,fontWeight:700,color:"#93c5fd"}}>{v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{background:"#1a4faa18",border:"1px solid #2563c740",borderRadius:15,padding:"22px",textAlign:"center"}}>
+          <div style={{fontWeight:900,fontSize:15,color:"#fff",marginBottom:12}}>{isEn?"Get in Touch":"تواصل معنا"}</div>
+          <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
+            <a href={`tel:${PHONE}`} style={{display:"inline-flex",alignItems:"center",gap:6,background:"linear-gradient(135deg,#1a4faa,#2563c7)",color:"#fff",borderRadius:11,padding:"10px 20px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14}}>📞 {PHONE}</a>
+            <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:7,background:"#25d36620",border:"1px solid #25d36644",color:"#25d366",borderRadius:11,padding:"10px 18px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14}}><WaIcon size={15}/> WhatsApp</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── ROOT ──────────────────────────────────────────────────────────────────────
+export default function App() {
+  const [page,setPage]           = useState("home");
+  const [lang,setLang]           = useState("ar");
+  const [props,setProps]         = useState([]);
+  const [loaded,setLoaded]       = useState(false);
+  const [saving,setSaving]       = useState(false);
+  const [scrolled,setScrolled]   = useState(false);
+  const [isAdmin,setIsAdmin]     = useState(false);
+  const [showLogin,setShowLogin] = useState(false);
+  const [showForm,setShowForm]   = useState(false);
+  const [editId,setEditId]       = useState(null);
+  const [form,setForm]           = useState(emptyForm);
+  const [lightbox,setLightbox]   = useState(null);
+  const [delId,setDelId]         = useState(null);
+  const [toast,setToast]         = useState(null);
+  const [shareP,setShareP]       = useState(null);
+
+  useEffect(()=>{
+    (async()=>{
+      try { const r=await window.storage.get(STORAGE_KEY); setProps(r?.value?JSON.parse(r.value):demo); }
+      catch { setProps(demo); }
+      setLoaded(true);
+    })();
+  },[]);
+
+  const persist=useCallback(async data=>{ setSaving(true); try { await window.storage.set(STORAGE_KEY,JSON.stringify(data)); } catch{} setTimeout(()=>setSaving(false),600); },[]);
+  useEffect(()=>{ if(loaded) persist(props); },[props,loaded,persist]);
+  useEffect(()=>{ const h=()=>setScrolled(window.scrollY>40); window.addEventListener("scroll",h); return ()=>window.removeEventListener("scroll",h); },[]);
+
+  const showToast=(msg,type="ok")=>{ setToast({msg,type}); setTimeout(()=>setToast(null),3000); };
+
+  const openAdd=()=>{ setForm({...emptyForm,createdAt:today(),refNo:"REF-"+String(props.length+1).padStart(3,"0")}); setEditId(null); setShowForm(true); };
+  const openEdit=p=>{ setForm({...p,images:p.images||[],mapUrl:p.mapUrl||""}); setEditId(p.id); setShowForm(true); };
+
+  // expose openAdd for navbar button
+  useEffect(()=>{ window.__openAdd=openAdd; },[props.length]);
+
+  const save=()=>{
+    if(!form.name) return showToast(lang==="en"?"Enter property name":"أدخل اسم العقار","err");
+    const u={...form,updatedAt:today()};
+    if(editId){ setProps(prev=>prev.map(p=>p.id===editId?{...u,id:editId}:p)); showToast("✓"); }
+    else { setProps(prev=>[...prev,{...u,id:"p"+Date.now(),views:0}]); showToast("✓"); }
+    setShowForm(false);
+  };
+
+  const del=id=>{ setProps(prev=>prev.filter(p=>p.id!==id)); setDelId(null); showToast(lang==="en"?"Deleted":"تم الحذف"); };
+  const changeStatus=(id,status)=>{ setProps(prev=>prev.map(p=>p.id===id?{...p,status,updatedAt:today()}:p)); showToast("✓"); };
+
+  const isEn = lang==="en";
+
+  if(!loaded) return (
+    <div style={{direction:"rtl",fontFamily:"'Cairo',sans-serif",minHeight:"100vh",background:"#07103a",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:14}}>
+      <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"/>
+      <div style={{width:56,height:56,borderRadius:16,background:"linear-gradient(135deg,#1a4faa,#2563c7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>🏛️</div>
+      <div style={{color:"#93c5fd",fontWeight:700,fontSize:14,fontFamily:"'Cairo',sans-serif"}}>جاري التحميل...</div>
+    </div>
+  );
+
+  return (
+    <div style={{direction:isEn?"ltr":"rtl",fontFamily:"'Cairo',sans-serif",minHeight:"100vh",background:"#07103a",color:"#e8eef8"}}>
+      <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"/>
+
+      {lightbox&&<Lightbox images={lightbox.images} startIndex={lightbox.idx} onClose={()=>setLightbox(null)}/>}
+      {showLogin&&<LoginModal onSuccess={()=>{setIsAdmin(true);setShowLogin(false);showToast(isEn?"Welcome! Admin mode active 🔓":"مرحباً! وضع الإدارة مفعّل 🔓");}} onClose={()=>setShowLogin(false)} lang={lang}/>}
+      {showForm&&<PropForm form={form} setForm={setForm} onSave={save} onClose={()=>setShowForm(false)} editId={editId}/>}
+      {shareP&&<ShareModal p={shareP} onClose={()=>setShareP(null)}/>}
+
+      {toast&&(<div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",background:toast.type==="err"?"#ef4444":"#1a4faa",border:`1px solid ${toast.type==="err"?"#ef4444":"#2563c7"}`,color:"#fff",padding:"10px 24px",borderRadius:12,zIndex:9999,fontWeight:700,fontSize:13,boxShadow:"0 8px 32px #000a",whiteSpace:"nowrap"}}>{toast.msg}</div>)}
+      {saving&&(<div style={{position:"fixed",bottom:16,left:16,background:"#0e2563",border:"1px solid #2563c7",color:"#93c5fd",padding:"6px 13px",borderRadius:9,fontSize:11,fontWeight:600,zIndex:9998}}>💾</div>)}
+
+      {/* Admin floating add button */}
+      {isAdmin&&page==="properties"&&(
+        <button onClick={openAdd} style={{position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",zIndex:150,background:"linear-gradient(135deg,#1a4faa,#2563c7)",color:"#fff",border:"none",borderRadius:14,padding:"13px 28px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",boxShadow:"0 8px 28px #1a4faa55",whiteSpace:"nowrap"}}>
+          + {isEn?"Add Property":"إضافة عقار جديد"}
+        </button>
+      )}
+
+      {delId&&(
+        <div style={{position:"fixed",inset:0,background:"#000c",zIndex:700,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:"1px solid #ef444440",borderRadius:20,padding:28,maxWidth:320,textAlign:"center"}}>
+            <div style={{fontSize:38,marginBottom:10}}>⚠️</div>
+            <div style={{fontWeight:900,fontSize:16,color:"#e8eef8",marginBottom:6}}>{isEn?"Delete Property":"حذف العقار"}</div>
+            <div style={{color:"#4a6fa5",marginBottom:20,fontSize:13}}>{isEn?"This action cannot be undone.":"سيتم الحذف نهائياً ولا يمكن التراجع."}</div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>del(delId)} style={{flex:1,background:"#ef4444",color:"#fff",border:"none",borderRadius:11,padding:"11px",fontFamily:"'Cairo',sans-serif",fontWeight:700,cursor:"pointer"}}>{isEn?"Yes, Delete":"نعم، احذف"}</button>
+              <button onClick={()=>setDelId(null)} style={{flex:1,background:"#071840",border:"1px solid #1e3a7a",color:"#6b8cc4",borderRadius:11,padding:"11px",fontFamily:"'Cairo',sans-serif",cursor:"pointer"}}>{isEn?"Cancel":"إلغاء"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Navbar page={page} setPage={setPage} isAdmin={isAdmin} onLoginClick={()=>setShowLogin(true)} onLogout={()=>{setIsAdmin(false);showToast(isEn?"Logged out":"تم تسجيل الخروج");}} lang={lang} setLang={setLang} scrolled={scrolled}/>
+
+      {page==="home"       && <HomePage setPage={setPage} lang={lang}/>}
+      {page==="properties" && <PropertiesPage props={props} isAdmin={isAdmin} onEdit={openEdit} onDelete={id=>setDelId(id)} onChangeStatus={changeStatus} setLightbox={setLightbox} onShare={setShareP} lang={lang}/>}
+      {page==="services"   && <ServicesPage lang={lang}/>}
+      {page==="about"      && <AboutPage lang={lang}/>}
+
+      <style>{`
+        *{box-sizing:border-box;}
+        input:focus,select:focus,textarea:focus{outline:none;border-color:#2563c7!important;}
+        ::-webkit-scrollbar{width:5px;height:5px}
+        ::-webkit-scrollbar-track{background:#07103a}
+        ::-webkit-scrollbar-thumb{background:#1e3a7a;border-radius:4px}
+        a{font-family:'Cairo',sans-serif;}
+      `}</style>
+    </div>
+  );
+}
