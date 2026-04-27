@@ -80,9 +80,34 @@ function Lightbox({ images, startIndex, onClose }) {
 }
 
 // ── Image Uploader ────────────────────────────────────────────────────────────
+function compressImage(file, maxWidth=800, quality=0.7) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let w = img.width, h = img.height;
+        if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 function ImageUploader({ images, onChange }) {
   const ref = useRef(); const [drag, setDrag] = useState(false);
-  const process = files => { Array.from(files).filter(f=>f.type.startsWith("image/")).forEach(f=>{ const r=new FileReader(); r.onload=e=>onChange(p=>[...p,e.target.result]); r.readAsDataURL(f); }); };
+  const process = async files => {
+    const valid = Array.from(files).filter(f=>f.type.startsWith("image/"));
+    for (const f of valid) {
+      const compressed = await compressImage(f);
+      onChange(p=>[...p, compressed]);
+    }
+  };
   return (
     <div>
       <div onDragOver={e=>{e.preventDefault();setDrag(true);}} onDragLeave={()=>setDrag(false)} onDrop={e=>{e.preventDefault();setDrag(false);process(e.dataTransfer.files);}} onClick={()=>ref.current.click()}
@@ -116,11 +141,16 @@ function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang,
       <div style={{maxWidth:1200,margin:"0 auto",padding:"0 16px",display:"flex",alignItems:"center",justifyContent:"space-between",height:64}}>
 
         {/* Brand */}
-        <button onClick={()=>go("home")} style={{display:"flex",alignItems:"center",gap:10,background:"none",border:"none",cursor:"pointer",padding:0,flexShrink:0}}>
-          <div style={{width:38,height:38,borderRadius:10,background:"linear-gradient(135deg,#1a4faa,#2563c7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>🏛️</div>
+        <button onClick={()=>go("home")} style={{display:"flex",alignItems:"center",gap:12,background:"none",border:"none",cursor:"pointer",padding:0,flexShrink:0}}>
+          <div style={{width:44,height:44,borderRadius:12,background:"linear-gradient(135deg,#1a4faa,#2563c7)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 4px 14px #1a4faa55"}}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 21h18M3 7l9-4 9 4M4 7v14M20 7v14M9 21V11h6v10" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M9 7h.01M12 7h.01M15 7h.01" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </div>
           <div style={{textAlign:"right"}}>
-            <div style={{fontWeight:900,fontSize:11,color:"#fff",fontFamily:"'Cairo',sans-serif",lineHeight:1.2,whiteSpace:"nowrap"}}>{isEn?"Khalid Al-Shaikh Est.":"مؤسسة خالد الغفور الشيخ"}</div>
-            <div style={{fontSize:9,color:"rgba(255,255,255,.4)",fontFamily:"'Cairo',sans-serif"}}>{isEn?"Real Estate Services":"للخدمات العقارية"}</div>
+            <div style={{fontWeight:900,fontSize:12,color:"#fff",fontFamily:"'Cairo',sans-serif",lineHeight:1.3}}>{isEn?"Khalid M. A. Ghafour Al-Shaikh":"مؤسسة خالد محمد عبدالغفور الشيخ"}</div>
+            <div style={{fontSize:10,color:"rgba(255,255,255,.45)",fontFamily:"'Cairo',sans-serif"}}>{isEn?"Real Estate Services":"للخدمات العقارية"}</div>
           </div>
         </button>
 
