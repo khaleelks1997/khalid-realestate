@@ -189,11 +189,10 @@ function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang,
 
         {/* Brand with logo */}
         <button onClick={()=>go("home")} style={{display:"flex",alignItems:"center",gap:10,background:"none",border:"none",cursor:"pointer",padding:0,flexShrink:0}}>
-          <div style={{width:48,height:48,borderRadius:12,background:"linear-gradient(135deg,#1a4faa,#1e3a8a)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 4px 14px #1a4faa55",overflow:"hidden",padding:3}}>
+          <div style={{width:48,height:48,borderRadius:12,background:"linear-gradient(135deg,#1a4faa,#1e3a8a)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 4px 14px #1a4faa55",overflow:"hidden",padding:4}}>
             <img src="https://res.cloudinary.com/dumtp0krl/image/upload/e_background_removal/v1777500214/LOGO_Khalil-1_jdf9cw.png"
               alt="Logo"
-              style={{width:"100%",height:"100%",objectFit:"contain",filter:"brightness(0) invert(1)"}}
-              onError={e=>{e.target.style.display="none"; e.target.parentElement.innerHTML='🏛️';}}
+              style={{width:"100%",height:"100%",objectFit:"contain"}}
             />
           </div>
           <div style={{textAlign:"right"}}>
@@ -484,12 +483,10 @@ function HomePage({ setPage, lang }) {
 
           {/* Logo in hero */}
           <div style={{marginBottom:24,display:"flex",justifyContent:"center"}}>
-            <div style={{width:120,height:120,borderRadius:24,background:"linear-gradient(135deg,#1a4faa,#1e3a8a)",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 12px 40px #1a4faa66",padding:10}}>
-              <img src="https://res.cloudinary.com/dumtp0krl/image/upload/e_background_removal/v1777500214/LOGO_Khalil-1_jdf9cw.png"
-                alt="Logo"
-                style={{width:"100%",height:"100%",objectFit:"contain",filter:"brightness(0) invert(1)"}}
-              />
-            </div>
+            <img src="https://res.cloudinary.com/dumtp0krl/image/upload/e_background_removal/v1777500214/LOGO_Khalil-1_jdf9cw.png"
+              alt="مؤسسة خالد محمد عبدالغفور الشيخ"
+              style={{width:220,height:"auto",objectFit:"contain"}}
+            />
           </div>
           <h1 style={{fontSize:"clamp(28px,5vw,54px)",fontWeight:900,color:"#fff",lineHeight:1.15,marginBottom:10}}>
             {isEn?"Khalid M. A. Ghafour":"مؤسسة خالد محمد"}<br/>
