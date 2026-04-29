@@ -187,13 +187,14 @@ function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang,
     <div style={{position:"fixed",top:0,left:0,right:0,zIndex:200,background:scrolled?"rgba(7,16,58,.98)":"rgba(7,16,58,.9)",backdropFilter:"blur(18px)",borderBottom:"1px solid rgba(255,255,255,.08)",transition:"background .3s"}}>
       <div style={{maxWidth:1200,margin:"0 auto",padding:"0 16px",display:"flex",alignItems:"center",justifyContent:"space-between",height:64}}>
 
-        {/* Brand */}
-        <button onClick={()=>go("home")} style={{display:"flex",alignItems:"center",gap:12,background:"none",border:"none",cursor:"pointer",padding:0,flexShrink:0}}>
-          <div style={{width:44,height:44,borderRadius:12,background:"linear-gradient(135deg,#1a4faa,#2563c7)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 4px 14px #1a4faa55"}}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M3 21h18M3 7l9-4 9 4M4 7v14M20 7v14M9 21V11h6v10" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M9 7h.01M12 7h.01M15 7h.01" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
+        {/* Brand with logo */}
+        <button onClick={()=>go("home")} style={{display:"flex",alignItems:"center",gap:10,background:"none",border:"none",cursor:"pointer",padding:0,flexShrink:0}}>
+          <div style={{width:48,height:48,borderRadius:12,background:"linear-gradient(135deg,#1a4faa,#1e3a8a)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 4px 14px #1a4faa55",overflow:"hidden",padding:3}}>
+            <img src="https://res.cloudinary.com/dumtp0krl/image/upload/e_background_removal/v1777500214/LOGO_Khalil-1_jdf9cw.png"
+              alt="Logo"
+              style={{width:"100%",height:"100%",objectFit:"contain",filter:"brightness(0) invert(1)"}}
+              onError={e=>{e.target.style.display="none"; e.target.parentElement.innerHTML='🏛️';}}
+            />
           </div>
           <div style={{textAlign:"right"}}>
             <div style={{fontWeight:900,fontSize:12,color:"#fff",fontFamily:"'Cairo',sans-serif",lineHeight:1.3}}>{isEn?"Khalid M. A. Ghafour Al-Shaikh":"مؤسسة خالد محمد عبدالغفور الشيخ"}</div>
@@ -479,6 +480,16 @@ function HomePage({ setPage, lang }) {
           <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.13)",borderRadius:30,padding:"6px 18px",fontSize:12,color:"rgba(255,255,255,.65)",marginBottom:28}}>
             <span style={{width:7,height:7,borderRadius:"50%",background:"#4ade80",boxShadow:"0 0 8px #4ade80",display:"inline-block"}}/>
             {isEn?"Licensed by Real Estate General Authority":"مرخصون من الهيئة العامة للعقار"}
+          </div>
+
+          {/* Logo in hero */}
+          <div style={{marginBottom:24,display:"flex",justifyContent:"center"}}>
+            <div style={{width:120,height:120,borderRadius:24,background:"linear-gradient(135deg,#1a4faa,#1e3a8a)",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 12px 40px #1a4faa66",padding:10}}>
+              <img src="https://res.cloudinary.com/dumtp0krl/image/upload/e_background_removal/v1777500214/LOGO_Khalil-1_jdf9cw.png"
+                alt="Logo"
+                style={{width:"100%",height:"100%",objectFit:"contain",filter:"brightness(0) invert(1)"}}
+              />
+            </div>
           </div>
           <h1 style={{fontSize:"clamp(28px,5vw,54px)",fontWeight:900,color:"#fff",lineHeight:1.15,marginBottom:10}}>
             {isEn?"Khalid M. A. Ghafour":"مؤسسة خالد محمد"}<br/>
