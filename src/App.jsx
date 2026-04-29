@@ -21,7 +21,8 @@ const SC = {
 const emptyForm = {
   name:"", address:"", type:"شقة", dealType:"إيجار",
   salePrice:"", rentPrice:"", minPrice:"",
-  area:"", builtArea:"", ownerName:"", ownerPhone:"",
+  area:"", builtArea:"", rooms:"", bathrooms:"",
+  ownerName:"", ownerPhone:"",
   furnished:false, aptCode:"", buildingCode:"",
   status:"متوفر", notes:"", images:[], mapUrl:"",
   marketingContractNo:"", adLicenseNo:"", refNo:"",
@@ -62,19 +63,51 @@ function ShareModal({ p, onClose }) {
 // ── Lightbox ──────────────────────────────────────────────────────────────────
 function Lightbox({ images, startIndex, onClose }) {
   const [idx, setIdx] = useState(startIndex);
+  const touchStart = useRef(null);
+
   useEffect(()=>{
     const h=e=>{ if(e.key==="Escape") onClose(); if(e.key==="ArrowLeft") setIdx(i=>(i+1)%images.length); if(e.key==="ArrowRight") setIdx(i=>(i-1+images.length)%images.length); };
     window.addEventListener("keydown",h); return ()=>window.removeEventListener("keydown",h);
   },[images,onClose]);
+
+  const onTouchStart = e => { touchStart.current = e.touches[0].clientX; };
+  const onTouchEnd = e => {
+    if(!touchStart.current) return;
+    const diff = touchStart.current - e.changedTouches[0].clientX;
+    if(Math.abs(diff) > 50) { diff > 0 ? setIdx(i=>(i+1)%images.length) : setIdx(i=>(i-1+images.length)%images.length); }
+    touchStart.current = null;
+  };
+
   return (
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"#000e",zIndex:3000,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-      <div style={{position:"relative"}} onClick={e=>e.stopPropagation()}>
-        <img src={images[idx]} alt="" style={{maxWidth:"88vw",maxHeight:"75vh",borderRadius:14,objectFit:"contain",display:"block"}}/>
-        <button onClick={onClose} style={{position:"absolute",top:-12,left:-12,width:32,height:32,background:"#ef4444",border:"none",borderRadius:"50%",color:"#fff",fontSize:17,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
-        {images.length>1&&<><button onClick={()=>setIdx(i=>(i-1+images.length)%images.length)} style={{position:"absolute",top:"50%",right:-50,transform:"translateY(-50%)",background:"#1a4faa",border:"1px solid #2563c7",color:"#fff",width:40,height:40,borderRadius:"50%",fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button><button onClick={()=>setIdx(i=>(i+1)%images.length)} style={{position:"absolute",top:"50%",left:-50,transform:"translateY(-50%)",background:"#1a4faa",border:"1px solid #2563c7",color:"#fff",width:40,height:40,borderRadius:"50%",fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>›</button></>}
-        <div style={{textAlign:"center",marginTop:8,color:"#93c5fd",fontSize:12}}>{idx+1} / {images.length}</div>
+      {/* Close */}
+      <button onClick={onClose} style={{position:"absolute",top:16,right:16,width:40,height:40,background:"#ef4444",border:"none",borderRadius:"50%",color:"#fff",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",zIndex:10}}>×</button>
+
+      {/* Counter */}
+      <div style={{position:"absolute",top:20,left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,.6)",color:"#fff",padding:"4px 14px",borderRadius:20,fontSize:13,fontWeight:700}}>{idx+1} / {images.length}</div>
+
+      {/* Image with swipe */}
+      <div style={{position:"relative",display:"flex",alignItems:"center",justifyContent:"center",width:"100%",padding:"0 50px",boxSizing:"border-box"}}
+        onClick={e=>e.stopPropagation()} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+        <img src={images[idx]} alt="" style={{maxWidth:"100%",maxHeight:"70vh",borderRadius:12,objectFit:"contain",display:"block"}}/>
       </div>
-      {images.length>1&&(<div style={{display:"flex",gap:6,marginTop:10,overflowX:"auto",maxWidth:"88vw"}}>{images.map((img,i)=>(<img key={i} src={img} onClick={e=>{e.stopPropagation();setIdx(i);}} alt="" style={{width:54,height:54,objectFit:"cover",borderRadius:8,cursor:"pointer",flexShrink:0,border:i===idx?"2px solid #60a5fa":"2px solid transparent",opacity:i===idx?1:.5,transition:"all .2s"}}/>))}</div>)}
+
+      {/* Arrows — always visible on mobile */}
+      {images.length>1&&(
+        <>
+          <button onClick={e=>{e.stopPropagation();setIdx(i=>(i-1+images.length)%images.length);}}
+            style={{position:"absolute",left:8,top:"50%",transform:"translateY(-50%)",background:"rgba(26,79,170,.9)",border:"none",color:"#fff",width:44,height:44,borderRadius:"50%",fontSize:24,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",zIndex:10}}>‹</button>
+          <button onClick={e=>{e.stopPropagation();setIdx(i=>(i+1)%images.length);}}
+            style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:"rgba(26,79,170,.9)",border:"none",color:"#fff",width:44,height:44,borderRadius:"50%",fontSize:24,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",zIndex:10}}>›</button>
+        </>
+      )}
+
+      {/* Thumbnails */}
+      {images.length>1&&(
+        <div style={{display:"flex",gap:6,marginTop:14,overflowX:"auto",maxWidth:"90vw",padding:"0 4px"}} onClick={e=>e.stopPropagation()}>
+          {images.map((img,i)=>(<img key={i} src={img} onClick={()=>setIdx(i)} alt="" style={{width:52,height:52,objectFit:"cover",borderRadius:8,cursor:"pointer",flexShrink:0,border:i===idx?"2px solid #60a5fa":"2px solid transparent",opacity:i===idx?1:.5,transition:"all .2s"}}/>))}
+        </div>
+      )}
     </div>
   );
 }
@@ -262,9 +295,9 @@ function PropForm({ form, setForm, onSave, onClose, editId }) {
           {[["سعر البيع (ر.س)","salePrice"],["قيمة الإيجار (ر.س)","rentPrice"],["الحد الأدنى (ر.س)","minPrice"]].map(([lbl,key])=>(<div key={key}><Lbl c={lbl}/><input type="number" value={form[key]} onChange={f(key)} style={IST}/></div>))}
         </div>
 
-        <Sec c="📐 المساحات"/>
+        <Sec c="📐 المساحات والغرف"/>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:16}}>
-          {[["المساحة الصافية (م²)","area"],["المسطح البنائي (م²)","builtArea"]].map(([lbl,key])=>(<div key={key}><Lbl c={lbl}/><input type="number" value={form[key]} onChange={f(key)} style={IST}/></div>))}
+          {[["المساحة الصافية (م²)","area"],["المسطح البنائي (م²)","builtArea"],["عدد الغرف 🛏️","rooms"],["عدد الحمامات 🚿","bathrooms"]].map(([lbl,key])=>(<div key={key}><Lbl c={lbl}/><input type="number" value={form[key]||""} onChange={f(key)} style={IST}/></div>))}
         </div>
 
         <Sec c="👤 المالك"/>
@@ -306,36 +339,72 @@ function PublicCard({ p, setLightbox, onShare, lang }) {
   const imgs=p.images||[]; const sc=SC[p.status]||SC["متوفر"];
   const waMsg=encodeURIComponent(`${isEn?"Hello, I'd like to inquire about":"مرحباً، أود الاستفسار عن"} ${p.name} - ${p.address}${p.rentPrice?" | "+Number(p.rentPrice).toLocaleString()+" ر.س/شهر":""}${p.salePrice?" | "+Number(p.salePrice).toLocaleString()+" ر.س":""}`);
   const statusEn={"متوفر":"Available","مؤجر":"Rented","مباع":"Sold","قريب الانتهاء":"Expiring","صيانة":"Maintenance"};
+  const dealColor = p.dealType==="بيع"?"#fbbf24":p.dealType==="إيجار وبيع"?"#e879f9":"#4ade80";
+
   return (
     <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:`1px solid ${sc.c}25`,borderRadius:18,overflow:"hidden",transition:"all .15s",transform:hov?"translateY(-3px)":"none",boxShadow:hov?`0 12px 36px ${sc.c}18`:"none"}}
       onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
-      <div style={{position:"relative",height:185,background:"#03102e",cursor:imgs.length>0?"pointer":"default"}} onClick={()=>imgs.length>0&&setLightbox({images:imgs,idx:0})}>
-        {imgs.length>0?(<><img src={imgs[0]} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/><div style={{position:"absolute",inset:0,background:"linear-gradient(to top,#07184088,transparent 55%)",pointerEvents:"none"}}/>{imgs.length>1&&<div style={{position:"absolute",bottom:10,left:10,background:"#000a",color:"#fff",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:18}}>📷 {imgs.length}</div>}</>):(
+
+      {/* Image */}
+      <div style={{position:"relative",height:200,background:"#03102e",cursor:imgs.length>0?"pointer":"default"}} onClick={()=>imgs.length>0&&setLightbox({images:imgs,idx:0})}>
+        {imgs.length>0 ? (
+          <><img src={imgs[0]} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/><div style={{position:"absolute",inset:0,background:"linear-gradient(to top,#000c 30%,transparent 70%)",pointerEvents:"none"}}/></>
+        ) : (
           <div style={{width:"100%",height:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:"#1e3a7a",gap:8}}><span style={{fontSize:38}}>🏠</span></div>
         )}
-        <div style={{position:"absolute",top:10,right:10}}><span style={{display:"inline-flex",alignItems:"center",gap:5,padding:"4px 11px",borderRadius:20,background:sc.bg,color:sc.c,fontSize:11,fontWeight:700,border:`1px solid ${sc.c}33`}}><span style={{width:6,height:6,borderRadius:"50%",background:sc.c}}/>{isEn?statusEn[p.status]:p.status}</span></div>
-        {p.furnished&&<div style={{position:"absolute",top:10,left:10,background:"#fbbf2420",color:"#fbbf24",fontSize:10,fontWeight:700,padding:"3px 9px",borderRadius:18,border:"1px solid #fbbf2440"}}>🛋️ {isEn?"Furnished":"مفروش"}</div>}
-        <button onClick={e=>{e.stopPropagation();onShare(p);}} style={{position:"absolute",bottom:10,left:10,background:"#1a4faa",border:"none",color:"#fff",borderRadius:20,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer"}}>📤 {isEn?"Share":"مشاركة"}</button>
+
+        {/* Status badge */}
+        <div style={{position:"absolute",top:10,right:10}}>
+          <span style={{display:"inline-flex",alignItems:"center",gap:5,padding:"4px 11px",borderRadius:20,background:sc.bg,color:sc.c,fontSize:11,fontWeight:700,border:`1px solid ${sc.c}33`,backdropFilter:"blur(4px)"}}><span style={{width:6,height:6,borderRadius:"50%",background:sc.c}}/>{isEn?statusEn[p.status]:p.status}</span>
+        </div>
+
+        {/* Deal type badge */}
+        <div style={{position:"absolute",top:10,left:10}}>
+          <span style={{display:"inline-flex",alignItems:"center",padding:"4px 11px",borderRadius:20,background:"#000a",color:dealColor,fontSize:11,fontWeight:700,border:`1px solid ${dealColor}44`,backdropFilter:"blur(4px)"}}>{p.dealType}</span>
+        </div>
+
+        {/* Price on image bottom */}
+        <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"10px 14px"}}>
+          {p.rentPrice && <div style={{color:"#fff",fontWeight:900,fontSize:17,textShadow:"0 2px 8px #000"}}>🏠 {Number(p.rentPrice).toLocaleString()} <span style={{fontSize:12,fontWeight:400,opacity:.8}}>ر.س/شهر</span></div>}
+          {p.salePrice && <div style={{color:"#fbbf24",fontWeight:900,fontSize:17,textShadow:"0 2px 8px #000"}}>💰 {Number(p.salePrice).toLocaleString()} <span style={{fontSize:12,fontWeight:400,opacity:.8}}>ر.س</span></div>}
+        </div>
+
+        {/* Share + photo count */}
+        <button onClick={e=>{e.stopPropagation();onShare(p);}} style={{position:"absolute",bottom:10,left:14,background:"rgba(26,79,170,.85)",border:"none",color:"#fff",borderRadius:20,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer",backdropFilter:"blur(4px)"}}>📤</button>
+        {imgs.length>1&&<div style={{position:"absolute",bottom:10,right:14,background:"rgba(0,0,0,.6)",color:"#fff",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:18}}>📷 {imgs.length}</div>}
       </div>
+
+      {/* Card body */}
       <div style={{padding:"14px 16px"}}>
-        <div style={{fontWeight:900,fontSize:15,color:"#e8eef8",marginBottom:3}}>{p.name}</div>
-        <div style={{fontSize:11,color:"#4a6fa5",marginBottom:8}}>📍 {p.address}</div>
-        <div style={{marginBottom:9}}>{p.adLicenseNo?<span style={{display:"inline-flex",alignItems:"center",gap:5,background:"#1a4faa22",border:"1px solid #2563c744",color:"#93c5fd",borderRadius:8,padding:"3px 10px",fontSize:10,fontWeight:700}}>🏛️ {isEn?"Ad License:":"رخصة إعلانية:"} {p.adLicenseNo}</span>:<span style={{display:"inline-flex",alignItems:"center",gap:5,background:"#ef444418",border:"1px solid #ef444430",color:"#f87171",borderRadius:8,padding:"3px 10px",fontSize:10,fontWeight:700}}>⚠️ {isEn?"Pending License":"قيد الترخيص"}</span>}</div>
-        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:9}}>
-          {p.rentPrice&&<div style={{background:"#4ade8015",border:"1px solid #4ade8028",borderRadius:9,padding:"5px 10px",fontSize:11,color:"#4ade80",fontWeight:700}}>🏠 {Number(p.rentPrice).toLocaleString()} {isEn?"SAR/mo":"ر.س/شهر"}</div>}
-          {p.salePrice&&<div style={{background:"#fbbf2415",border:"1px solid #fbbf2428",borderRadius:9,padding:"5px 10px",fontSize:11,color:"#fbbf24",fontWeight:700}}>💰 {Number(p.salePrice).toLocaleString()} {isEn?"SAR":"ر.س"}</div>}
+        <div style={{fontWeight:900,fontSize:15,color:"#e8eef8",marginBottom:2}}>{p.name}</div>
+        <div style={{fontSize:11,color:"#4a6fa5",marginBottom:10}}>📍 {p.address}</div>
+
+        {/* Specs row: type, rooms, area */}
+        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
+          <span style={{background:"#1a4faa22",color:"#93c5fd",fontSize:11,fontWeight:700,padding:"4px 10px",borderRadius:16,border:"1px solid #2563c722"}}>{p.type}</span>
+          {p.rooms&&<span style={{background:"#1a4faa22",color:"#93c5fd",fontSize:11,fontWeight:700,padding:"4px 10px",borderRadius:16,border:"1px solid #2563c722"}}>🛏️ {p.rooms} {isEn?"Rooms":"غرف"}</span>}
+          {p.bathrooms&&<span style={{background:"#1a4faa22",color:"#93c5fd",fontSize:11,fontWeight:700,padding:"4px 10px",borderRadius:16,border:"1px solid #2563c722"}}>🚿 {p.bathrooms}</span>}
+          {p.area&&<span style={{background:"#071840",color:"#6b8cc4",fontSize:11,fontWeight:700,padding:"4px 10px",borderRadius:16}}>📐 {p.area} م²</span>}
+          {p.furnished&&<span style={{background:"#fbbf2415",color:"#fbbf24",fontSize:11,fontWeight:700,padding:"4px 10px",borderRadius:16,border:"1px solid #fbbf2428"}}>🛋️ {isEn?"Furnished":"مفروش"}</span>}
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:10}}>
-          {p.area&&<div style={{background:"#071840",borderRadius:8,padding:"5px 9px",fontSize:11,color:"#6b8cc4"}}>📐 {p.area} م²</div>}
-          {p.builtArea&&<div style={{background:"#071840",borderRadius:8,padding:"5px 9px",fontSize:11,color:"#6b8cc4"}}>🏗️ {p.builtArea} م²</div>}
+
+        {/* Ad license */}
+        <div style={{marginBottom:10}}>
+          {p.adLicenseNo
+            ? <span style={{display:"inline-flex",alignItems:"center",gap:5,background:"#1a4faa22",border:"1px solid #2563c744",color:"#93c5fd",borderRadius:8,padding:"3px 10px",fontSize:10,fontWeight:700}}>🏛️ {isEn?"Ad License:":"رخصة:"} {p.adLicenseNo}</span>
+            : <span style={{display:"inline-flex",alignItems:"center",gap:5,background:"#ef444418",border:"1px solid #ef444430",color:"#f87171",borderRadius:8,padding:"3px 10px",fontSize:10,fontWeight:700}}>⚠️ {isEn?"Pending License":"قيد الترخيص"}</span>
+          }
         </div>
-        {p.notes&&<div style={{fontSize:11,color:"#4a6fa5",background:"#071840",borderRadius:8,padding:"6px 10px",marginBottom:10}}>💬 {p.notes}</div>}
+
+        {p.notes&&<div style={{fontSize:11,color:"#4a6fa5",background:"#071840",borderRadius:8,padding:"6px 10px",marginBottom:10,lineHeight:1.6}}>💬 {p.notes}</div>}
+
+        {/* Action buttons */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:7,marginBottom:p.mapUrl?8:0}}>
-          <a href={`tel:${PHONE}`} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"linear-gradient(135deg,#1a4faa,#2563c7)",color:"#fff",borderRadius:10,padding:"9px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11}}>📞 {isEn?"Call":"اتصال"}</a>
-          <a href={`https://wa.me/${WA_NUMBER}?text=${waMsg}`} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"#25d36618",border:"1px solid #25d36640",color:"#25d366",borderRadius:10,padding:"9px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11}}><WaIcon size={12}/> {isEn?"WhatsApp":"واتساب"}</a>
-          <button onClick={()=>onShare(p)} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"#6366f118",border:"1px solid #6366f140",color:"#a5b4fc",borderRadius:10,padding:"9px 6px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11,cursor:"pointer"}}>📤 {isEn?"Share":"شارك"}</button>
+          <a href={`tel:${PHONE}`} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"linear-gradient(135deg,#1a4faa,#2563c7)",color:"#fff",borderRadius:10,padding:"10px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12}}>📞 {isEn?"Call":"اتصال"}</a>
+          <a href={`https://wa.me/${WA_NUMBER}?text=${waMsg}`} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"#25d36618",border:"1px solid #25d36640",color:"#25d366",borderRadius:10,padding:"10px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12}}><WaIcon size={13}/> {isEn?"WhatsApp":"واتساب"}</a>
+          <button onClick={()=>onShare(p)} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"#6366f118",border:"1px solid #6366f140",color:"#a5b4fc",borderRadius:10,padding:"10px 6px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer"}}>📤 {isEn?"Share":"شارك"}</button>
         </div>
-        {p.mapUrl&&<a href={p.mapUrl} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"#16a34a18",border:"1px solid #16a34a40",color:"#4ade80",borderRadius:10,padding:"8px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,width:"100%",boxSizing:"border-box"}}>📍 {isEn?"View on Map":"عرض على الخريطة"}</a>}
+        {p.mapUrl&&<a href={p.mapUrl} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"#16a34a18",border:"1px solid #16a34a40",color:"#4ade80",borderRadius:10,padding:"9px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,width:"100%",boxSizing:"border-box"}}>📍 {isEn?"View on Map":"عرض على الخريطة"}</a>}
       </div>
     </div>
   );
