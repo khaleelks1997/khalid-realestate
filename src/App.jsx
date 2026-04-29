@@ -117,7 +117,7 @@ function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang,
 
         {/* Brand */}
         <button onClick={()=>go("home")} style={{display:"flex",alignItems:"center",gap:10,background:"none",border:"none",cursor:"pointer",padding:0,flexShrink:0}}>
-          <div style={{width:44,height:44,borderRadius:10,overflow:"hidden",flexShrink:0,boxShadow:"0 2px 10px #1a4faa55"}}><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777502437/WhatsApp_Image_2026-04-30_at_1.38.52_AM_btqpqt.jpg" alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
+          <div style={{width:38,height:38,borderRadius:10,background:"linear-gradient(135deg,#1a4faa,#2563c7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>🏛️</div>
           <div style={{textAlign:"right"}}>
             <div style={{fontWeight:900,fontSize:11,color:"#fff",fontFamily:"'Cairo',sans-serif",lineHeight:1.2,whiteSpace:"nowrap"}}>{isEn?"Khalid Al-Shaikh Est.":"مؤسسة خالد الغفور الشيخ"}</div>
             <div style={{fontSize:9,color:"rgba(255,255,255,.4)",fontFamily:"'Cairo',sans-serif"}}>{isEn?"Real Estate Services":"للخدمات العقارية"}</div>
@@ -421,7 +421,7 @@ function HomePage({ setPage, lang }) {
       <div style={{background:"#040d28",borderTop:"1px solid #0e2050",padding:"28px 24px"}}>
         <div style={{maxWidth:1100,margin:"0 auto",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:14}}>
           <div style={{display:"flex",alignItems:"center",gap:11}}>
-            <div style={{width:36,height:36,borderRadius:10,overflow:"hidden"}}><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777502437/WhatsApp_Image_2026-04-30_at_1.38.52_AM_btqpqt.jpg" alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
+            <div style={{width:36,height:36,borderRadius:10,background:"linear-gradient(135deg,#1a4faa,#2563c7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>🏛️</div>
             <div><div style={{fontWeight:800,fontSize:12,color:"#fff"}}>مؤسسة خالد محمد عبدالغفور الشيخ</div><div style={{fontSize:10,color:"#4a6fa5"}}>Khalid M. A. Ghafour Al-Shaikh Est.</div></div>
           </div>
           <div style={{fontSize:11,color:"#2a3a6a"}}>© 2025 | {isEn?"Licensed by Real Estate General Authority":"مرخصة من الهيئة العامة للعقار"}</div>
@@ -561,7 +561,7 @@ export default function App() {
   if(!loaded) return (
     <div style={{direction:"rtl",fontFamily:"'Cairo',sans-serif",minHeight:"100vh",background:"#07103a",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:14}}>
       <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"/>
-      <div style={{width:56,height:56,borderRadius:16,overflow:"hidden"}}><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777502437/WhatsApp_Image_2026-04-30_at_1.38.52_AM_btqpqt.jpg" alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
+      <div style={{width:56,height:56,borderRadius:16,background:"linear-gradient(135deg,#1a4faa,#2563c7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>🏛️</div>
       <div style={{color:"#93c5fd",fontWeight:700,fontSize:14,fontFamily:"'Cairo',sans-serif"}}>جاري التحميل...</div>
     </div>
   );
