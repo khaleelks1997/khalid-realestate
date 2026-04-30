@@ -225,7 +225,7 @@ function CodeInput({ label, value, onChange }) {
 }
 
 // ── NAVBAR ────────────────────────────────────────────────────────────────────
-function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang, scrolled }) {
+function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang, scrolled, darkMode, setDarkMode, T }) {
   const isEn = lang==="en";
   const [menuOpen, setMenuOpen] = useState(false);
   const navItems = isEn
@@ -235,7 +235,7 @@ function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang,
   const go = (p) => { setPage(p); setMenuOpen(false); };
 
   return (
-    <div style={{position:"fixed",top:0,left:0,right:0,zIndex:200,background:scrolled?"rgba(7,16,58,.98)":"rgba(7,16,58,.9)",backdropFilter:"blur(18px)",borderBottom:"1px solid rgba(255,255,255,.08)",transition:"background .3s"}}>
+    <div style={{position:"fixed",top:0,left:0,right:0,zIndex:200,background:T.navbar,backdropFilter:"blur(18px)",borderBottom:`1px solid ${T.navbarBorder}`,transition:"background .3s"}}>
       <div style={{maxWidth:1200,margin:"0 auto",padding:"0 16px",display:"flex",alignItems:"center",justifyContent:"space-between",height:64}}>
 
         {/* Brand */}
@@ -255,6 +255,7 @@ function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang,
         {/* Right actions */}
         <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
           <div className="desktop-actions" style={{display:"flex",alignItems:"center",gap:6}}>
+            <button onClick={()=>setDarkMode(d=>!d)} style={{background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.13)",color:"#fff",borderRadius:8,padding:"5px 9px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"}}>{darkMode?"☀️":"🌙"}</button>
             <button onClick={()=>setLang(isEn?"ar":"en")} style={{background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.13)",color:"#fff",borderRadius:8,padding:"5px 9px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11,cursor:"pointer"}}>{isEn?"🇸🇦":"🇬🇧 EN"}</button>
             <a href={`tel:${PHONE}`} style={{background:"#1a4faa",color:"#fff",borderRadius:8,padding:"6px 10px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11,cursor:"pointer",textDecoration:"none",whiteSpace:"nowrap"}}>📞 {PHONE}</a>
             <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer" style={{background:"#25d36622",border:"1px solid #25d36640",color:"#25d366",borderRadius:8,padding:"6px 9px",textDecoration:"none",display:"flex",alignItems:"center"}}><WaIcon size={12}/></a>
@@ -280,6 +281,7 @@ function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang,
           ))}
           <div style={{height:1,background:"rgba(255,255,255,.08)",margin:"4px 0"}}/>
           <button onClick={()=>{setLang(isEn?"ar":"en");setMenuOpen(false);}} style={{background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.13)",color:"#fff",borderRadius:10,padding:"13px 16px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",textAlign:"right",width:"100%"}}>{isEn?"🇸🇦 عربي":"🇬🇧 English"}</button>
+          <button onClick={()=>{setDarkMode(d=>!d);setMenuOpen(false);}} style={{background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.13)",color:"#fff",borderRadius:10,padding:"13px 16px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",textAlign:"right",width:"100%"}}>{darkMode?"☀️ الوضع الفاتح":"🌙 الوضع الداكن"}</button>
           <a href={`tel:${PHONE}`} style={{display:"block",background:"#1a4faa",color:"#fff",borderRadius:10,padding:"13px 16px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,textAlign:"right"}}>📞 {PHONE}</a>
           <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",gap:8,background:"#25d36620",border:"1px solid #25d36640",color:"#25d366",borderRadius:10,padding:"13px 16px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,justifyContent:"flex-end"}}><WaIcon size={16}/> WhatsApp</a>
           <div style={{height:1,background:"rgba(255,255,255,.08)",margin:"4px 0"}}/>
@@ -477,7 +479,7 @@ function AdminCard({ p, onEdit, onDelete, onChangeStatus, setLightbox, onShare }
 }
 
 // ── Pages ─────────────────────────────────────────────────────────────────────
-function HomePage({ setPage, lang }) {
+function HomePage({ setPage, lang, darkMode, T }) {
   const isEn=lang==="en";
   const services=isEn?[
     {icon:"🏢",t:"Buy & Rent",d:"Best real estate opportunities for sale and rent at competitive prices"},
@@ -499,8 +501,8 @@ function HomePage({ setPage, lang }) {
     {icon:"🏛️",t:"خدمات السجل العقاري",d:"إفراغات، تحديث صكوك، عقود إيجار في منصة إيجار"},
   ];
   return (
-    <div style={{paddingTop:64}}>
-      <div style={{minHeight:"calc(100vh - 64px)",background:"linear-gradient(160deg,#07103a 0%,#0e2563 55%,#1a4faa 100%)",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",padding:"60px 24px"}}>
+    <div style={{paddingTop:64,background:T.bg}}>
+      <div style={{minHeight:"calc(100vh - 64px)",background:darkMode?"linear-gradient(160deg,#07103a 0%,#0e2563 55%,#1a4faa 100%)":"linear-gradient(160deg,#eff6ff 0%,#dbeafe 55%,#bfdbfe 100%)",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",padding:"60px 24px"}}>
         <div style={{position:"absolute",inset:0,backgroundImage:"linear-gradient(rgba(255,255,255,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.015) 1px,transparent 1px)",backgroundSize:"48px 48px"}}/>
         <div style={{position:"relative",zIndex:2,textAlign:"center",maxWidth:780}}>
           <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.13)",borderRadius:30,padding:"6px 18px",fontSize:12,color:"rgba(255,255,255,.65)",marginBottom:28}}>
@@ -512,7 +514,7 @@ function HomePage({ setPage, lang }) {
             <img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777502437/WhatsApp_Image_2026-04-30_at_1.38.52_AM_btqpqt.jpg"
               alt="Logo" style={{width:160,height:160,objectFit:"cover",borderRadius:24,boxShadow:"0 8px 40px #00000055"}}/>
           </div>
-          <h1 style={{fontSize:"clamp(28px,5vw,54px)",fontWeight:900,color:"#fff",lineHeight:1.15,marginBottom:10}}>
+          <h1 style={{fontSize:"clamp(28px,5vw,54px)",fontWeight:900,color:darkMode?"#fff":"#1e3a6e",lineHeight:1.15,marginBottom:10}}>
             {isEn?"Khalid M. A. Ghafour":"مؤسسة خالد محمد"}<br/>
             <span style={{background:"linear-gradient(135deg,#60a5fa,#93c5fd)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>{isEn?"Al-Shaikh Est.":"عبدالغفور الشيخ"}</span>
           </h1>
@@ -529,17 +531,17 @@ function HomePage({ setPage, lang }) {
           </div>
         </div>
       </div>
-      <div style={{background:"#07103a",padding:"70px 24px"}}>
+      <div style={{background:T.bg,padding:"70px 24px"}}>
         <div style={{maxWidth:1100,margin:"0 auto"}}>
           <div style={{textAlign:"center",marginBottom:46}}>
             <div style={{display:"inline-block",background:"#1a4faa22",border:"1px solid #1a4faa44",color:"#93c5fd",borderRadius:20,padding:"5px 16px",fontSize:11,fontWeight:700,marginBottom:12}}>{isEn?"Our Services":"خدماتنا"}</div>
             <h2 style={{fontSize:"clamp(20px,3.5vw,32px)",fontWeight:900,color:"#fff"}}>{isEn?"Complete Real Estate Services":"خدمات عقارية متكاملة تحت سقف واحد"}</h2>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:14}}>
-            {services.map((s,i)=>(<div key={i} style={{background:"linear-gradient(140deg,#0e2050,#12286a)",border:"1px solid rgba(255,255,255,.06)",borderRadius:17,padding:"24px 20px",transition:"all .25s"}} onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.borderColor="rgba(37,99,199,.3)";}} onMouseLeave={e=>{e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.borderColor="rgba(255,255,255,.06)";}}>
-              <div style={{width:46,height:46,borderRadius:13,background:"#1a4faa22",border:"1px solid #1a4faa33",display:"flex",alignItems:"center",justifyContent:"center",fontSize:21,marginBottom:14}}>{s.icon}</div>
-              <div style={{fontSize:14,fontWeight:800,color:"#fff",marginBottom:7}}>{s.t}</div>
-              <div style={{fontSize:12,color:"#6b8cc4",lineHeight:1.7}}>{s.d}</div>
+            {services.map((s,i)=>(<div key={i} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:17,padding:"24px 20px",transition:"all .25s"}} onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-4px)";}} onMouseLeave={e=>{e.currentTarget.style.transform="translateY(0)";}}>
+              <div style={{width:46,height:46,borderRadius:13,background:darkMode?"#1a4faa22":"#dbeafe",border:`1px solid ${T.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:21,marginBottom:14}}>{s.icon}</div>
+              <div style={{fontSize:14,fontWeight:800,color:T.text,marginBottom:7}}>{s.t}</div>
+              <div style={{fontSize:12,color:T.text3,lineHeight:1.7}}>{s.d}</div>
             </div>))}
           </div>
         </div>
@@ -552,7 +554,7 @@ function HomePage({ setPage, lang }) {
           <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:8,background:"#25d36620",border:"1px solid #25d36650",color:"#25d366",borderRadius:13,padding:"12px 24px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:15}}><WaIcon size={18}/> WhatsApp</a>
         </div>
       </div>
-      <div style={{background:"#040d28",borderTop:"1px solid #0e2050",padding:"28px 24px"}}>
+      <div style={{background:T.bg4,borderTop:`1px solid ${T.border}`,padding:"28px 24px"}}>
         <div style={{maxWidth:1100,margin:"0 auto",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:14}}>
           <div style={{display:"flex",alignItems:"center",gap:11}}>
             <div style={{width:36,height:36,borderRadius:10,overflow:"hidden"}}><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777502437/WhatsApp_Image_2026-04-30_at_1.38.52_AM_btqpqt.jpg" alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
@@ -565,7 +567,7 @@ function HomePage({ setPage, lang }) {
   );
 }
 
-function PropertiesPage({ props, isAdmin, onEdit, onDelete, onChangeStatus, setLightbox, onShare, onOpenAdd, lang }) {
+function PropertiesPage({ props, isAdmin, onEdit, onDelete, onChangeStatus, setLightbox, onShare, onOpenAdd, lang, darkMode, T }) {
   const isEn=lang==="en";
 
   // ترجمة الفلاتر
@@ -584,7 +586,7 @@ function PropertiesPage({ props, isAdmin, onEdit, onDelete, onChangeStatus, setL
     (p.name.includes(search)||p.address.includes(search)||(p.ownerName||"").includes(search))
   );
   return (
-    <div style={{paddingTop:isAdmin?90:64,minHeight:"100vh",background:"#07103a"}}>
+    <div style={{paddingTop:isAdmin?90:64,minHeight:"100vh",background:T.bg}}>
       <div style={{background:"linear-gradient(135deg,#0e2563,#1a4faa)",padding:"28px 24px 24px"}}>
         <div style={{maxWidth:1200,margin:"0 auto",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
           <div><div style={{fontWeight:900,fontSize:22,color:"#fff",marginBottom:3}}>{isAdmin?(isEn?"🔒 Admin Panel":"🔒 لوحة الإدارة"):(isEn?"🏘️ Available Properties":"🏘️ العقارات المتاحة")}</div><div style={{fontSize:12,color:"rgba(255,255,255,.5)"}}>Khalid M. A. Ghafour Al-Shaikh Est.</div></div>
@@ -619,10 +621,10 @@ function PropertiesPage({ props, isAdmin, onEdit, onDelete, onChangeStatus, setL
   );
 }
 
-function AboutPage({ lang }) {
+function AboutPage({ lang, darkMode, T }) {
   const isEn=lang==="en";
   return (
-    <div style={{paddingTop:64,minHeight:"100vh",background:"#07103a"}}>
+    <div style={{paddingTop:64,minHeight:"100vh",background:T.bg}}>
       <div style={{background:"linear-gradient(135deg,#0e2563,#1a4faa)",padding:"28px 24px 24px"}}><div style={{maxWidth:900,margin:"0 auto"}}><div style={{fontWeight:900,fontSize:22,color:"#fff",marginBottom:3}}>ℹ️ {isEn?"About Us":"عن المؤسسة"}</div></div></div>
       <div style={{maxWidth:900,margin:"0 auto",padding:"36px 24px"}}>
         <div style={{background:"linear-gradient(140deg,#0e2050,#12286a)",border:"1px solid rgba(255,255,255,.07)",borderRadius:20,padding:"32px",marginBottom:18}}>
@@ -653,6 +655,7 @@ function AboutPage({ lang }) {
 export default function App() {
   const [page,setPage]           = useState("home");
   const [lang,setLang]           = useState("ar");
+  const [darkMode,setDarkMode]   = useState(true);
   const [props,setProps]         = useState([]);
   const [loaded,setLoaded]       = useState(false);
   const [saving,setSaving]       = useState(false);
@@ -721,13 +724,27 @@ export default function App() {
     </div>
   );
 
+  const T = darkMode ? {
+    bg:"#07103a", bg2:"#071840", bg3:"#0a1f54", bg4:"#03102e",
+    text:"#e8eef8", text2:"#93c5fd", text3:"#4a6fa5",
+    border:"#1e3a7a", card:"linear-gradient(160deg,#071840,#0a1f54)",
+    navbar:"rgba(7,16,58,.98)", navbarBorder:"rgba(255,255,255,.08)",
+    navText:"rgba(255,255,255,.6)", navActive:"rgba(255,255,255,.1)",
+  } : {
+    bg:"#f0f4ff", bg2:"#fff", bg3:"#e8eeff", bg4:"#f8faff",
+    text:"#1e3a6e", text2:"#1a4faa", text3:"#64748b",
+    border:"#dbeafe", card:"linear-gradient(160deg,#fff,#f0f4ff)",
+    navbar:"rgba(255,255,255,.98)", navbarBorder:"rgba(0,0,0,.08)",
+    navText:"rgba(30,58,110,.6)", navActive:"rgba(26,79,170,.1)",
+  };
+
   return (
-    <div style={{direction:isEn?"ltr":"rtl",fontFamily:"'Cairo',sans-serif",minHeight:"100vh",background:"#07103a",color:"#e8eef8"}}>
+    <div style={{direction:isEn?"ltr":"rtl",fontFamily:"'Cairo',sans-serif",minHeight:"100vh",background:T.bg,color:T.text,transition:"background .3s,color .3s"}}>
       <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"/>
 
       {lightbox&&<Lightbox images={lightbox.images} startIndex={lightbox.idx} onClose={()=>setLightbox(null)}/>}
       {showLogin&&<LoginModal onSuccess={()=>{setIsAdmin(true);setShowLogin(false);showToast(isEn?"Welcome! Admin mode active 🔓":"مرحباً! وضع الإدارة مفعّل 🔓");}} onClose={()=>setShowLogin(false)} lang={lang}/>}
-      {showForm&&<PropForm form={form} setForm={setForm} onSave={save} onClose={()=>setShowForm(false)} editId={editId}/>}
+      {showForm&&<PropForm form={form} setForm={setForm} onSave={save} onClose={()=>setShowForm(false)} editId={editId} T={T}/>}
       {shareP&&<ShareModal p={shareP} onClose={()=>setShareP(null)}/>}
 
       {toast&&(<div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",background:toast.type==="err"?"#ef4444":"#1a4faa",border:`1px solid ${toast.type==="err"?"#ef4444":"#2563c7"}`,color:"#fff",padding:"10px 24px",borderRadius:12,zIndex:9999,fontWeight:700,fontSize:13,boxShadow:"0 8px 32px #000a",whiteSpace:"nowrap"}}>{toast.msg}</div>)}
@@ -735,24 +752,24 @@ export default function App() {
 
       {delId&&(
         <div style={{position:"fixed",inset:0,background:"#000c",zIndex:700,display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:"1px solid #ef444440",borderRadius:20,padding:28,maxWidth:320,textAlign:"center"}}>
+          <div style={{background:T.card,border:"1px solid #ef444440",borderRadius:20,padding:28,maxWidth:320,textAlign:"center"}}>
             <div style={{fontSize:38,marginBottom:10}}>⚠️</div>
-            <div style={{fontWeight:900,fontSize:16,color:"#e8eef8",marginBottom:6}}>{isEn?"Delete Property":"حذف العقار"}</div>
-            <div style={{color:"#4a6fa5",marginBottom:20,fontSize:13}}>{isEn?"This cannot be undone.":"سيتم الحذف نهائياً."}</div>
+            <div style={{fontWeight:900,fontSize:16,color:T.text,marginBottom:6}}>{isEn?"Delete Property":"حذف العقار"}</div>
+            <div style={{color:T.text3,marginBottom:20,fontSize:13}}>{isEn?"This cannot be undone.":"سيتم الحذف نهائياً."}</div>
             <div style={{display:"flex",gap:10}}>
               <button onClick={()=>del(delId)} style={{flex:1,background:"#ef4444",color:"#fff",border:"none",borderRadius:11,padding:"11px",fontFamily:"'Cairo',sans-serif",fontWeight:700,cursor:"pointer"}}>{isEn?"Delete":"احذف"}</button>
-              <button onClick={()=>setDelId(null)} style={{flex:1,background:"#071840",border:"1px solid #1e3a7a",color:"#6b8cc4",borderRadius:11,padding:"11px",fontFamily:"'Cairo',sans-serif",cursor:"pointer"}}>{isEn?"Cancel":"إلغاء"}</button>
+              <button onClick={()=>setDelId(null)} style={{flex:1,background:T.bg2,border:`1px solid ${T.border}`,color:T.text3,borderRadius:11,padding:"11px",fontFamily:"'Cairo',sans-serif",cursor:"pointer"}}>{isEn?"Cancel":"إلغاء"}</button>
             </div>
           </div>
         </div>
       )}
 
-      <Navbar page={page} setPage={setPage} isAdmin={isAdmin} onLoginClick={()=>setShowLogin(true)} onLogout={()=>{setIsAdmin(false);showToast(isEn?"Logged out":"تم تسجيل الخروج");}} lang={lang} setLang={setLang} scrolled={scrolled}/>
+      <Navbar page={page} setPage={setPage} isAdmin={isAdmin} onLoginClick={()=>setShowLogin(true)} onLogout={()=>{setIsAdmin(false);showToast(isEn?"Logged out":"تم تسجيل الخروج");}} lang={lang} setLang={setLang} scrolled={scrolled} darkMode={darkMode} setDarkMode={setDarkMode} T={T}/>
 
-      {page==="home"       && <HomePage setPage={setPage} lang={lang}/>}
-      {page==="properties" && <PropertiesPage props={props} isAdmin={isAdmin} onEdit={openEdit} onDelete={id=>setDelId(id)} onChangeStatus={changeStatus} setLightbox={setLightbox} onShare={setShareP} onOpenAdd={openAdd} lang={lang}/>}
-      {page==="services"   && <HomePage setPage={setPage} lang={lang}/>}
-      {page==="about"      && <AboutPage lang={lang}/>}
+      {page==="home"       && <HomePage setPage={setPage} lang={lang} darkMode={darkMode} T={T}/>}
+      {page==="properties" && <PropertiesPage props={props} isAdmin={isAdmin} onEdit={openEdit} onDelete={id=>setDelId(id)} onChangeStatus={changeStatus} setLightbox={setLightbox} onShare={setShareP} onOpenAdd={openAdd} lang={lang} darkMode={darkMode} T={T}/>}
+      {page==="services"   && <HomePage setPage={setPage} lang={lang} darkMode={darkMode} T={T}/>}
+      {page==="about"      && <AboutPage lang={lang} darkMode={darkMode} T={T}/>}
 
       {/* ── Floating WhatsApp Button ── */}
       <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer"
@@ -768,8 +785,8 @@ export default function App() {
         *{box-sizing:border-box;}
         input:focus,select:focus,textarea:focus{outline:none;border-color:#2563c7!important;}
         ::-webkit-scrollbar{width:5px;height:5px}
-        ::-webkit-scrollbar-track{background:#07103a}
-        ::-webkit-scrollbar-thumb{background:#1e3a7a;border-radius:4px}
+        ::-webkit-scrollbar-track{background:${T.bg}}
+        ::-webkit-scrollbar-thumb{background:${darkMode?"#1e3a7a":"#bfdbfe"};border-radius:4px}
         a{font-family:'Cairo',sans-serif;}
         @media(max-width:768px){
           .desktop-nav{display:none!important;}
