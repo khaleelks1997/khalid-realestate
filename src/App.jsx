@@ -29,6 +29,24 @@ const emptyForm = {
 
 const today = () => new Date().toLocaleDateString("ar-SA");
 
+// ── Export to Excel ───────────────────────────────────────────────────────────
+function exportToExcel(props) {
+  const headers = ["الرقم المرجعي","اسم العقار","العنوان","النوع","الصفقة","الحالة","سعر البيع","الإيجار","المساحة","الغرف","الحمامات","مفروش","المالك","جوال المالك","رخصة إعلانية","عقد تسويق","ملاحظات"];
+  const rows = props.map(p => [
+    p.refNo||"",p.name||"",p.address||"",p.type||"",p.dealType||"",p.status||"",
+    p.salePrice||"",p.rentPrice||"",p.area||"",p.rooms||"",p.bathrooms||"",
+    p.furnished?"نعم":"لا",p.ownerName||"",p.ownerPhone||"",
+    p.adLicenseNo||"",p.marketingContractNo||"",p.notes||""
+  ]);
+  const csv = [headers,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const BOM = "\uFEFF";
+  const blob = new Blob([BOM+csv],{type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href=url; a.download=`عقارات-${new Date().toLocaleDateString("ar-SA").replace(/\//g,"-")}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
 // ── WA Icon ──────────────────────────────────────────────────────────────────
 const WaIcon = ({size=14,color="#25d366"}) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
@@ -465,7 +483,10 @@ function PropertiesPage({ props, isAdmin, onEdit, onDelete, onChangeStatus, setL
       <div style={{background:"linear-gradient(135deg,#0e2563,#1a4faa)",padding:"28px 24px 24px"}}>
         <div style={{maxWidth:1200,margin:"0 auto",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
           <div><div style={{fontWeight:900,fontSize:22,color:"#fff",marginBottom:3}}>{isAdmin?(isEn?"🔒 Admin Panel":"🔒 لوحة الإدارة"):(isEn?"🏘️ Available Properties":"🏘️ العقارات المتاحة")}</div><div style={{fontSize:12,color:"rgba(255,255,255,.5)"}}>Khalid M. A. Ghafour Al-Shaikh Est.</div></div>
-          {isAdmin&&<button onClick={onOpenAdd} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:11,padding:"10px 22px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ {isEn?"Add Property":"إضافة عقار"}</button>}
+          {isAdmin&&<div style={{display:"flex",gap:8}}>
+            <button onClick={()=>exportToExcel(props)} style={{background:"#16a34a22",border:"1px solid #16a34a44",color:"#4ade80",borderRadius:11,padding:"10px 18px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"}}>📊 {isEn?"Export Excel":"تصدير Excel"}</button>
+            <button onClick={onOpenAdd} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:11,padding:"10px 22px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ {isEn?"Add Property":"إضافة عقار"}</button>
+          </div>}
         </div>
       </div>
       <div style={{maxWidth:1200,margin:"0 auto",padding:"22px"}}>
