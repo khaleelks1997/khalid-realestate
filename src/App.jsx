@@ -54,21 +54,126 @@ const WaIcon = ({size=14,color="#25d366"}) => (
   </svg>
 );
 
-// ── Share Modal ───────────────────────────────────────────────────────────────
+// ── Share Modal with Image Generator ─────────────────────────────────────────
 function ShareModal({ p, onClose }) {
   const [copied, setCopied] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const cardRef = useRef();
+
   const text = `🏠 ${p.name}\n📍 ${p.address}\n🏷️ ${p.type} | ${p.dealType}${p.rentPrice?"\n💰 إيجار: "+Number(p.rentPrice).toLocaleString()+" ر.س/شهر":""}${p.salePrice?"\n💰 بيع: "+Number(p.salePrice).toLocaleString()+" ر.س":""}${p.area?"\n📐 المساحة: "+p.area+" م²":""}${p.furnished?"\n🛋️ مفروش":""}${p.adLicenseNo?"\n🏛️ رخصة إعلانية: "+p.adLicenseNo:""}\n📞 للتواصل: ${PHONE}\n💬 واتساب: wa.me/${WA_NUMBER}`;
   const waMsg = encodeURIComponent(text);
   const copy = () => { navigator.clipboard.writeText(text).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),2000); }); };
+  const sc = SC[p.status]||SC["متوفر"];
+
+  const downloadImage = async () => {
+    setGenerating(true);
+    try {
+      // load html2canvas dynamically
+      if (!window.html2canvas) {
+        await new Promise((res,rej)=>{
+          const s=document.createElement("script");
+          s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+          s.onload=res; s.onerror=rej;
+          document.head.appendChild(s);
+        });
+      }
+      const canvas = await window.html2canvas(cardRef.current, {
+        scale:2, useCORS:true, backgroundColor:null,
+        logging:false, allowTaint:true
+      });
+      const a = document.createElement("a");
+      a.download = `${p.name||"عقار"}.png`;
+      a.href = canvas.toDataURL("image/png");
+      a.click();
+    } catch(e) { alert("حدث خطأ في توليد الصورة"); }
+    setGenerating(false);
+  };
+
   return (
-    <div style={{position:"fixed",inset:0,background:"#000c",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
-      <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:"1px solid #2563c7",borderRadius:20,padding:26,maxWidth:420,width:"100%"}} onClick={e=>e.stopPropagation()}>
+    <div style={{position:"fixed",inset:0,background:"#000c",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20,overflowY:"auto"}} onClick={onClose}>
+      <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:"1px solid #2563c7",borderRadius:20,padding:26,maxWidth:440,width:"100%"}} onClick={e=>e.stopPropagation()}>
+        
+        {/* Header */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
           <div style={{fontWeight:900,fontSize:16,color:"#fff"}}>📤 مشاركة العقار</div>
           <button onClick={onClose} style={{background:"#1e3a7a",border:"none",color:"#aaa",width:30,height:30,borderRadius:"50%",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
         </div>
-        <div style={{background:"#03102e",border:"1px solid #1e3a7a",borderRadius:12,padding:"12px 14px",marginBottom:14,fontSize:11,color:"#93c5fd",lineHeight:1.8,whiteSpace:"pre-line"}}>{text}</div>
+
+        {/* Preview Card - this gets converted to image */}
+        <div ref={cardRef} style={{
+          background:"linear-gradient(135deg,#07103a 0%,#0e2563 60%,#1a4faa 100%)",
+          borderRadius:18, padding:24, marginBottom:14,
+          fontFamily:"'Cairo',sans-serif", direction:"rtl",
+          border:`2px solid ${sc.c}44`, position:"relative", overflow:"hidden"
+        }}>
+          {/* Background pattern */}
+          <div style={{position:"absolute",inset:0,backgroundImage:"linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px)",backgroundSize:"24px 24px",pointerEvents:"none"}}/>
+          
+          {/* Logo + Title */}
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:18,position:"relative"}}>
+            <img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777502437/WhatsApp_Image_2026-04-30_at_1.38.52_AM_btqpqt.jpg"
+              alt="Logo" style={{width:52,height:52,borderRadius:12,objectFit:"cover",flexShrink:0}}/>
+            <div>
+              <div style={{fontWeight:900,fontSize:13,color:"#fff",lineHeight:1.3}}>مؤسسة خالد محمد عبدالغفور الشيخ</div>
+              <div style={{fontSize:10,color:"rgba(255,255,255,.5)"}}>للخدمات العقارية</div>
+            </div>
+            <div style={{marginRight:"auto",background:sc.bg,border:`1px solid ${sc.c}44`,color:sc.c,borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{p.status}</div>
+          </div>
+
+          {/* Property image if exists */}
+          {p.images&&p.images[0]&&(
+            <img src={p.images[0]} alt="" style={{width:"100%",height:160,objectFit:"cover",borderRadius:12,marginBottom:14}}/>
+          )}
+
+          {/* Property name */}
+          <div style={{fontWeight:900,fontSize:20,color:"#fff",marginBottom:6,position:"relative"}}>{p.name}</div>
+          <div style={{fontSize:13,color:"rgba(255,255,255,.6)",marginBottom:14,position:"relative"}}>📍 {p.address}</div>
+
+          {/* Details grid */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14,position:"relative"}}>
+            {p.rentPrice&&<div style={{background:"rgba(255,255,255,.07)",borderRadius:10,padding:"8px 12px"}}>
+              <div style={{fontSize:10,color:"rgba(255,255,255,.4)"}}>الإيجار الشهري</div>
+              <div style={{fontSize:15,fontWeight:900,color:"#4ade80"}}>{Number(p.rentPrice).toLocaleString()} ر.س</div>
+            </div>}
+            {p.salePrice&&<div style={{background:"rgba(255,255,255,.07)",borderRadius:10,padding:"8px 12px"}}>
+              <div style={{fontSize:10,color:"rgba(255,255,255,.4)"}}>سعر البيع</div>
+              <div style={{fontSize:15,fontWeight:900,color:"#fbbf24"}}>{Number(p.salePrice).toLocaleString()} ر.س</div>
+            </div>}
+            {p.area&&<div style={{background:"rgba(255,255,255,.07)",borderRadius:10,padding:"8px 12px"}}>
+              <div style={{fontSize:10,color:"rgba(255,255,255,.4)"}}>المساحة</div>
+              <div style={{fontSize:15,fontWeight:900,color:"#93c5fd"}}>{p.area} م²</div>
+            </div>}
+            {p.rooms&&<div style={{background:"rgba(255,255,255,.07)",borderRadius:10,padding:"8px 12px"}}>
+              <div style={{fontSize:10,color:"rgba(255,255,255,.4)"}}>الغرف</div>
+              <div style={{fontSize:15,fontWeight:900,color:"#93c5fd"}}>{p.rooms} غرف</div>
+            </div>}
+          </div>
+
+          {/* Tags */}
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14,position:"relative"}}>
+            <span style={{background:"#1a4faa44",color:"#93c5fd",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:14}}>{p.type}</span>
+            <span style={{background:"#1a4faa44",color:"#93c5fd",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:14}}>{p.dealType}</span>
+            {p.furnished&&<span style={{background:"#fbbf2420",color:"#fbbf24",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:14}}>🛋️ مفروش</span>}
+          </div>
+
+          {/* Contact */}
+          <div style={{background:"rgba(255,255,255,.07)",borderRadius:12,padding:"10px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"relative"}}>
+            <div>
+              <div style={{fontSize:10,color:"rgba(255,255,255,.4)",marginBottom:2}}>للتواصل</div>
+              <div style={{fontSize:15,fontWeight:900,color:"#fff"}}>📞 {PHONE}</div>
+            </div>
+            <div style={{fontSize:11,color:"#25d366",fontWeight:700}}>💬 wa.me/{WA_NUMBER}</div>
+          </div>
+
+          {/* Ad license */}
+          {p.adLicenseNo&&<div style={{marginTop:8,fontSize:10,color:"rgba(255,255,255,.3)",textAlign:"center",position:"relative"}}>🏛️ رخصة إعلانية: {p.adLicenseNo}</div>}
+        </div>
+
+        {/* Action buttons */}
         <div style={{display:"flex",flexDirection:"column",gap:9}}>
+          <button onClick={downloadImage} disabled={generating} style={{display:"flex",alignItems:"center",gap:10,background:"linear-gradient(135deg,#1a4faa,#2563c7)",border:"none",color:"#fff",borderRadius:12,padding:"11px 18px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:generating?"not-allowed":"pointer",justifyContent:"center",opacity:generating?.7:1}}>
+            {generating?"⏳ جاري التوليد...":"🖼️ حفظ كصورة"}
+          </button>
           <a href={`https://wa.me/?text=${waMsg}`} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",gap:10,background:"#25d36620",border:"1px solid #25d36640",color:"#25d366",borderRadius:12,padding:"11px 18px",textDecoration:"none",fontWeight:700,fontSize:14,justifyContent:"center"}}><WaIcon size={18}/> مشاركة عبر واتساب</a>
           <button onClick={copy} style={{display:"flex",alignItems:"center",gap:10,background:copied?"#4ade8020":"#1a4faa22",border:`1px solid ${copied?"#4ade8040":"#2563c740"}`,color:copied?"#4ade80":"#93c5fd",borderRadius:12,padding:"11px 18px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",justifyContent:"center"}}>{copied?"✅ تم النسخ!":"📋 نسخ النص"}</button>
         </div>
