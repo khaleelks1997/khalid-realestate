@@ -60,7 +60,7 @@ function ShareModal({ p, onClose }) {
   const [generating, setGenerating] = useState(false);
   const cardRef = useRef();
 
-  const text = `🏠 ${p.name}\n📍 ${p.address}\n🏷️ ${p.type} | ${p.dealType}${p.rentPrice?"\n💰 إيجار: "+Number(p.rentPrice).toLocaleString()+" ر.س/شهر":""}${p.salePrice?"\n💰 بيع: "+Number(p.salePrice).toLocaleString()+" ر.س":""}${p.area?"\n📐 المساحة: "+p.area+" م²":""}${p.furnished?"\n🛋️ مفروش":""}${p.adLicenseNo?"\n🏛️ رخصة إعلانية: "+p.adLicenseNo:""}\n📞 للتواصل: ${PHONE}\n💬 واتساب: wa.me/${WA_NUMBER}`;
+  const text = `🏠 ${p.name}\n📍 ${p.address}\n🏷️ ${p.type} | ${p.dealType}${p.rentPrice?"\n💰 إيجار: "+Number(p.rentPrice).toLocaleString()+" ﷼/سنة":""}${p.salePrice?"\n💰 بيع: "+Number(p.salePrice).toLocaleString()+" ﷼":""}${p.area?"\n📐 المساحة: "+p.area+" م²":""}${p.furnished?"\n🛋️ مفروش":""}${p.adLicenseNo?"\n🏛️ رخصة إعلانية: "+p.adLicenseNo:""}\n📞 للتواصل: ${PHONE}\n💬 واتساب: wa.me/${WA_NUMBER}`;
   const waMsg = encodeURIComponent(text);
   const copy = () => { navigator.clipboard.writeText(text).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),2000); }); };
   const sc = SC[p.status]||SC["متوفر"];
@@ -132,12 +132,12 @@ function ShareModal({ p, onClose }) {
           {/* Details grid */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14,position:"relative"}}>
             {p.rentPrice&&<div style={{background:"rgba(255,255,255,.07)",borderRadius:10,padding:"8px 12px"}}>
-              <div style={{fontSize:10,color:"rgba(255,255,255,.4)"}}>الإيجار الشهري</div>
-              <div style={{fontSize:15,fontWeight:900,color:"#4ade80"}}>{Number(p.rentPrice).toLocaleString()} ر.س</div>
+              <div style={{fontSize:10,color:"rgba(255,255,255,.4)"}}>الإيجار السنوي</div>
+              <div style={{fontSize:15,fontWeight:900,color:"#4ade80"}}>{Number(p.rentPrice).toLocaleString()} ﷼</div>
             </div>}
             {p.salePrice&&<div style={{background:"rgba(255,255,255,.07)",borderRadius:10,padding:"8px 12px"}}>
               <div style={{fontSize:10,color:"rgba(255,255,255,.4)"}}>سعر البيع</div>
-              <div style={{fontSize:15,fontWeight:900,color:"#fbbf24"}}>{Number(p.salePrice).toLocaleString()} ر.س</div>
+              <div style={{fontSize:15,fontWeight:900,color:"#fbbf24"}}>{Number(p.salePrice).toLocaleString()} ﷼</div>
             </div>}
             {p.area&&<div style={{background:"rgba(255,255,255,.07)",borderRadius:10,padding:"8px 12px"}}>
               <div style={{fontSize:10,color:"rgba(255,255,255,.4)"}}>المساحة</div>
@@ -357,7 +357,7 @@ function PropForm({ form, setForm, onSave, onClose, editId }) {
 
         <Sec c="💰 الأسعار"/>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:11,marginBottom:16}}>
-          {[["سعر البيع (ر.س)","salePrice"],["قيمة الإيجار (ر.س)","rentPrice"],["الحد الأدنى (ر.س)","minPrice"]].map(([lbl,key])=>(<div key={key}><Lbl c={lbl}/><input type="number" value={form[key]} onChange={f(key)} style={IST}/></div>))}
+          {[["سعر البيع (﷼)","salePrice"],["قيمة الإيجار السنوي (﷼)","rentPrice"],["الحد الأدنى (﷼)","minPrice"]].map(([lbl,key])=>(<div key={key}><Lbl c={lbl}/><input type="number" value={form[key]} onChange={f(key)} style={IST}/></div>))}
         </div>
 
         <Sec c="📐 المساحات"/>
@@ -402,7 +402,7 @@ function PublicCard({ p, setLightbox, onShare, lang }) {
   const [hov,setHov]=useState(false);
   const isEn=lang==="en";
   const imgs=p.images||[]; const sc=SC[p.status]||SC["متوفر"];
-  const waMsg=encodeURIComponent(`${isEn?"Hello, I'd like to inquire about":"مرحباً، أود الاستفسار عن"} ${p.name} - ${p.address}${p.rentPrice?" | "+Number(p.rentPrice).toLocaleString()+" ر.س/شهر":""}${p.salePrice?" | "+Number(p.salePrice).toLocaleString()+" ر.س":""}`);
+  const waMsg=encodeURIComponent(`${isEn?"Hello, I'd like to inquire about":"مرحباً، أود الاستفسار عن"} ${p.name} - ${p.address}${p.rentPrice?" | "+Number(p.rentPrice).toLocaleString()+" ﷼/سنة":""}${p.salePrice?" | "+Number(p.salePrice).toLocaleString()+" ﷼":""}`);
   const statusEn={"متوفر":"Available","مؤجر":"Rented","مباع":"Sold","قريب الانتهاء":"Expiring","صيانة":"Maintenance"};
   return (
     <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:`1px solid ${sc.c}25`,borderRadius:18,overflow:"hidden",transition:"all .15s",transform:hov?"translateY(-3px)":"none",boxShadow:hov?`0 12px 36px ${sc.c}18`:"none"}}
@@ -420,8 +420,8 @@ function PublicCard({ p, setLightbox, onShare, lang }) {
         <div style={{fontSize:11,color:"#4a6fa5",marginBottom:8}}>📍 {p.address}</div>
         <div style={{marginBottom:9}}>{p.adLicenseNo?<span style={{display:"inline-flex",alignItems:"center",gap:5,background:"#1a4faa22",border:"1px solid #2563c744",color:"#93c5fd",borderRadius:8,padding:"3px 10px",fontSize:10,fontWeight:700}}>🏛️ {isEn?"Ad License:":"رخصة إعلانية:"} {p.adLicenseNo}</span>:<span style={{display:"inline-flex",alignItems:"center",gap:5,background:"#ef444418",border:"1px solid #ef444430",color:"#f87171",borderRadius:8,padding:"3px 10px",fontSize:10,fontWeight:700}}>⚠️ {isEn?"Pending License":"قيد الترخيص"}</span>}</div>
         <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:9}}>
-          {p.rentPrice&&<div style={{background:"#4ade8015",border:"1px solid #4ade8028",borderRadius:9,padding:"5px 10px",fontSize:11,color:"#4ade80",fontWeight:700}}>🏠 {Number(p.rentPrice).toLocaleString()} {isEn?"SAR/mo":"ر.س/شهر"}</div>}
-          {p.salePrice&&<div style={{background:"#fbbf2415",border:"1px solid #fbbf2428",borderRadius:9,padding:"5px 10px",fontSize:11,color:"#fbbf24",fontWeight:700}}>💰 {Number(p.salePrice).toLocaleString()} {isEn?"SAR":"ر.س"}</div>}
+          {p.rentPrice&&<div style={{background:"#4ade8015",border:"1px solid #4ade8028",borderRadius:9,padding:"5px 10px",fontSize:11,color:"#4ade80",fontWeight:700}}>🏠 {Number(p.rentPrice).toLocaleString()} {isEn?"SAR/yr":"﷼/سنة"}</div>}
+          {p.salePrice&&<div style={{background:"#fbbf2415",border:"1px solid #fbbf2428",borderRadius:9,padding:"5px 10px",fontSize:11,color:"#fbbf24",fontWeight:700}}>💰 {Number(p.salePrice).toLocaleString()} {isEn?"SAR":"﷼"}</div>}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:10}}>
           {p.area&&<div style={{background:"#071840",borderRadius:8,padding:"5px 9px",fontSize:11,color:"#6b8cc4"}}>📐 {p.area} م²</div>}
@@ -597,7 +597,7 @@ function PropertiesPage({ props, isAdmin, onEdit, onDelete, onChangeStatus, setL
         </div>
       </div>
       <div style={{maxWidth:1200,margin:"0 auto",padding:"22px"}}>
-        {isAdmin&&(()=>{const st={total:props.length,available:props.filter(p=>p.status==="متوفر").length,rented:props.filter(p=>p.status==="مؤجر").length,income:props.filter(p=>p.rentPrice).reduce((s,p)=>s+Number(p.rentPrice),0),noLicense:props.filter(p=>!p.adLicenseNo).length};return(<div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:9,marginBottom:20}}>{[{l:isEn?"Total":"الإجمالي",v:st.total,i:"🏢",c:"#93c5fd"},{l:isEn?"Available":"متوفر",v:st.available,i:"✅",c:"#4ade80"},{l:isEn?"Rented":"مؤجر",v:st.rented,i:"🔑",c:"#a5b4fc"},{l:isEn?"Monthly Income":"الدخل الشهري",v:st.income.toLocaleString()+" ر.س",i:"💰",c:"#fbbf24"},{l:isEn?"No License":"بدون ترخيص",v:st.noLicense,i:"⚠️",c:"#f87171"}].map((s,i)=>(<div key={i} style={{background:"linear-gradient(135deg,#071840,#0e2563)",border:`1px solid ${s.c}22`,borderRadius:12,padding:"12px 10px",position:"relative",overflow:"hidden"}}><div style={{position:"absolute",top:-8,left:-8,width:32,height:32,background:s.c+"15",borderRadius:"50%"}}/><div style={{fontSize:17,marginBottom:5}}>{s.i}</div><div style={{fontWeight:900,fontSize:15,color:s.c}}>{s.v}</div><div style={{fontSize:10,color:"#4a6fa5",marginTop:1}}>{s.l}</div></div>))}</div>);})()}
+        {isAdmin&&(()=>{const st={total:props.length,available:props.filter(p=>p.status==="متوفر").length,rented:props.filter(p=>p.status==="مؤجر").length,income:props.filter(p=>p.rentPrice).reduce((s,p)=>s+Number(p.rentPrice),0),noLicense:props.filter(p=>!p.adLicenseNo).length};return(<div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:9,marginBottom:20}}>{[{l:isEn?"Total":"الإجمالي",v:st.total,i:"🏢",c:"#93c5fd"},{l:isEn?"Available":"متوفر",v:st.available,i:"✅",c:"#4ade80"},{l:isEn?"Rented":"مؤجر",v:st.rented,i:"🔑",c:"#a5b4fc"},{l:isEn?"Monthly Income":"الدخل السنوي",v:st.income.toLocaleString()+" ﷼",i:"💰",c:"#fbbf24"},{l:isEn?"No License":"بدون ترخيص",v:st.noLicense,i:"⚠️",c:"#f87171"}].map((s,i)=>(<div key={i} style={{background:"linear-gradient(135deg,#071840,#0e2563)",border:`1px solid ${s.c}22`,borderRadius:12,padding:"12px 10px",position:"relative",overflow:"hidden"}}><div style={{position:"absolute",top:-8,left:-8,width:32,height:32,background:s.c+"15",borderRadius:"50%"}}/><div style={{fontSize:17,marginBottom:5}}>{s.i}</div><div style={{fontWeight:900,fontSize:15,color:s.c}}>{s.v}</div><div style={{fontSize:10,color:"#4a6fa5",marginTop:1}}>{s.l}</div></div>))}</div>);})()}
         <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap",alignItems:"center"}}>
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={isEn?"🔍 Search...":"🔍 ابحث..."} style={{flex:1,minWidth:180,background:T.bg2,border:`1px solid ${T.border}`,borderRadius:10,padding:"8px 13px",color:T.text,fontFamily:"'Cairo',sans-serif",fontSize:13}}/>
           <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
