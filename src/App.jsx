@@ -384,6 +384,11 @@ function HomePage({ setPage, lang }) {
             <span style={{width:7,height:7,borderRadius:"50%",background:"#4ade80",boxShadow:"0 0 8px #4ade80",display:"inline-block"}}/>
             {isEn?"Licensed by Real Estate General Authority":"مرخصون من الهيئة العامة للعقار"}
           </div>
+          {/* Hero Logo */}
+          <div style={{marginBottom:24,display:"flex",justifyContent:"center"}}>
+            <img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777502437/WhatsApp_Image_2026-04-30_at_1.38.52_AM_btqpqt.jpg"
+              alt="Logo" style={{width:160,height:160,objectFit:"cover",borderRadius:24,boxShadow:"0 8px 40px #00000055"}}/>
+          </div>
           <h1 style={{fontSize:"clamp(28px,5vw,54px)",fontWeight:900,color:"#fff",lineHeight:1.15,marginBottom:10}}>
             {isEn?"Khalid M. A. Ghafour":"مؤسسة خالد محمد"}<br/>
             <span style={{background:"linear-gradient(135deg,#60a5fa,#93c5fd)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>{isEn?"Al-Shaikh Est.":"عبدالغفور الشيخ"}</span>
@@ -439,8 +444,22 @@ function HomePage({ setPage, lang }) {
 
 function PropertiesPage({ props, isAdmin, onEdit, onDelete, onChangeStatus, setLightbox, onShare, onOpenAdd, lang }) {
   const isEn=lang==="en";
-  const [filter,setFilter]=useState("الكل"); const [search,setSearch]=useState(""); const [dealF,setDealF]=useState("الكل");
-  const filtered=props.filter(p=>(filter==="الكل"||p.status===filter)&&(dealF==="الكل"||p.dealType===dealF)&&(p.name.includes(search)||p.address.includes(search)||(p.ownerName||"").includes(search)));
+
+  // ترجمة الفلاتر
+  const statusLabels = isEn
+    ? {all:"All", "متوفر":"Available","مؤجر":"Rented","مباع":"Sold","قريب الانتهاء":"Expiring","صيانة":"Maintenance"}
+    : {all:"الكل", "متوفر":"متوفر","مؤجر":"مؤجر","مباع":"مباع","قريب الانتهاء":"قريب الانتهاء","صيانة":"صيانة"};
+  const dealLabels = isEn
+    ? {all:"All","إيجار":"Rent","بيع":"Sale","إيجار وبيع":"Rent & Sale"}
+    : {all:"الكل","إيجار":"إيجار","بيع":"بيع","إيجار وبيع":"إيجار وبيع"};
+
+  const [filter,setFilter]=useState("all"); const [search,setSearch]=useState(""); const [dealF,setDealF]=useState("all");
+
+  const filtered=props.filter(p=>
+    (filter==="all"||p.status===filter)&&
+    (dealF==="all"||p.dealType===dealF)&&
+    (p.name.includes(search)||p.address.includes(search)||(p.ownerName||"").includes(search))
+  );
   return (
     <div style={{paddingTop:isAdmin?90:64,minHeight:"100vh",background:"#07103a"}}>
       <div style={{background:"linear-gradient(135deg,#0e2563,#1a4faa)",padding:"28px 24px 24px"}}>
@@ -453,8 +472,12 @@ function PropertiesPage({ props, isAdmin, onEdit, onDelete, onChangeStatus, setL
         {isAdmin&&(()=>{const st={total:props.length,available:props.filter(p=>p.status==="متوفر").length,rented:props.filter(p=>p.status==="مؤجر").length,income:props.filter(p=>p.rentPrice).reduce((s,p)=>s+Number(p.rentPrice),0),noLicense:props.filter(p=>!p.adLicenseNo).length};return(<div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:9,marginBottom:20}}>{[{l:isEn?"Total":"الإجمالي",v:st.total,i:"🏢",c:"#93c5fd"},{l:isEn?"Available":"متوفر",v:st.available,i:"✅",c:"#4ade80"},{l:isEn?"Rented":"مؤجر",v:st.rented,i:"🔑",c:"#a5b4fc"},{l:isEn?"Monthly Income":"الدخل الشهري",v:st.income.toLocaleString()+" ر.س",i:"💰",c:"#fbbf24"},{l:isEn?"No License":"بدون ترخيص",v:st.noLicense,i:"⚠️",c:"#f87171"}].map((s,i)=>(<div key={i} style={{background:"linear-gradient(135deg,#071840,#0e2563)",border:`1px solid ${s.c}22`,borderRadius:12,padding:"12px 10px",position:"relative",overflow:"hidden"}}><div style={{position:"absolute",top:-8,left:-8,width:32,height:32,background:s.c+"15",borderRadius:"50%"}}/><div style={{fontSize:17,marginBottom:5}}>{s.i}</div><div style={{fontWeight:900,fontSize:15,color:s.c}}>{s.v}</div><div style={{fontSize:10,color:"#4a6fa5",marginTop:1}}>{s.l}</div></div>))}</div>);})()}
         <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap",alignItems:"center"}}>
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={isEn?"🔍 Search...":"🔍 ابحث..."} style={{flex:1,minWidth:180,background:"#071840",border:"1px solid #1e3a7a",borderRadius:10,padding:"8px 13px",color:"#e8eef8",fontFamily:"'Cairo',sans-serif",fontSize:13}}/>
-          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>{["الكل",...STATUS_OPTIONS].map(f=>(<button key={f} onClick={()=>setFilter(f)} style={{padding:"7px 12px",borderRadius:8,cursor:"pointer",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11,background:filter===f?"linear-gradient(135deg,#1a4faa,#2563c7)":"#071840",color:filter===f?"#fff":"#4a6fa5",border:filter===f?"none":"1px solid #1e3a7a"}}>{f}</button>))}</div>
-          <div style={{display:"flex",gap:5}}>{["الكل","إيجار","بيع","إيجار وبيع"].map(f=>(<button key={f} onClick={()=>setDealF(f)} style={{padding:"7px 12px",borderRadius:8,cursor:"pointer",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11,background:dealF===f?"#fbbf2433":"#071840",color:dealF===f?"#fbbf24":"#4a6fa5",border:dealF===f?"1px solid #fbbf2444":"1px solid #1e3a7a"}}>{f}</button>))}</div>
+          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+            {["all",...STATUS_OPTIONS].map(f=>(<button key={f} onClick={()=>setFilter(f)} style={{padding:"7px 12px",borderRadius:8,cursor:"pointer",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11,background:filter===f?"linear-gradient(135deg,#1a4faa,#2563c7)":"#071840",color:filter===f?"#fff":"#4a6fa5",border:filter===f?"none":"1px solid #1e3a7a"}}>{f==="all"?statusLabels.all:statusLabels[f]}</button>))}
+          </div>
+          <div style={{display:"flex",gap:5}}>
+            {["all","إيجار","بيع","إيجار وبيع"].map(f=>(<button key={f} onClick={()=>setDealF(f)} style={{padding:"7px 12px",borderRadius:8,cursor:"pointer",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11,background:dealF===f?"#fbbf2433":"#071840",color:dealF===f?"#fbbf24":"#4a6fa5",border:dealF===f?"1px solid #fbbf2444":"1px solid #1e3a7a"}}>{f==="all"?dealLabels.all:dealLabels[f]}</button>))}
+          </div>
         </div>
         <div style={{fontSize:11,color:"#4a6fa5",marginBottom:12}}>{filtered.length} {isEn?"properties":"عقار"}</div>
         {filtered.length===0?(<div style={{textAlign:"center",padding:"60px 0",color:"#1e3a7a"}}><div style={{fontSize:46,marginBottom:10}}>🏚️</div><div style={{fontSize:13,fontWeight:600}}>{isEn?"No results":"لا توجد نتائج"}</div></div>):(
@@ -478,7 +501,7 @@ function AboutPage({ lang }) {
       <div style={{maxWidth:900,margin:"0 auto",padding:"36px 24px"}}>
         <div style={{background:"linear-gradient(140deg,#0e2050,#12286a)",border:"1px solid rgba(255,255,255,.07)",borderRadius:20,padding:"32px",marginBottom:18}}>
           <div style={{display:"flex",alignItems:"center",gap:18,marginBottom:22,flexWrap:"wrap"}}>
-            <div style={{width:68,height:68,borderRadius:17,background:"linear-gradient(135deg,#1a4faa,#2563c7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,flexShrink:0}}>🏛️</div>
+            <div style={{width:68,height:68,borderRadius:17,overflow:"hidden",flexShrink:0}}><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777502437/WhatsApp_Image_2026-04-30_at_1.38.52_AM_btqpqt.jpg" alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
             <div><div style={{fontWeight:900,fontSize:19,color:"#fff",marginBottom:3}}>مؤسسة خالد محمد عبدالغفور الشيخ</div><div style={{fontSize:13,color:"#6b8cc4"}}>Khalid M. A. Ghafour Al-Shaikh Est. | للخدمات العقارية</div></div>
           </div>
           <p style={{fontSize:14,color:"#93c5fd",lineHeight:1.9,marginBottom:22}}>{isEn?"A specialized real estate establishment providing comprehensive licensed services across Saudi Arabia. We are committed to the highest standards of quality and professionalism.":"مؤسسة عقارية متخصصة تقدم طيفاً شاملاً من الخدمات العقارية المرخصة في المملكة العربية السعودية. نلتزم بأعلى معايير الجودة والمهنية."}</p>
