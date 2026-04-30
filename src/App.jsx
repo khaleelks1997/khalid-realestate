@@ -628,6 +628,16 @@ export default function App() {
       {page==="services"   && <HomePage setPage={setPage} lang={lang}/>}
       {page==="about"      && <AboutPage lang={lang}/>}
 
+      {/* ── Floating WhatsApp Button ── */}
+      <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer"
+        style={{position:"fixed",bottom:24,left:24,zIndex:999,display:"flex",alignItems:"center",gap:10,background:"#25d366",borderRadius:50,padding:"14px 20px",boxShadow:"0 6px 24px #25d36655",textDecoration:"none",transition:"transform .2s"}}
+        onMouseEnter={e=>e.currentTarget.style.transform="scale(1.08)"}
+        onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}
+      >
+        <WaIcon size={26} color="#fff"/>
+        <span style={{color:"#fff",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,whiteSpace:"nowrap"}}>{isEn?"Chat with us":"تواصل معنا"}</span>
+      </a>
+
       <style>{`
         *{box-sizing:border-box;}
         input:focus,select:focus,textarea:focus{outline:none;border-color:#2563c7!important;}
