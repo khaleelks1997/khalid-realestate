@@ -111,7 +111,7 @@ function ShareModal({ p, onClose }) {
           
           {/* Logo + Title */}
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:18,position:"relative"}}>
-            <img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777502437/WhatsApp_Image_2026-04-30_at_1.38.52_AM_btqpqt.jpg"
+            <img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777727982/WhatsApp_Image_2026-04-30_at_1.38.52_AM_bx1fuy.jpg"
               alt="Logo" style={{width:52,height:52,borderRadius:12,objectFit:"cover",flexShrink:0}}/>
             <div>
               <div style={{fontWeight:900,fontSize:13,color:"#fff",lineHeight:1.3}}>مؤسسة خالد محمد عبدالغفور الشيخ</div>
@@ -240,9 +240,9 @@ function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang,
 
         {/* Brand */}
         <button onClick={()=>go("home")} style={{display:"flex",alignItems:"center",gap:10,background:"none",border:"none",cursor:"pointer",padding:0,flexShrink:0}}>
-          <div style={{width:44,height:44,borderRadius:10,overflow:"hidden",flexShrink:0,boxShadow:"0 2px 10px #1a4faa55"}}><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777502437/WhatsApp_Image_2026-04-30_at_1.38.52_AM_btqpqt.jpg" alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
-          <div className="brand-text" style={{textAlign:"right"}}>
-            <div style={{fontWeight:900,fontSize:11,color:T.text,fontFamily:"'Cairo',sans-serif",lineHeight:1.2,whiteSpace:"nowrap"}}>{isEn?"Khalid M. A. Ghafour Al-Shaikh":"مؤسسة خالد محمد عبدالغفور الشيخ"}</div>
+          <div style={{width:44,height:44,borderRadius:10,overflow:"hidden",flexShrink:0,boxShadow:"0 2px 10px #1a4faa55"}}><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777727982/WhatsApp_Image_2026-04-30_at_1.38.52_AM_bx1fuy.jpg" alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
+          <div style={{textAlign:"right"}}>
+            <div style={{fontWeight:900,fontSize:11,color:T.text,fontFamily:"'Cairo',sans-serif",lineHeight:1.2,whiteSpace:"nowrap"}}>{isEn?"Khalid Al-Shaikh Est.":"مؤسسة خالد الغفور الشيخ"}</div>
             <div style={{fontSize:9,color:T.text3,fontFamily:"'Cairo',sans-serif"}}>{isEn?"Real Estate Services":"للخدمات العقارية"}</div>
           </div>
         </button>
@@ -404,15 +404,10 @@ function PublicCard({ p, setLightbox, onShare, lang }) {
   const imgs=p.images||[]; const sc=SC[p.status]||SC["متوفر"];
   const waMsg=encodeURIComponent(`${isEn?"Hello, I'd like to inquire about":"مرحباً، أود الاستفسار عن"} ${p.name} - ${p.address}${p.rentPrice?" | "+Number(p.rentPrice).toLocaleString()+" ﷼/سنة":""}${p.salePrice?" | "+Number(p.salePrice).toLocaleString()+" ﷼":""}`);
   const statusEn={"متوفر":"Available","مؤجر":"Rented","مباع":"Sold","قريب الانتهاء":"Expiring","صيانة":"Maintenance"};
-
-  const trackView = async () => {
-    try { await updateDoc(doc(db,"properties",p.id),{views:(p.views||0)+1}); } catch(e) {}
-  };
-
   return (
     <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:`1px solid ${sc.c}25`,borderRadius:18,overflow:"hidden",transition:"all .15s",transform:hov?"translateY(-3px)":"none",boxShadow:hov?`0 12px 36px ${sc.c}18`:"none"}}
       onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
-      <div style={{position:"relative",height:185,background:"#03102e",cursor:imgs.length>0?"pointer":"default"}} onClick={()=>{if(imgs.length>0){setLightbox({images:imgs,idx:0});trackView();}}}>
+      <div style={{position:"relative",height:185,background:"#03102e",cursor:imgs.length>0?"pointer":"default"}} onClick={()=>imgs.length>0&&setLightbox({images:imgs,idx:0})}>
         {imgs.length>0?(<><img src={imgs[0]} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/><div style={{position:"absolute",inset:0,background:"linear-gradient(to top,#07184088,transparent 55%)",pointerEvents:"none"}}/>{imgs.length>1&&<div style={{position:"absolute",bottom:10,left:10,background:"#000a",color:"#fff",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:18}}>📷 {imgs.length}</div>}</>):(
           <div style={{width:"100%",height:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:"#1e3a7a",gap:8}}><span style={{fontSize:38}}>🏠</span></div>
         )}
@@ -463,8 +458,7 @@ function AdminCard({ p, onEdit, onDelete, onChangeStatus, setLightbox, onShare }
         <div style={{background:"#03102e",borderRadius:9,padding:"8px 10px",marginBottom:7,border:"1px solid #0e2050"}}>
           <div style={{fontSize:9,color:p.adLicenseNo?"#4ade80":"#f87171",marginBottom:2}}>🏛️ رخصة: {p.adLicenseNo||"غير مُدخل ⚠️"}</div>
           <div style={{fontSize:9,color:"#6b8cc4",marginBottom:2}}>📋 عقد: {p.marketingContractNo||"—"}</div>
-          {p.ownerName&&<div style={{fontSize:9,color:"#93c5fd",marginBottom:2}}>👤 {p.ownerName} {p.ownerPhone&&"— "+p.ownerPhone}</div>}
-          <div style={{fontSize:9,color:"#a5b4fc",fontWeight:700}}>👁️ {p.views||0} مشاهدة</div>
+          {p.ownerName&&<div style={{fontSize:9,color:"#93c5fd"}}>👤 {p.ownerName} {p.ownerPhone&&"— "+p.ownerPhone}</div>}
         </div>
         <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:7}}>
           {p.rentPrice&&<div style={{background:"#4ade8015",border:"1px solid #4ade8025",borderRadius:7,padding:"3px 8px",fontSize:9,color:"#4ade80",fontWeight:700}}>إيجار: {Number(p.rentPrice).toLocaleString()}</div>}
@@ -517,7 +511,7 @@ function HomePage({ setPage, lang, darkMode, T }) {
           </div>
           {/* Hero Logo */}
           <div style={{marginBottom:24,display:"flex",justifyContent:"center"}}>
-            <img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777502437/WhatsApp_Image_2026-04-30_at_1.38.52_AM_btqpqt.jpg"
+            <img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777727982/WhatsApp_Image_2026-04-30_at_1.38.52_AM_bx1fuy.jpg"
               alt="Logo" style={{width:160,height:160,objectFit:"cover",borderRadius:24,boxShadow:"0 8px 40px #00000055"}}/>
           </div>
           <h1 style={{fontSize:"clamp(28px,5vw,54px)",fontWeight:900,color:darkMode?"#fff":"#1e3a6e",lineHeight:1.15,marginBottom:10}}>
@@ -563,7 +557,7 @@ function HomePage({ setPage, lang, darkMode, T }) {
       <div style={{background:T.bg4,borderTop:`1px solid ${T.border}`,padding:"28px 24px"}}>
         <div style={{maxWidth:1100,margin:"0 auto",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:14}}>
           <div style={{display:"flex",alignItems:"center",gap:11}}>
-            <div style={{width:36,height:36,borderRadius:10,overflow:"hidden"}}><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777502437/WhatsApp_Image_2026-04-30_at_1.38.52_AM_btqpqt.jpg" alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
+            <div style={{width:36,height:36,borderRadius:10,overflow:"hidden"}}><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777727982/WhatsApp_Image_2026-04-30_at_1.38.52_AM_bx1fuy.jpg" alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
             <div><div style={{fontWeight:800,fontSize:12,color:"#fff"}}>مؤسسة خالد محمد عبدالغفور الشيخ</div><div style={{fontSize:10,color:"#4a6fa5"}}>Khalid M. A. Ghafour Al-Shaikh Est.</div></div>
           </div>
           <div style={{fontSize:11,color:"#2a3a6a"}}>© 2025 | {isEn?"Licensed by Real Estate General Authority":"مرخصة من الهيئة العامة للعقار"}</div>
@@ -633,20 +627,70 @@ function AboutPage({ lang, darkMode, T }) {
     <div style={{paddingTop:64,minHeight:"100vh",background:T.bg}}>
       <div style={{background:"linear-gradient(135deg,#0e2563,#1a4faa)",padding:"28px 24px 24px"}}><div style={{maxWidth:900,margin:"0 auto"}}><div style={{fontWeight:900,fontSize:22,color:"#fff",marginBottom:3}}>ℹ️ {isEn?"About Us":"عن المؤسسة"}</div></div></div>
       <div style={{maxWidth:900,margin:"0 auto",padding:"36px 24px"}}>
-        <div style={{background:"linear-gradient(140deg,#0e2050,#12286a)",border:"1px solid rgba(255,255,255,.07)",borderRadius:20,padding:"32px",marginBottom:18}}>
-          <div style={{display:"flex",alignItems:"center",gap:18,marginBottom:22,flexWrap:"wrap"}}>
-            <div style={{width:68,height:68,borderRadius:17,overflow:"hidden",flexShrink:0}}><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777502437/WhatsApp_Image_2026-04-30_at_1.38.52_AM_btqpqt.jpg" alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
-            <div><div style={{fontWeight:900,fontSize:19,color:"#fff",marginBottom:3}}>مؤسسة خالد محمد عبدالغفور الشيخ</div><div style={{fontSize:13,color:"#6b8cc4"}}>Khalid M. A. Ghafour Al-Shaikh Est. | للخدمات العقارية</div></div>
+
+        {/* Main card */}
+        <div style={{background:"linear-gradient(140deg,#0e2050,#12286a)",border:"1px solid rgba(255,255,255,.07)",borderRadius:20,padding:"32px",marginBottom:16}}>
+          <div style={{display:"flex",alignItems:"center",gap:18,marginBottom:24,flexWrap:"wrap"}}>
+            <div style={{width:80,height:80,borderRadius:17,overflow:"hidden",flexShrink:0,boxShadow:"0 4px 20px #1a4faa55"}}><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777727982/WhatsApp_Image_2026-04-30_at_1.38.52_AM_bx1fuy.jpg" alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
+            <div>
+              <div style={{fontWeight:900,fontSize:20,color:"#fff",marginBottom:4}}>مؤسسة خالد محمد عبدالغفور الشيخ</div>
+              <div style={{fontSize:13,color:"#6b8cc4"}}>Khalid M. A. Ghafour Al-Shaikh Est. | للخدمات العقارية</div>
+              <div style={{marginTop:8,display:"inline-flex",alignItems:"center",gap:6,background:"#4ade8015",border:"1px solid #4ade8030",borderRadius:20,padding:"3px 12px"}}>
+                <span style={{width:7,height:7,borderRadius:"50%",background:"#4ade80",display:"inline-block"}}/>
+                <span style={{fontSize:11,color:"#4ade80",fontWeight:700}}>مرخصة من الهيئة العامة للعقار</span>
+              </div>
+            </div>
           </div>
-          <p style={{fontSize:14,color:"#93c5fd",lineHeight:1.9,marginBottom:22}}>{isEn?"A specialized real estate establishment providing comprehensive licensed services across Saudi Arabia. We are committed to the highest standards of quality and professionalism.":"مؤسسة عقارية متخصصة تقدم طيفاً شاملاً من الخدمات العقارية المرخصة في المملكة العربية السعودية. نلتزم بأعلى معايير الجودة والمهنية."}</p>
+
+          {/* About text */}
+          <div style={{fontSize:14,color:"#93c5fd",lineHeight:2,marginBottom:24}}>
+            <p style={{marginBottom:14}}>
+              {isEn
+                ? "Founded in 1997 by Khalid Mohamed Abdulghafour Al-Shaikh, our establishment is among the earliest specialized real estate firms in the Eastern Province of Saudi Arabia. Over more than 27 years, we have built enduring trust with our clients based on transparency, professionalism, and integrity."
+                : "تأسست المؤسسة عام 1997م على يد خالد محمد عبدالغفور الشيخ، لتكون من أوائل المؤسسات العقارية المتخصصة في المنطقة الشرقية بالمملكة العربية السعودية. على مدى أكثر من 27 عاماً، بنينا ثقة راسخة مع عملائنا قائمة على الشفافية والمهنية والنزاهة."
+              }
+            </p>
+            <p style={{marginBottom:14}}>
+              {isEn
+                ? "We provide a comprehensive range of licensed real estate services including residential and commercial sales and leasing, property asset management, certified real estate valuation, and specialized investment consulting."
+                : "نقدم طيفاً شاملاً من الخدمات العقارية المرخصة من الهيئة العامة للعقار، تشمل بيع وتأجير العقارات السكنية والتجارية، وإدارة الأصول العقارية، والتقييم العقاري المعتمد، والاستشارات الاستثمارية المتخصصة."
+              }
+            </p>
+            <p>
+              {isEn
+                ? "Our vision is to be the most trusted real estate partner in the Eastern Province, by delivering innovative solutions that meet and exceed our clients' aspirations."
+                : "رؤيتنا أن نكون الشريك العقاري الأول والأكثر موثوقية في المنطقة الشرقية، من خلال تقديم حلول عقارية مبتكرة تلبي تطلعات عملائنا وتتجاوز توقعاتهم."
+              }
+            </p>
+          </div>
+
+          {/* Stats */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:24}}>
+            {[
+              {n:"1997",l:isEn?"Est. Year":"سنة التأسيس",i:"🏛️"},
+              {n:"27+",l:isEn?"Years Experience":"سنة خبرة",i:"⭐"},
+              {n:"8+",l:isEn?"Services":"خدمة عقارية",i:"🏢"},
+            ].map((s,i)=>(
+              <div key={i} style={{background:"#03102e",borderRadius:12,padding:"14px",textAlign:"center",border:"1px solid #1e3a7a"}}>
+                <div style={{fontSize:22,marginBottom:4}}>{s.i}</div>
+                <div style={{fontWeight:900,fontSize:20,color:"#fff",marginBottom:2}}>{s.n}</div>
+                <div style={{fontSize:11,color:"#4a6fa5"}}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Contact grid */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-            {[["📞 "+PHONE,PHONE],["💬 WhatsApp","0568300022"],["🏛️ "+( isEn?"License":"الترخيص"),isEn?"Real Estate Gen. Authority":"هيئة العقار"],["✅ "+( isEn?"Compliance":"الامتثال"),isEn?"Fully Compliant":"متوافق بالكامل"]].map(([l,v])=>(
-              <div key={l} style={{background:"#03102e",borderRadius:11,padding:"13px 15px",border:"1px solid #1e3a7a"}}><div style={{fontSize:11,color:"#4a6fa5",marginBottom:4}}>{l}</div><div style={{fontSize:13,fontWeight:700,color:"#93c5fd"}}>{v}</div></div>
+            {[["📞 "+PHONE,PHONE],["💬 WhatsApp","0568300022"],["🏛️ "+(isEn?"License":"الترخيص"),isEn?"Real Estate Gen. Authority":"هيئة العقار"],["📍 "+(isEn?"Location":"الموقع"),isEn?"Eastern Province, KSA":"المنطقة الشرقية، المملكة العربية السعودية"]].map(([l,v])=>(
+              <div key={l} style={{background:"#03102e",borderRadius:11,padding:"13px 15px",border:"1px solid #1e3a7a"}}><div style={{fontSize:11,color:"#4a6fa5",marginBottom:4}}>{l}</div><div style={{fontSize:12,fontWeight:700,color:"#93c5fd"}}>{v}</div></div>
             ))}
           </div>
         </div>
+
+        {/* CTA */}
         <div style={{background:"#1a4faa18",border:"1px solid #2563c740",borderRadius:15,padding:"22px",textAlign:"center"}}>
-          <div style={{fontWeight:900,fontSize:15,color:"#fff",marginBottom:12}}>{isEn?"Get in Touch":"تواصل معنا"}</div>
+          <div style={{fontWeight:900,fontSize:15,color:"#fff",marginBottom:6}}>{isEn?"Get in Touch":"تواصل معنا"}</div>
+          <div style={{fontSize:12,color:"#4a6fa5",marginBottom:16}}>{isEn?"We're here to help 24/7":"فريقنا جاهز لمساعدتك على مدار الساعة"}</div>
           <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
             <a href={`tel:${PHONE}`} style={{display:"inline-flex",alignItems:"center",gap:6,background:"linear-gradient(135deg,#1a4faa,#2563c7)",color:"#fff",borderRadius:11,padding:"10px 20px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14}}>📞 {PHONE}</a>
             <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:7,background:"#25d36620",border:"1px solid #25d36644",color:"#25d366",borderRadius:11,padding:"10px 18px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14}}><WaIcon size={15}/> WhatsApp</a>
@@ -725,7 +769,7 @@ export default function App() {
   if(!loaded) return (
     <div style={{direction:"rtl",fontFamily:"'Cairo',sans-serif",minHeight:"100vh",background:"#07103a",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:14}}>
       <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"/>
-      <div style={{width:56,height:56,borderRadius:16,overflow:"hidden"}}><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777502437/WhatsApp_Image_2026-04-30_at_1.38.52_AM_btqpqt.jpg" alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
+      <div style={{width:56,height:56,borderRadius:16,overflow:"hidden"}}><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777727982/WhatsApp_Image_2026-04-30_at_1.38.52_AM_bx1fuy.jpg" alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
       <div style={{color:"#93c5fd",fontWeight:700,fontSize:14,fontFamily:"'Cairo',sans-serif"}}>جاري التحميل...</div>
     </div>
   );
@@ -797,7 +841,6 @@ export default function App() {
         @media(max-width:768px){
           .desktop-nav{display:none!important;}
           .desktop-actions{display:none!important;}
-          .brand-text{display:none!important;}
         }
       `}</style>
     </div>
