@@ -402,12 +402,16 @@ function PublicCard({ p, setLightbox, onShare, lang }) {
   const [hov,setHov]=useState(false);
   const isEn=lang==="en";
   const imgs=p.images||[]; const sc=SC[p.status]||SC["متوفر"];
+
+  const trackView = async () => {
+    try { await updateDoc(doc(db,"properties",p.id),{views:(p.views||0)+1}); } catch(e) {}
+  };
   const waMsg=encodeURIComponent(`${isEn?"Hello, I'd like to inquire about":"مرحباً، أود الاستفسار عن"} ${p.name} - ${p.address}${p.rentPrice?" | "+Number(p.rentPrice).toLocaleString()+" ﷼/سنة":""}${p.salePrice?" | "+Number(p.salePrice).toLocaleString()+" ﷼":""}`);
   const statusEn={"متوفر":"Available","مؤجر":"Rented","مباع":"Sold","قريب الانتهاء":"Expiring","صيانة":"Maintenance"};
   return (
     <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:`1px solid ${sc.c}25`,borderRadius:18,overflow:"hidden",transition:"all .15s",transform:hov?"translateY(-3px)":"none",boxShadow:hov?`0 12px 36px ${sc.c}18`:"none"}}
       onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
-      <div style={{position:"relative",height:185,background:"#03102e",cursor:imgs.length>0?"pointer":"default"}} onClick={()=>imgs.length>0&&setLightbox({images:imgs,idx:0})}>
+      <div style={{position:"relative",height:185,background:"#03102e",cursor:imgs.length>0?"pointer":"default"}} onClick={()=>{if(imgs.length>0){setLightbox({images:imgs,idx:0});trackView();}}}>
         {imgs.length>0?(<><img src={imgs[0]} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/><div style={{position:"absolute",inset:0,background:"linear-gradient(to top,#07184088,transparent 55%)",pointerEvents:"none"}}/>{imgs.length>1&&<div style={{position:"absolute",bottom:10,left:10,background:"#000a",color:"#fff",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:18}}>📷 {imgs.length}</div>}</>):(
           <div style={{width:"100%",height:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:"#1e3a7a",gap:8}}><span style={{fontSize:38}}>🏠</span></div>
         )}
@@ -458,7 +462,8 @@ function AdminCard({ p, onEdit, onDelete, onChangeStatus, setLightbox, onShare }
         <div style={{background:"#03102e",borderRadius:9,padding:"8px 10px",marginBottom:7,border:"1px solid #0e2050"}}>
           <div style={{fontSize:9,color:p.adLicenseNo?"#4ade80":"#f87171",marginBottom:2}}>🏛️ رخصة: {p.adLicenseNo||"غير مُدخل ⚠️"}</div>
           <div style={{fontSize:9,color:"#6b8cc4",marginBottom:2}}>📋 عقد: {p.marketingContractNo||"—"}</div>
-          {p.ownerName&&<div style={{fontSize:9,color:"#93c5fd"}}>👤 {p.ownerName} {p.ownerPhone&&"— "+p.ownerPhone}</div>}
+          {p.ownerName&&<div style={{fontSize:9,color:"#93c5fd",marginBottom:2}}>👤 {p.ownerName} {p.ownerPhone&&"— "+p.ownerPhone}</div>}
+          <div style={{fontSize:9,color:"#a5b4fc",fontWeight:700}}>👁️ {p.views||0} مشاهدة</div>
         </div>
         <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:7}}>
           {p.rentPrice&&<div style={{background:"#4ade8015",border:"1px solid #4ade8025",borderRadius:7,padding:"3px 8px",fontSize:9,color:"#4ade80",fontWeight:700}}>إيجار: {Number(p.rentPrice).toLocaleString()}</div>}
