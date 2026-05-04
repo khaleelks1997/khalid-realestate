@@ -441,7 +441,7 @@ function PropForm({ form, setForm, onSave, onClose, editId }) {
           <div style={{fontSize:10,color:"#4a6fa5",marginTop:5}}>💡 قوقل ماب → ابحث عن الموقع → مشاركة → نسخ الرابط</div>
         </div>
 
-        <div style={{marginBottom:14}}><Lbl c="📝 ملاحظات"/><textarea value={form.notes} onChange={f("notes")} rows={2} style={{...IST,resize:"none"}}/></div>
+        <div style={{marginBottom:14}}><Lbl c="📝 ملاحظات"/><textarea value={form.notes} onChange={f("notes")} rows={5} placeholder="كل سطر يظهر منفصلاً..." style={{...IST,resize:"vertical",whiteSpace:"pre-wrap",lineHeight:1.7}}/></div>
 
         <Sec c="🖼️ صور العقار"/>
         <div style={{marginBottom:20}}><ImageUploader images={form.images||[]} onChange={imgs=>setForm(p=>({...p,images:typeof imgs==="function"?imgs(p.images||[]):imgs}))}/></div>
@@ -489,7 +489,7 @@ function PublicCard({ p, setLightbox, onShare, lang }) {
           {p.area&&<div style={{background:"#071840",borderRadius:8,padding:"5px 9px",fontSize:11,color:"#6b8cc4"}}>📐 {p.area} م²</div>}
           {p.builtArea&&<div style={{background:"#071840",borderRadius:8,padding:"5px 9px",fontSize:11,color:"#6b8cc4"}}>🏗️ {p.builtArea} م²</div>}
         </div>
-        {p.notes&&<div style={{fontSize:11,color:"#4a6fa5",background:"#071840",borderRadius:8,padding:"6px 10px",marginBottom:10}}>💬 {p.notes}</div>}
+        {p.notes&&<div style={{fontSize:11,color:"#4a6fa5",background:"#071840",borderRadius:8,padding:"6px 10px",marginBottom:10,whiteSpace:"pre-line",lineHeight:1.7}}>💬 {p.notes}</div>}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:7,marginBottom:p.mapUrl?8:0}}>
           <a href={`tel:${PHONE}`} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"linear-gradient(135deg,#1a4faa,#2563c7)",color:"#fff",borderRadius:10,padding:"9px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11}}>📞 {isEn?"Call":"اتصال"}</a>
           <a href={`https://wa.me/${WA_NUMBER}?text=${waMsg}`} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"#25d36618",border:"1px solid #25d36640",color:"#25d366",borderRadius:10,padding:"9px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11}}><WaIcon size={12}/> {isEn?"WhatsApp":"واتساب"}</a>
