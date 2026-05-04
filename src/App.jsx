@@ -486,7 +486,6 @@ function PropertyModal({ p, onClose, setLightbox, onShare, lang }) {
           <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}>
             {p.rentPrice&&<div style={{background:"#4ade8015",border:"1px solid #4ade8030",borderRadius:10,padding:"8px 14px",fontSize:14,color:"#4ade80",fontWeight:900}}>🏠 {Number(p.rentPrice).toLocaleString()} {isEn?"SAR/yr":"﷼/سنة"}</div>}
             {p.salePrice&&<div style={{background:"#fbbf2415",border:"1px solid #fbbf2430",borderRadius:10,padding:"8px 14px",fontSize:14,color:"#fbbf24",fontWeight:900}}>💰 {Number(p.salePrice).toLocaleString()} {isEn?"SAR":"﷼"}</div>}
-            {p.minPrice&&<div style={{background:"#f8717115",border:"1px solid #f8717130",borderRadius:10,padding:"8px 14px",fontSize:13,color:"#f87171",fontWeight:700}}>أدنى: {Number(p.minPrice).toLocaleString()} ﷼</div>}
           </div>
 
           {/* Details grid */}
