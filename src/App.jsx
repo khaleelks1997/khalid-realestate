@@ -203,15 +203,73 @@ function Lightbox({ images, startIndex, onClose }) {
 }
 
 // ── Image Uploader ────────────────────────────────────────────────────────────
+// ── Cloudinary Upload + Compression ──────────────────────────────────────────
+const CLOUD_NAME = "dumtp0krl";
+const UPLOAD_PRESET = "khalid_realestate";
+
+async function compressImage(file, maxWidth=1200, quality=0.8) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      let w = img.width, h = img.height;
+      if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      canvas.toBlob(blob => { URL.revokeObjectURL(url); resolve(blob); }, "image/jpeg", quality);
+    };
+    img.src = url;
+  });
+}
+
+async function uploadToCloudinary(file) {
+  const compressed = await compressImage(file);
+  const fd = new FormData();
+  fd.append("file", compressed, file.name);
+  fd.append("upload_preset", UPLOAD_PRESET);
+  fd.append("folder", "properties");
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method:"POST", body:fd });
+  const data = await res.json();
+  if (data.secure_url) return data.secure_url;
+  throw new Error(data.error?.message || "Upload failed");
+}
+
 function ImageUploader({ images, onChange }) {
-  const ref = useRef(); const [drag, setDrag] = useState(false);
-  const process = files => { Array.from(files).filter(f=>f.type.startsWith("image/")).forEach(f=>{ const r=new FileReader(); r.onload=e=>onChange(p=>[...p,e.target.result]); r.readAsDataURL(f); }); };
+  const ref = useRef();
+  const [drag, setDrag] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentFile, setCurrentFile] = useState("");
+
+  const process = async (files) => {
+    const valid = Array.from(files).filter(f => f.type.startsWith("image/"));
+    if (!valid.length) return;
+    setUploading(true);
+    for (let i = 0; i < valid.length; i++) {
+      setCurrentFile(`${i+1}/${valid.length}`);
+      setProgress(Math.round((i/valid.length)*100));
+      try {
+        const url = await uploadToCloudinary(valid[i]);
+        onChange(p => [...p, url]);
+      } catch(e) { alert("خطأ في رفع الصورة: " + e.message); }
+    }
+    setUploading(false); setCurrentFile(""); setProgress(0);
+  };
+
   return (
     <div>
-      <div onDragOver={e=>{e.preventDefault();setDrag(true);}} onDragLeave={()=>setDrag(false)} onDrop={e=>{e.preventDefault();setDrag(false);process(e.dataTransfer.files);}} onClick={()=>ref.current.click()}
-        style={{border:`2px dashed ${drag?"#60a5fa":"#1e3a7a"}`,borderRadius:12,padding:"16px",textAlign:"center",cursor:"pointer",background:drag?"#60a5fa0d":"transparent",transition:"all .2s",marginBottom:10}}>
-        <div style={{fontSize:24,marginBottom:4}}>📸</div>
-        <div style={{color:"#6b8cc4",fontSize:13}}>اسحب الصور أو <span style={{color:"#60a5fa",fontWeight:700}}>اضغط للاختيار</span></div>
+      <div onDragOver={e=>{e.preventDefault();setDrag(true);}} onDragLeave={()=>setDrag(false)} onDrop={e=>{e.preventDefault();setDrag(false);process(e.dataTransfer.files);}} onClick={()=>!uploading&&ref.current.click()}
+        style={{border:`2px dashed ${drag?"#60a5fa":"#1e3a7a"}`,borderRadius:12,padding:"16px",textAlign:"center",cursor:uploading?"not-allowed":"pointer",background:drag?"#60a5fa0d":"transparent",transition:"all .2s",marginBottom:10}}>
+        <div style={{fontSize:24,marginBottom:4}}>{uploading?"⏳":"📸"}</div>
+        {uploading ? (
+          <div>
+            <div style={{color:"#60a5fa",fontSize:13,fontWeight:700,marginBottom:4}}>جاري الضغط والرفع... {progress}% ({currentFile})</div>
+            <div style={{height:6,background:"#1e3a7a",borderRadius:4}}><div style={{height:"100%",background:"linear-gradient(90deg,#1a4faa,#60a5fa)",borderRadius:4,width:progress+"%",transition:"width .3s"}}/></div>
+          </div>
+        ) : (
+          <div style={{color:"#6b8cc4",fontSize:13}}>اسحب الصور أو <span style={{color:"#60a5fa",fontWeight:700}}>اضغط للاختيار</span><br/><span style={{fontSize:11,color:"#4a6fa5"}}>يتم ضغط الصور تلقائياً ⚡</span></div>
+        )}
         <input ref={ref} type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>process(e.target.files)}/>
       </div>
       {images.length>0&&(<div style={{display:"flex",flexWrap:"wrap",gap:8}}>{images.map((img,i)=>(<div key={i} style={{position:"relative",width:72,height:72}}><img src={img} alt="" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:9,border:"2px solid #1e3a7a"}}/><button onClick={()=>onChange(images.filter((_,j)=>j!==i))} style={{position:"absolute",top:-5,right:-5,width:18,height:18,background:"#ef4444",border:"none",borderRadius:"50%",color:"#fff",fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>{i===0&&<div style={{position:"absolute",bottom:0,left:0,right:0,background:"#1a4faa",fontSize:9,color:"#fff",textAlign:"center",borderRadius:"0 0 7px 7px",fontWeight:900}}>رئيسية</div>}</div>))}</div>)}
