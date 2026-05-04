@@ -456,8 +456,80 @@ function PropForm({ form, setForm, onSave, onClose, editId }) {
 }
 
 // ── Public Card ───────────────────────────────────────────────────────────────
+// ── Property Detail Modal ─────────────────────────────────────────────────────
+function PropertyModal({ p, onClose, setLightbox, onShare, lang }) {
+  const isEn=lang==="en";
+  const imgs=p.images||[]; const sc=SC[p.status]||SC["متوفر"];
+  const waMsg=encodeURIComponent(`مرحباً، أود الاستفسار عن ${p.name} - ${p.address}${p.rentPrice?" | "+Number(p.rentPrice).toLocaleString()+" ﷼/سنة":""}${p.salePrice?" | "+Number(p.salePrice).toLocaleString()+" ﷼":""}`);
+  const statusEn={"متوفر":"Available","مؤجر":"Rented","مباع":"Sold","قريب الانتهاء":"Expiring","صيانة":"Maintenance"};
+
+  useEffect(()=>{ document.body.style.overflow="hidden"; return()=>{ document.body.style.overflow=""; }; },[]);
+
+  return (
+    <div style={{position:"fixed",inset:0,background:"#000d",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16,overflowY:"auto"}} onClick={onClose}>
+      <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:`1px solid ${sc.c}33`,borderRadius:22,maxWidth:600,width:"100%",overflow:"hidden",maxHeight:"90vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+
+        {/* Header image */}
+        <div style={{position:"relative",height:240,background:"#03102e",cursor:imgs.length>0?"pointer":"default"}} onClick={()=>imgs.length>0&&setLightbox({images:imgs,idx:0})}>
+          {imgs.length>0?(<><img src={imgs[0]} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/><div style={{position:"absolute",inset:0,background:"linear-gradient(to top,#071840cc,transparent 60%)",pointerEvents:"none"}}/></>):(<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:52,color:"#1e3a7a"}}>🏠</div>)}
+          <button onClick={onClose} style={{position:"absolute",top:12,right:12,background:"rgba(0,0,0,.6)",border:"none",color:"#fff",width:34,height:34,borderRadius:"50%",cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+          {imgs.length>1&&<div style={{position:"absolute",bottom:12,left:12,background:"rgba(0,0,0,.6)",color:"#fff",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:18}}>📷 {imgs.length} {isEn?"photos":"صور"}</div>}
+          <div style={{position:"absolute",top:12,left:12}}><span style={{display:"inline-flex",alignItems:"center",gap:5,padding:"4px 11px",borderRadius:20,background:sc.bg,color:sc.c,fontSize:11,fontWeight:700,border:`1px solid ${sc.c}44`,backdropFilter:"blur(4px)"}}><span style={{width:6,height:6,borderRadius:"50%",background:sc.c}}/>{isEn?statusEn[p.status]:p.status}</span></div>
+        </div>
+
+        <div style={{padding:"20px 22px"}}>
+          {/* Title */}
+          <div style={{fontWeight:900,fontSize:20,color:"#e8eef8",marginBottom:4}}>{p.name}</div>
+          <div style={{fontSize:12,color:"#4a6fa5",marginBottom:14}}>📍 {p.address}</div>
+
+          {/* Price */}
+          <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}>
+            {p.rentPrice&&<div style={{background:"#4ade8015",border:"1px solid #4ade8030",borderRadius:10,padding:"8px 14px",fontSize:14,color:"#4ade80",fontWeight:900}}>🏠 {Number(p.rentPrice).toLocaleString()} {isEn?"SAR/yr":"﷼/سنة"}</div>}
+            {p.salePrice&&<div style={{background:"#fbbf2415",border:"1px solid #fbbf2430",borderRadius:10,padding:"8px 14px",fontSize:14,color:"#fbbf24",fontWeight:900}}>💰 {Number(p.salePrice).toLocaleString()} {isEn?"SAR":"﷼"}</div>}
+            {p.minPrice&&<div style={{background:"#f8717115",border:"1px solid #f8717130",borderRadius:10,padding:"8px 14px",fontSize:13,color:"#f87171",fontWeight:700}}>أدنى: {Number(p.minPrice).toLocaleString()} ﷼</div>}
+          </div>
+
+          {/* Details grid */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
+            {[
+              p.type&&{l:isEn?"Type":"النوع",v:p.type,i:"🏢"},
+              p.dealType&&{l:isEn?"Deal":"الصفقة",v:p.dealType,i:"📋"},
+              p.area&&{l:isEn?"Area":"المساحة",v:p.area+" م²",i:"📐"},
+              p.builtArea&&{l:isEn?"Built":"المبني",v:p.builtArea+" م²",i:"🏗️"},
+              p.furnished!==undefined&&{l:isEn?"Furnished":"مفروش",v:p.furnished?(isEn?"Yes":"نعم"):(isEn?"No":"لا"),i:"🛋️"},
+              p.refNo&&{l:isEn?"Ref":"المرجع",v:p.refNo,i:"🔖"},
+            ].filter(Boolean).map((s,i)=>(
+              <div key={i} style={{background:"#03102e",borderRadius:10,padding:"10px 12px",border:"1px solid #1e3a7a"}}>
+                <div style={{fontSize:10,color:"#4a6fa5",marginBottom:3}}>{s.i} {s.l}</div>
+                <div style={{fontSize:13,fontWeight:700,color:"#93c5fd"}}>{s.v}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* License */}
+          {p.adLicenseNo&&<div style={{background:"#1a4faa18",border:"1px solid #2563c740",borderRadius:10,padding:"8px 12px",marginBottom:14,fontSize:11,color:"#93c5fd",fontWeight:700}}>🏛️ {isEn?"Ad License:":"رخصة إعلانية:"} {p.adLicenseNo}</div>}
+
+          {/* Notes */}
+          {p.notes&&<div style={{background:"#03102e",border:"1px solid #1e3a7a",borderRadius:12,padding:"12px 14px",marginBottom:16,fontSize:13,color:"#93c5fd",lineHeight:1.9,whiteSpace:"pre-line",direction:"auto"}}>{p.notes}</div>}
+
+          {/* Map */}
+          {p.mapUrl&&<a href={p.mapUrl} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"#16a34a18",border:"1px solid #16a34a40",color:"#4ade80",borderRadius:11,padding:"10px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,width:"100%",boxSizing:"border-box",marginBottom:12}}>📍 {isEn?"View on Map":"عرض على الخريطة"}</a>}
+
+          {/* Actions */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+            <a href={`tel:${PHONE}`} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"linear-gradient(135deg,#1a4faa,#2563c7)",color:"#fff",borderRadius:11,padding:"11px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12}}>📞 {isEn?"Call":"اتصال"}</a>
+            <a href={`https://wa.me/${WA_NUMBER}?text=${waMsg}`} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"#25d36618",border:"1px solid #25d36640",color:"#25d366",borderRadius:11,padding:"11px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12}}><WaIcon size={13}/> {isEn?"WhatsApp":"واتساب"}</a>
+            <button onClick={()=>onShare(p)} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"#6366f118",border:"1px solid #6366f140",color:"#a5b4fc",borderRadius:11,padding:"11px 6px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer"}}>📤 {isEn?"Share":"شارك"}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PublicCard({ p, setLightbox, onShare, lang }) {
   const [hov,setHov]=useState(false);
+  const [showModal,setShowModal]=useState(false);
   const isEn=lang==="en";
   const imgs=p.images||[]; const sc=SC[p.status]||SC["متوفر"];
 
@@ -467,7 +539,9 @@ function PublicCard({ p, setLightbox, onShare, lang }) {
   const waMsg=encodeURIComponent(`${isEn?"Hello, I'd like to inquire about":"مرحباً، أود الاستفسار عن"} ${p.name} - ${p.address}${p.rentPrice?" | "+Number(p.rentPrice).toLocaleString()+" ﷼/سنة":""}${p.salePrice?" | "+Number(p.salePrice).toLocaleString()+" ﷼":""}`);
   const statusEn={"متوفر":"Available","مؤجر":"Rented","مباع":"Sold","قريب الانتهاء":"Expiring","صيانة":"Maintenance"};
   return (
-    <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:`1px solid ${sc.c}25`,borderRadius:18,overflow:"hidden",transition:"all .15s",transform:hov?"translateY(-3px)":"none",boxShadow:hov?`0 12px 36px ${sc.c}18`:"none"}}
+    <>
+    {showModal&&<PropertyModal p={p} onClose={()=>setShowModal(false)} setLightbox={setLightbox} onShare={onShare} lang={lang}/>}
+    <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:`1px solid ${sc.c}25`,borderRadius:18,overflow:"hidden",transition:"all .15s",transform:hov?"translateY(-3px)":"none",boxShadow:hov?`0 12px 36px ${sc.c}18`:"none",display:"flex",flexDirection:"column"}}
       onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
       <div style={{position:"relative",height:185,background:"#03102e",cursor:imgs.length>0?"pointer":"default"}} onClick={()=>{if(imgs.length>0){setLightbox({images:imgs,idx:0});trackView();}}}>
         {imgs.length>0?(<><img src={imgs[0]} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/><div style={{position:"absolute",inset:0,background:"linear-gradient(to top,#07184088,transparent 55%)",pointerEvents:"none"}}/>{imgs.length>1&&<div style={{position:"absolute",bottom:10,left:10,background:"#000a",color:"#fff",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:18}}>📷 {imgs.length}</div>}</>):(
@@ -477,7 +551,7 @@ function PublicCard({ p, setLightbox, onShare, lang }) {
         {p.furnished&&<div style={{position:"absolute",top:10,left:10,background:"#fbbf2420",color:"#fbbf24",fontSize:10,fontWeight:700,padding:"3px 9px",borderRadius:18,border:"1px solid #fbbf2440"}}>🛋️ {isEn?"Furnished":"مفروش"}</div>}
         <button onClick={e=>{e.stopPropagation();onShare(p);}} style={{position:"absolute",bottom:10,left:10,background:"#1a4faa",border:"none",color:"#fff",borderRadius:20,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer"}}>📤 {isEn?"Share":"مشاركة"}</button>
       </div>
-      <div style={{padding:"14px 16px"}}>
+      <div style={{padding:"14px 16px",display:"flex",flexDirection:"column",flex:1}}>
         <div style={{fontWeight:900,fontSize:15,color:"#e8eef8",marginBottom:3}}>{p.name}</div>
         <div style={{fontSize:11,color:"#4a6fa5",marginBottom:8}}>📍 {p.address}</div>
         <div style={{marginBottom:9}}>{p.adLicenseNo?<span style={{display:"inline-flex",alignItems:"center",gap:5,background:"#1a4faa22",border:"1px solid #2563c744",color:"#93c5fd",borderRadius:8,padding:"3px 10px",fontSize:10,fontWeight:700}}>🏛️ {isEn?"Ad License:":"رخصة إعلانية:"} {p.adLicenseNo}</span>:<span style={{display:"inline-flex",alignItems:"center",gap:5,background:"#ef444418",border:"1px solid #ef444430",color:"#f87171",borderRadius:8,padding:"3px 10px",fontSize:10,fontWeight:700}}>⚠️ {isEn?"Pending License":"قيد الترخيص"}</span>}</div>
@@ -489,7 +563,16 @@ function PublicCard({ p, setLightbox, onShare, lang }) {
           {p.area&&<div style={{background:"#071840",borderRadius:8,padding:"5px 9px",fontSize:11,color:"#6b8cc4"}}>📐 {p.area} م²</div>}
           {p.builtArea&&<div style={{background:"#071840",borderRadius:8,padding:"5px 9px",fontSize:11,color:"#6b8cc4"}}>🏗️ {p.builtArea} م²</div>}
         </div>
-        {p.notes&&<div style={{fontSize:11,color:"#4a6fa5",background:"#071840",borderRadius:8,padding:"6px 10px",marginBottom:10,whiteSpace:"pre-line",lineHeight:1.7}}>💬 {p.notes}</div>}
+
+        {/* Notes preview - 2 lines only */}
+        {p.notes&&<div style={{fontSize:11,color:"#4a6fa5",background:"#071840",borderRadius:8,padding:"6px 10px",marginBottom:10,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",lineHeight:1.7}}>💬 {p.notes}</div>}
+
+        {/* View details button */}
+        <button onClick={()=>{setShowModal(true);trackView();}} style={{width:"100%",background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",color:"#93c5fd",borderRadius:10,padding:"9px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:9,transition:"background .2s"}}
+          onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,.1)"}
+          onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,.06)"}
+        >🔍 {isEn?"View Full Details":"عرض التفاصيل كاملة"}</button>
+
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:7,marginBottom:p.mapUrl?8:0}}>
           <a href={`tel:${PHONE}`} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"linear-gradient(135deg,#1a4faa,#2563c7)",color:"#fff",borderRadius:10,padding:"9px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11}}>📞 {isEn?"Call":"اتصال"}</a>
           <a href={`https://wa.me/${WA_NUMBER}?text=${waMsg}`} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"#25d36618",border:"1px solid #25d36640",color:"#25d366",borderRadius:10,padding:"9px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11}}><WaIcon size={12}/> {isEn?"WhatsApp":"واتساب"}</a>
@@ -498,6 +581,7 @@ function PublicCard({ p, setLightbox, onShare, lang }) {
         {p.mapUrl&&<a href={p.mapUrl} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"#16a34a18",border:"1px solid #16a34a40",color:"#4ade80",borderRadius:10,padding:"8px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,width:"100%",boxSizing:"border-box"}}>📍 {isEn?"View on Map":"عرض على الخريطة"}</a>}
       </div>
     </div>
+    </>
   );
 }
 
