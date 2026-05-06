@@ -185,14 +185,36 @@ function ShareModal({ p, onClose }) {
 // ── Lightbox ──────────────────────────────────────────────────────────────────
 function Lightbox({ images, startIndex, onClose }) {
   const [idx, setIdx] = useState(startIndex);
+  const touchStart = useRef(null);
+  const dragStart = useRef(null);
+
   useEffect(()=>{
     const h=e=>{ if(e.key==="Escape") onClose(); if(e.key==="ArrowLeft") setIdx(i=>(i+1)%images.length); if(e.key==="ArrowRight") setIdx(i=>(i-1+images.length)%images.length); };
     window.addEventListener("keydown",h); return ()=>window.removeEventListener("keydown",h);
   },[images,onClose]);
+
+  const onTouchStart = e => { touchStart.current = e.touches[0].clientX; };
+  const onTouchEnd = e => {
+    if(touchStart.current===null) return;
+    const diff = touchStart.current - e.changedTouches[0].clientX;
+    if(Math.abs(diff) > 40) { diff > 0 ? setIdx(i=>(i+1)%images.length) : setIdx(i=>(i-1+images.length)%images.length); }
+    touchStart.current = null;
+  };
+  const onMouseDown = e => { dragStart.current = e.clientX; };
+  const onMouseUp = e => {
+    if(dragStart.current===null) return;
+    const diff = dragStart.current - e.clientX;
+    if(Math.abs(diff) > 40) { diff > 0 ? setIdx(i=>(i+1)%images.length) : setIdx(i=>(i-1+images.length)%images.length); }
+    dragStart.current = null;
+  };
+
   return (
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"#000e",zIndex:3000,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-      <div style={{position:"relative"}} onClick={e=>e.stopPropagation()}>
-        <img src={images[idx]} alt="" style={{maxWidth:"88vw",maxHeight:"75vh",borderRadius:14,objectFit:"contain",display:"block"}}/>
+      <div style={{position:"relative",userSelect:"none"}} onClick={e=>e.stopPropagation()}
+        onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
+        onMouseDown={onMouseDown} onMouseUp={onMouseUp}
+      >
+        <img src={images[idx]} alt="" style={{maxWidth:"88vw",maxHeight:"75vh",borderRadius:14,objectFit:"contain",display:"block",cursor:"grab",draggable:"false"}}/>
         <button onClick={onClose} style={{position:"absolute",top:-12,left:-12,width:32,height:32,background:"#ef4444",border:"none",borderRadius:"50%",color:"#fff",fontSize:17,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
         {images.length>1&&<><button onClick={()=>setIdx(i=>(i-1+images.length)%images.length)} style={{position:"absolute",top:"50%",right:-50,transform:"translateY(-50%)",background:"#1a4faa",border:"1px solid #2563c7",color:"#fff",width:40,height:40,borderRadius:"50%",fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button><button onClick={()=>setIdx(i=>(i+1)%images.length)} style={{position:"absolute",top:"50%",left:-50,transform:"translateY(-50%)",background:"#1a4faa",border:"1px solid #2563c7",color:"#fff",width:40,height:40,borderRadius:"50%",fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>›</button></>}
         <div style={{textAlign:"center",marginTop:8,color:"#93c5fd",fontSize:12}}>{idx+1} / {images.length}</div>
@@ -716,21 +738,39 @@ function HomePage({ setPage, lang, darkMode, T }) {
 function PropertiesPage({ props, isAdmin, onEdit, onDelete, onChangeStatus, setLightbox, onShare, onOpenAdd, lang, darkMode, T }) {
   const isEn=lang==="en";
 
-  // ترجمة الفلاتر
-  const statusLabels = isEn
-    ? {all:"All", "متوفر":"Available","مؤجر":"Rented","مباع":"Sold","قريب الانتهاء":"Expiring","صيانة":"Maintenance"}
-    : {all:"الكل", "متوفر":"متوفر","مؤجر":"مؤجر","مباع":"مباع","قريب الانتهاء":"قريب الانتهاء","صيانة":"صيانة"};
   const dealLabels = isEn
     ? {all:"All","إيجار":"Rent","بيع":"Sale","إيجار وبيع":"Rent & Sale"}
     : {all:"الكل","إيجار":"إيجار","بيع":"بيع","إيجار وبيع":"إيجار وبيع"};
 
-  const [filter,setFilter]=useState("all"); const [search,setSearch]=useState(""); const [dealF,setDealF]=useState("all");
+  const typeLabels = isEn
+    ? {all:"All Types","شقة":"Apartment","فيلا":"Villa","محل تجاري":"Shop","مكتب":"Office","استوديو":"Studio","دوبلكس":"Duplex","أرض":"Land"}
+    : {all:"كل الأنواع","شقة":"شقة","فيلا":"فيلا","محل تجاري":"محل","مكتب":"مكتب","استوديو":"استوديو","دوبلكس":"دوبلكس","أرض":"أرض"};
+
+  const statusLabels = isEn
+    ? {all:"All","متوفر":"Available","مؤجر":"Rented","مباع":"Sold","قريب الانتهاء":"Expiring","صيانة":"Maintenance"}
+    : {all:"الكل","متوفر":"متوفر","مؤجر":"مؤجر","مباع":"مباع","قريب الانتهاء":"قريب الانتهاء","صيانة":"صيانة"};
+
+  const [dealF,setDealF]   = useState("all");
+  const [typeF,setTypeF]   = useState("all");
+  const [statusF,setStatusF] = useState("all");
+  const [search,setSearch] = useState("");
 
   const filtered=props.filter(p=>
-    (filter==="all"||p.status===filter)&&
     (dealF==="all"||p.dealType===dealF)&&
+    (typeF==="all"||p.type===typeF)&&
+    (statusF==="all"||p.status===statusF)&&
     (p.name.includes(search)||p.address.includes(search)||(p.ownerName||"").includes(search))
   );
+
+  const BtnStyle = (active, color="#1a4faa") => ({
+    padding:"7px 13px",borderRadius:20,cursor:"pointer",
+    fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11,
+    background:active?`linear-gradient(135deg,${color},${color}dd)`:T.bg2,
+    color:active?"#fff":T.text3,
+    border:active?"none":`1px solid ${T.border}`,
+    whiteSpace:"nowrap", transition:"all .2s"
+  });
+
   return (
     <div style={{paddingTop:isAdmin?90:64,minHeight:"100vh",background:T.bg}}>
       <div style={{background:"linear-gradient(135deg,#0e2563,#1a4faa)",padding:"28px 24px 24px"}}>
@@ -743,16 +783,38 @@ function PropertiesPage({ props, isAdmin, onEdit, onDelete, onChangeStatus, setL
         </div>
       </div>
       <div style={{maxWidth:1200,margin:"0 auto",padding:"22px"}}>
-        {isAdmin&&(()=>{const st={total:props.length,available:props.filter(p=>p.status==="متوفر").length,rented:props.filter(p=>p.status==="مؤجر").length,income:props.filter(p=>p.rentPrice).reduce((s,p)=>s+Number(p.rentPrice),0),noLicense:props.filter(p=>!p.adLicenseNo).length};return(<div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:9,marginBottom:20}}>{[{l:isEn?"Total":"الإجمالي",v:st.total,i:"🏢",c:"#93c5fd"},{l:isEn?"Available":"متوفر",v:st.available,i:"✅",c:"#4ade80"},{l:isEn?"Rented":"مؤجر",v:st.rented,i:"🔑",c:"#a5b4fc"},{l:isEn?"Monthly Income":"الدخل السنوي",v:st.income.toLocaleString()+" ﷼",i:"💰",c:"#fbbf24"},{l:isEn?"No License":"بدون ترخيص",v:st.noLicense,i:"⚠️",c:"#f87171"}].map((s,i)=>(<div key={i} style={{background:"linear-gradient(135deg,#071840,#0e2563)",border:`1px solid ${s.c}22`,borderRadius:12,padding:"12px 10px",position:"relative",overflow:"hidden"}}><div style={{position:"absolute",top:-8,left:-8,width:32,height:32,background:s.c+"15",borderRadius:"50%"}}/><div style={{fontSize:17,marginBottom:5}}>{s.i}</div><div style={{fontWeight:900,fontSize:15,color:s.c}}>{s.v}</div><div style={{fontSize:10,color:"#4a6fa5",marginTop:1}}>{s.l}</div></div>))}</div>);})()}
-        <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap",alignItems:"center"}}>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={isEn?"🔍 Search...":"🔍 ابحث..."} style={{flex:1,minWidth:180,background:T.bg2,border:`1px solid ${T.border}`,borderRadius:10,padding:"8px 13px",color:T.text,fontFamily:"'Cairo',sans-serif",fontSize:13}}/>
-          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-            {["all",...STATUS_OPTIONS].map(f=>(<button key={f} onClick={()=>setFilter(f)} style={{padding:"7px 12px",borderRadius:8,cursor:"pointer",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11,background:filter===f?"linear-gradient(135deg,#1a4faa,#2563c7)":T.bg2,color:filter===f?"#fff":T.text3,border:filter===f?"none":`1px solid ${T.border}`}}>{f==="all"?statusLabels.all:statusLabels[f]}</button>))}
-          </div>
-          <div style={{display:"flex",gap:5}}>
-            {["all","إيجار","بيع","إيجار وبيع"].map(f=>(<button key={f} onClick={()=>setDealF(f)} style={{padding:"7px 12px",borderRadius:8,cursor:"pointer",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11,background:dealF===f?"#fbbf2433":T.bg2,color:dealF===f?"#fbbf24":T.text3,border:dealF===f?"1px solid #fbbf2444":`1px solid ${T.border}`}}>{f==="all"?dealLabels.all:dealLabels[f]}</button>))}
-          </div>
+        {isAdmin&&(()=>{const st={total:props.length,available:props.filter(p=>p.status==="متوفر").length,rented:props.filter(p=>p.status==="مؤجر").length,income:props.filter(p=>p.rentPrice).reduce((s,p)=>s+Number(p.rentPrice),0),noLicense:props.filter(p=>!p.adLicenseNo).length};return(<div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:9,marginBottom:20}}>{[{l:isEn?"Total":"الإجمالي",v:st.total,i:"🏢",c:"#93c5fd"},{l:isEn?"Available":"متوفر",v:st.available,i:"✅",c:"#4ade80"},{l:isEn?"Rented":"مؤجر",v:st.rented,i:"🔑",c:"#a5b4fc"},{l:isEn?"Annual Income":"الدخل السنوي",v:st.income.toLocaleString()+" ﷼",i:"💰",c:"#fbbf24"},{l:isEn?"No License":"بدون ترخيص",v:st.noLicense,i:"⚠️",c:"#f87171"}].map((s,i)=>(<div key={i} style={{background:"linear-gradient(135deg,#071840,#0e2563)",border:`1px solid ${s.c}22`,borderRadius:12,padding:"12px 10px",position:"relative",overflow:"hidden"}}><div style={{position:"absolute",top:-8,left:-8,width:32,height:32,background:s.c+"15",borderRadius:"50%"}}/><div style={{fontSize:17,marginBottom:5}}>{s.i}</div><div style={{fontWeight:900,fontSize:15,color:s.c}}>{s.v}</div><div style={{fontSize:10,color:"#4a6fa5",marginTop:1}}>{s.l}</div></div>))}</div>);})()}
+
+        {/* Search */}
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={isEn?"🔍 Search...":"🔍 ابحث بالاسم أو الموقع..."} style={{width:"100%",boxSizing:"border-box",background:T.bg2,border:`1px solid ${T.border}`,borderRadius:12,padding:"10px 16px",color:T.text,fontFamily:"'Cairo',sans-serif",fontSize:13,marginBottom:12}}/>
+
+        {/* Row 1: Deal type */}
+        <div style={{display:"flex",gap:7,marginBottom:8,flexWrap:"wrap"}}>
+          {["all","إيجار","بيع","إيجار وبيع"].map(f=>(
+            <button key={f} onClick={()=>setDealF(f)} style={BtnStyle(dealF===f,"#1a4faa")}>
+              {f==="all"?dealLabels.all:dealLabels[f]}
+            </button>
+          ))}
         </div>
+
+        {/* Row 2: Property type */}
+        <div style={{display:"flex",gap:7,marginBottom:8,flexWrap:"wrap"}}>
+          {["all",...PROPERTY_TYPES].map(f=>(
+            <button key={f} onClick={()=>setTypeF(f)} style={BtnStyle(typeF===f,"#7c3aed")}>
+              {f==="all"?typeLabels.all:typeLabels[f]}
+            </button>
+          ))}
+        </div>
+
+        {/* Row 3: Status - admin only */}
+        {isAdmin&&<div style={{display:"flex",gap:7,marginBottom:12,flexWrap:"wrap"}}>
+          {["all",...STATUS_OPTIONS].map(f=>(
+            <button key={f} onClick={()=>setStatusF(f)} style={BtnStyle(statusF===f,"#0e7490")}>
+              {f==="all"?statusLabels.all:statusLabels[f]}
+            </button>
+          ))}
+        </div>}
+
         <div style={{fontSize:11,color:T.text3,marginBottom:12}}>{filtered.length} {isEn?"properties":"عقار"}</div>
         {filtered.length===0?(<div style={{textAlign:"center",padding:"60px 0",color:"#1e3a7a"}}><div style={{fontSize:46,marginBottom:10}}>🏚️</div><div style={{fontSize:13,fontWeight:600}}>{isEn?"No results":"لا توجد نتائج"}</div></div>):(
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(295px,1fr))",gap:15}}>
