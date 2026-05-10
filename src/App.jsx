@@ -859,6 +859,7 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
   const [clients, setClients] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [editClientId, setEditClientId] = useState(null);
   const [delId, setDelId] = useState(null);
   const [commentId, setCommentId] = useState(null);
   const [commentText, setCommentText] = useState("");
@@ -873,11 +874,18 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
     return ()=>unsub();
   },[]);
 
+  const openAdd = () => { setForm(emptyClient); setEditClientId(null); setShowForm(true); };
+  const openEdit = (c) => { setForm({...emptyClient,...c}); setEditClientId(c.id); setShowForm(true); };
+
   const save = async () => {
     if(!form.name||!form.phone) return alert("الاسم ورقم الجوال مطلوبان");
-    const num = clients.length + 1;
-    await addDoc(collection(db,"clients"),{...form, clientNo:num, createdAt:new Date().toISOString(), createdDate:new Date().toLocaleDateString("ar-SA"), comments:[] });
-    setForm(emptyClient); setShowForm(false);
+    if(editClientId) {
+      await updateDoc(doc(db,"clients",editClientId),{...form, updatedAt:new Date().toISOString()});
+    } else {
+      const num = clients.length + 1;
+      await addDoc(collection(db,"clients"),{...form, clientNo:num, createdAt:new Date().toISOString(), createdDate:new Date().toLocaleDateString("ar-SA"), comments:[] });
+    }
+    setForm(emptyClient); setShowForm(false); setEditClientId(null);
   };
 
   const del = async (id) => { await deleteDoc(doc(db,"clients",id)); setDelId(null); };
@@ -920,7 +928,7 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
           </div>
           <div style={{display:"flex",gap:8}}>
             {isManager&&<button onClick={exportClients} style={{background:"#16a34a22",border:"1px solid #16a34a44",color:"#4ade80",borderRadius:11,padding:"10px 18px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"}}>📊 تصدير Excel</button>}
-            <button onClick={()=>setShowForm(true)} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:11,padding:"10px 22px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ إضافة عميل</button>
+            <button onClick={openAdd} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:11,padding:"10px 22px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ إضافة عميل</button>
           </div>
         </div>
       </div>
@@ -972,6 +980,7 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
                     <span style={{background:requestColor[c.requestType]+"20",color:requestColor[c.requestType],border:`1px solid ${requestColor[c.requestType]}40`,borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{c.requestType}</span>
                     {c.paymentType&&c.requestType==="شراء"&&<span style={{background:"#1a4faa22",color:"#93c5fd",border:"1px solid #2563c740",borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{c.paymentType}</span>}
                     {isManager&&<button onClick={()=>setDelId(c.id)} style={{background:"#ef444414",border:"1px solid #ef444428",color:"#f87171",borderRadius:8,padding:"4px 10px",cursor:"pointer",fontSize:11}}>🗑️</button>}
+                    <button onClick={()=>openEdit(c)} style={{background:"#1a4faa22",border:"1px solid #2563c740",color:"#93c5fd",borderRadius:8,padding:"4px 10px",cursor:"pointer",fontSize:11}}>✏️ تعديل</button>
                   </div>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:8,marginTop:12}}>
@@ -1014,11 +1023,11 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
 
       {/* Add Client Modal */}
       {showForm&&(
-        <div style={{position:"fixed",inset:0,background:"#000b",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setShowForm(false)}>
+        <div style={{position:"fixed",inset:0,background:"#000b",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>{setShowForm(false);setEditClientId(null);}}>
           <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:"1px solid #1a4faa",borderRadius:22,padding:24,maxWidth:540,width:"100%",maxHeight:"93vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,paddingBottom:14,borderBottom:"1px solid #1e3a7a"}}>
-              <div style={{fontWeight:900,fontSize:16,color:"#e8eef8"}}>👤 إضافة عميل جديد</div>
-              <button onClick={()=>setShowForm(false)} style={{background:"#1e3a7a",border:"none",color:"#aaa",width:30,height:30,borderRadius:"50%",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+              <div style={{fontWeight:900,fontSize:16,color:"#e8eef8"}}>{editClientId?"✏️ تعديل العميل":"👤 إضافة عميل جديد"}</div>
+              <button onClick={()=>{setShowForm(false);setEditClientId(null);}} style={{background:"#1e3a7a",border:"none",color:"#aaa",width:30,height:30,borderRadius:"50%",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:14}}>
               <div style={{gridColumn:"1/-1"}}><Lbl c="الاسم *"/><input value={form.name} onChange={f("name")} style={IST} placeholder="اسم العميل"/></div>
@@ -1079,8 +1088,8 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
               <div style={{gridColumn:"1/-1"}}><Lbl c="ملاحظات"/><textarea value={form.notes} onChange={f("notes")} rows={3} style={{...IST,resize:"none"}} placeholder="أي تفاصيل إضافية..."/></div>
             </div>
             <div style={{display:"flex",gap:10}}>
-              <button onClick={save} style={{flex:1,background:"linear-gradient(135deg,#1a4faa,#2563c7)",color:"#fff",border:"none",borderRadius:11,padding:"12px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer"}}>✅ حفظ العميل</button>
-              <button onClick={()=>setShowForm(false)} style={{background:"#071840",border:"1px solid #1e3a7a",color:"#6b8cc4",borderRadius:11,padding:"12px 18px",fontFamily:"'Cairo',sans-serif",cursor:"pointer"}}>إلغاء</button>
+              <button onClick={save} style={{flex:1,background:"linear-gradient(135deg,#1a4faa,#2563c7)",color:"#fff",border:"none",borderRadius:11,padding:"12px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer"}}>{editClientId?"💾 حفظ التعديلات":"✅ حفظ العميل"}</button>
+              <button onClick={()=>{setShowForm(false);setEditClientId(null);}} style={{background:"#071840",border:"1px solid #1e3a7a",color:"#6b8cc4",borderRadius:11,padding:"12px 18px",fontFamily:"'Cairo',sans-serif",cursor:"pointer"}}>إلغاء</button>
             </div>
           </div>
         </div>
