@@ -353,22 +353,40 @@ function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang,
 
       {/* Mobile dropdown menu */}
       {menuOpen && (
-        <div style={{background:"rgba(7,16,58,.98)",borderTop:"1px solid rgba(255,255,255,.08)",padding:"12px 16px",display:"flex",flexDirection:"column",gap:8}}>
-          {navItems.map(([p,label])=>(
-            <button key={p} onClick={()=>go(p)} style={{background:page===p?"rgba(255,255,255,.1)":"transparent",border:"none",color:page===p?"#fff":"rgba(255,255,255,.6)",borderRadius:10,padding:"13px 16px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",textAlign:"right",width:"100%"}}>
-              {label}
-            </button>
-          ))}
-          <div style={{height:1,background:"rgba(255,255,255,.08)",margin:"4px 0"}}/>
-          <button onClick={()=>{setLang(isEn?"ar":"en");setMenuOpen(false);}} style={{background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.13)",color:"#fff",borderRadius:10,padding:"13px 16px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",textAlign:"right",width:"100%"}}>{isEn?"🇸🇦 عربي":"🇬🇧 English"}</button>
-          <button onClick={()=>{setDarkMode(d=>!d);setMenuOpen(false);}} style={{background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.13)",color:"#fff",borderRadius:10,padding:"13px 16px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",textAlign:"right",width:"100%"}}>{darkMode?"☀️ الوضع الفاتح":"🌙 الوضع الداكن"}</button>
-          <a href={`tel:${PHONE}`} style={{display:"block",background:"#1a4faa",color:"#fff",borderRadius:10,padding:"13px 16px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,textAlign:"right"}}>📞 {PHONE}</a>
-          <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",gap:8,background:"#25d36620",border:"1px solid #25d36640",color:"#25d366",borderRadius:10,padding:"13px 16px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,justifyContent:"flex-end"}}><WaIcon size={16}/> WhatsApp</a>
-          <div style={{height:1,background:"rgba(255,255,255,.08)",margin:"4px 0"}}/>
-          {isAdmin&&<button onClick={()=>go("clients")} style={{background:page==="clients"?"rgba(255,255,255,.1)":"transparent",border:"none",color:page==="clients"?"#fff":"rgba(255,255,255,.6)",borderRadius:10,padding:"13px 16px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",textAlign:"right",width:"100%"}}>👥 سجل العملاء</button>}
+        <div style={{background:"rgba(7,16,58,.99)",borderTop:"1px solid rgba(255,255,255,.08)",padding:"10px 12px",display:"flex",flexDirection:"column",gap:4}}>
+
+          {/* Nav pages - compact grid */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,marginBottom:4}}>
+            {navItems.map(([p,label])=>(
+              <button key={p} onClick={()=>go(p)} style={{background:page===p?"rgba(255,255,255,.12)":"rgba(255,255,255,.04)",border:`1px solid ${page===p?"rgba(255,255,255,.2)":"rgba(255,255,255,.07)"}`,color:page===p?"#fff":"rgba(255,255,255,.6)",borderRadius:9,padding:"9px 10px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer",textAlign:"right"}}>
+                {label}
+              </button>
+            ))}
+            {isAdmin&&<button onClick={()=>go("clients")} style={{background:page==="clients"?"rgba(255,255,255,.12)":"rgba(255,255,255,.04)",border:`1px solid ${page==="clients"?"rgba(255,255,255,.2)":"rgba(255,255,255,.07)"}`,color:page==="clients"?"#fff":"rgba(255,255,255,.6)",borderRadius:9,padding:"9px 10px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer",textAlign:"right"}}>👥 سجل العملاء</button>}
+          </div>
+
+          <div style={{height:1,background:"rgba(255,255,255,.07)",margin:"2px 0"}}/>
+
+          {/* Contact row */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
+            <a href={`tel:${PHONE}`} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"#1a4faa",color:"#fff",borderRadius:9,padding:"9px 10px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12}}>📞 {PHONE}</a>
+            <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"#25d36620",border:"1px solid #25d36640",color:"#25d366",borderRadius:9,padding:"9px 10px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12}}><WaIcon size={13}/> WhatsApp</a>
+          </div>
+
+          <div style={{height:1,background:"rgba(255,255,255,.07)",margin:"2px 0"}}/>
+
+          {/* Settings row */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
+            <button onClick={()=>{setLang(isEn?"ar":"en");setMenuOpen(false);}} style={{background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)",color:"#fff",borderRadius:9,padding:"9px 10px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer"}}>{isEn?"🇸🇦 عربي":"🇬🇧 English"}</button>
+            <button onClick={()=>{setDarkMode(d=>!d);setMenuOpen(false);}} style={{background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)",color:"#fff",borderRadius:9,padding:"9px 10px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer"}}>{darkMode?"☀️ فاتح":"🌙 داكن"}</button>
+          </div>
+
+          <div style={{height:1,background:"rgba(255,255,255,.07)",margin:"2px 0"}}/>
+
+          {/* Admin button */}
           {isAdmin
-            ? <button onClick={()=>{onLogout();setMenuOpen(false);}} style={{background:"#ef444420",border:"1px solid #ef444440",color:"#f87171",borderRadius:10,padding:"13px 16px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",textAlign:"right",width:"100%"}}>{isEn?"🔓 Logout":"🔓 تسجيل خروج"}</button>
-            : <button onClick={()=>{onLoginClick();setMenuOpen(false);}} style={{background:"linear-gradient(135deg,#1a4faa,#2563c7)",border:"none",color:"#fff",borderRadius:10,padding:"13px 16px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",textAlign:"right",width:"100%"}}>🔐 {isEn?"Admin Login":"دخول الإدارة"}</button>
+            ? <button onClick={()=>{onLogout();setMenuOpen(false);}} style={{background:"#ef444418",border:"1px solid #ef444430",color:"#f87171",borderRadius:9,padding:"9px 12px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer",textAlign:"right",width:"100%"}}>🔓 {isEn?"Logout":"تسجيل خروج"}</button>
+            : <button onClick={()=>{onLoginClick();setMenuOpen(false);}} style={{background:"linear-gradient(135deg,#1a4faa,#2563c7)",border:"none",color:"#fff",borderRadius:9,padding:"9px 12px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer",textAlign:"right",width:"100%"}}>🔐 {isEn?"Admin Login":"دخول الإدارة"}</button>
           }
         </div>
       )}
