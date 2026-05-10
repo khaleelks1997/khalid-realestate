@@ -365,6 +365,7 @@ function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang,
           <a href={`tel:${PHONE}`} style={{display:"block",background:"#1a4faa",color:"#fff",borderRadius:10,padding:"13px 16px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,textAlign:"right"}}>📞 {PHONE}</a>
           <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",gap:8,background:"#25d36620",border:"1px solid #25d36640",color:"#25d366",borderRadius:10,padding:"13px 16px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,justifyContent:"flex-end"}}><WaIcon size={16}/> WhatsApp</a>
           <div style={{height:1,background:"rgba(255,255,255,.08)",margin:"4px 0"}}/>
+          {isAdmin&&<button onClick={()=>go("clients")} style={{background:page==="clients"?"rgba(255,255,255,.1)":"transparent",border:"none",color:page==="clients"?"#fff":"rgba(255,255,255,.6)",borderRadius:10,padding:"13px 16px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",textAlign:"right",width:"100%"}}>👥 سجل العملاء</button>}
           {isAdmin
             ? <button onClick={()=>{onLogout();setMenuOpen(false);}} style={{background:"#ef444420",border:"1px solid #ef444440",color:"#f87171",borderRadius:10,padding:"13px 16px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",textAlign:"right",width:"100%"}}>{isEn?"🔓 Logout":"🔓 تسجيل خروج"}</button>
             : <button onClick={()=>{onLoginClick();setMenuOpen(false);}} style={{background:"linear-gradient(135deg,#1a4faa,#2563c7)",border:"none",color:"#fff",borderRadius:10,padding:"13px 16px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",textAlign:"right",width:"100%"}}>🔐 {isEn?"Admin Login":"دخول الإدارة"}</button>
@@ -829,7 +830,162 @@ function PropertiesPage({ props, isAdmin, onEdit, onDelete, onChangeStatus, setL
   );
 }
 
-function AboutPage({ lang, darkMode, T }) {
+// ── Clients Page ──────────────────────────────────────────────────────────────
+function ClientsPage({ lang, T, darkMode }) {
+  const isEn = lang==="en";
+  const [clients, setClients] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [delId, setDelId] = useState(null);
+  const emptyClient = { name:"", phone:"", area:"", requestType:"إيجار", budget:"", paymentType:"", notes:"", contactDate:"" };
+  const [form, setForm] = useState(emptyClient);
+
+  useEffect(()=>{
+    const unsub = onSnapshot(collection(db,"clients"), snap=>{
+      const data = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.createdAt?.localeCompare?.(a.createdAt)||0);
+      setClients(data); setLoaded(true);
+    }, ()=>setLoaded(true));
+    return ()=>unsub();
+  },[]);
+
+  const save = async () => {
+    if(!form.name||!form.phone) return alert("الاسم ورقم الجوال مطلوبان");
+    const num = clients.length + 1;
+    await addDoc(collection(db,"clients"),{...form, clientNo:num, createdAt:new Date().toISOString(), createdDate:new Date().toLocaleDateString("ar-SA") });
+    setForm(emptyClient); setShowForm(false);
+  };
+
+  const del = async (id) => { await deleteDoc(doc(db,"clients",id)); setDelId(null); };
+
+  const f = key => e => setForm(p=>({...p,[key]:e.target.value}));
+  const IST = { width:"100%", boxSizing:"border-box", background:"#071840", border:"1px solid #1e3a7a", borderRadius:10, padding:"9px 12px", color:"#e8eef8", fontFamily:"'Cairo',sans-serif", fontSize:13 };
+  const Lbl = ({c}) => <div style={{fontSize:11,color:"#6b8cc4",marginBottom:5,fontWeight:600}}>{c}</div>;
+
+  const requestColor = {"إيجار":"#4ade80","شراء":"#fbbf24","إيجار وشراء":"#e879f9"};
+
+  return (
+    <div style={{paddingTop:64,minHeight:"100vh",background:T.bg}}>
+      {/* Header */}
+      <div style={{background:"linear-gradient(135deg,#0e2563,#1a4faa)",padding:"28px 24px 24px"}}>
+        <div style={{maxWidth:1100,margin:"0 auto",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
+          <div>
+            <div style={{fontWeight:900,fontSize:22,color:"#fff",marginBottom:3}}>👥 سجل العملاء المحتملين</div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,.5)"}}>Khalid M. A. Ghafour Al-Shaikh Est.</div>
+          </div>
+          <button onClick={()=>setShowForm(true)} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:11,padding:"10px 22px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ إضافة عميل</button>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div style={{maxWidth:1100,margin:"0 auto",padding:"20px 22px 0"}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:9,marginBottom:20}}>
+          {[
+            {l:"إجمالي العملاء",v:clients.length,i:"👥",c:"#93c5fd"},
+            {l:"طلبات إيجار",v:clients.filter(c=>c.requestType==="إيجار").length,i:"🏠",c:"#4ade80"},
+            {l:"طلبات شراء",v:clients.filter(c=>c.requestType==="شراء").length,i:"💰",c:"#fbbf24"},
+            {l:"اليوم",v:clients.filter(c=>c.createdDate===new Date().toLocaleDateString("ar-SA")).length,i:"📅",c:"#e879f9"},
+          ].map((s,i)=>(
+            <div key={i} style={{background:"linear-gradient(135deg,#071840,#0e2563)",border:`1px solid ${s.c}22`,borderRadius:12,padding:"12px 10px",position:"relative",overflow:"hidden"}}>
+              <div style={{fontSize:20,marginBottom:4}}>{s.i}</div>
+              <div style={{fontWeight:900,fontSize:18,color:s.c}}>{s.v}</div>
+              <div style={{fontSize:10,color:"#4a6fa5"}}>{s.l}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Client list */}
+        {!loaded ? <div style={{textAlign:"center",padding:40,color:"#4a6fa5"}}>جاري التحميل...</div> : clients.length===0 ? (
+          <div style={{textAlign:"center",padding:60,color:"#1e3a7a"}}><div style={{fontSize:46,marginBottom:10}}>👤</div><div style={{fontSize:13}}>لا يوجد عملاء بعد</div></div>
+        ) : (
+          <div style={{display:"flex",flexDirection:"column",gap:10,paddingBottom:30}}>
+            {clients.map(c=>(
+              <div key={c.id} style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:"1px solid #1e3a7a",borderRadius:16,padding:"14px 16px"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8}}>
+                  <div style={{display:"flex",alignItems:"center",gap:12}}>
+                    <div style={{width:40,height:40,borderRadius:12,background:"#1a4faa33",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,color:"#93c5fd",fontSize:13,flexShrink:0}}>#{c.clientNo||"—"}</div>
+                    <div>
+                      <div style={{fontWeight:900,fontSize:15,color:"#e8eef8"}}>{c.name}</div>
+                      <div style={{fontSize:12,color:"#4a6fa5"}}>📞 {c.phone}</div>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+                    <span style={{background:requestColor[c.requestType]+"20",color:requestColor[c.requestType],border:`1px solid ${requestColor[c.requestType]}40`,borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{c.requestType}</span>
+                    {c.paymentType&&c.requestType==="شراء"&&<span style={{background:"#1a4faa22",color:"#93c5fd",border:"1px solid #2563c740",borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{c.paymentType}</span>}
+                    <button onClick={()=>setDelId(c.id)} style={{background:"#ef444414",border:"1px solid #ef444428",color:"#f87171",borderRadius:8,padding:"4px 10px",cursor:"pointer",fontSize:11}}>🗑️</button>
+                  </div>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:8,marginTop:12}}>
+                  {c.area&&<div style={{background:"#03102e",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#4a6fa5"}}>📍 الحي: </span><span style={{color:"#93c5fd",fontWeight:700}}>{c.area}</span></div>}
+                  {c.budget&&<div style={{background:"#03102e",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#4a6fa5"}}>💰 الميزانية: </span><span style={{color:"#4ade80",fontWeight:700}}>{Number(c.budget).toLocaleString()} ﷼</span></div>}
+                  {c.contactDate&&<div style={{background:"#03102e",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#4a6fa5"}}>📞 تاريخ التواصل: </span><span style={{color:"#93c5fd",fontWeight:700}}>{c.contactDate}</span></div>}
+                  <div style={{background:"#03102e",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#4a6fa5"}}>📅 تسجيل: </span><span style={{color:"#93c5fd",fontWeight:700}}>{c.createdDate}</span></div>
+                </div>
+                {c.notes&&<div style={{marginTop:8,background:"#03102e",borderRadius:8,padding:"6px 10px",fontSize:11,color:"#4a6fa5",whiteSpace:"pre-line",lineHeight:1.7}}>💬 {c.notes}</div>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Add Client Modal */}
+      {showForm&&(
+        <div style={{position:"fixed",inset:0,background:"#000b",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setShowForm(false)}>
+          <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:"1px solid #1a4faa",borderRadius:22,padding:24,maxWidth:540,width:"100%",maxHeight:"93vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,paddingBottom:14,borderBottom:"1px solid #1e3a7a"}}>
+              <div style={{fontWeight:900,fontSize:16,color:"#e8eef8"}}>👤 إضافة عميل جديد</div>
+              <button onClick={()=>setShowForm(false)} style={{background:"#1e3a7a",border:"none",color:"#aaa",width:30,height:30,borderRadius:"50%",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:14}}>
+              <div style={{gridColumn:"1/-1"}}><Lbl c="الاسم *"/><input value={form.name} onChange={f("name")} style={IST} placeholder="اسم العميل"/></div>
+              <div><Lbl c="رقم الجوال *"/><input value={form.phone} onChange={f("phone")} style={IST} placeholder="05xxxxxxxx"/></div>
+              <div><Lbl c="تاريخ التواصل"/><input type="date" value={form.contactDate} onChange={f("contactDate")} style={IST}/></div>
+              <div><Lbl c="الحي / الموقع المطلوب"/><input value={form.area} onChange={f("area")} style={IST} placeholder="مثال: العزيزية، الخبر"/></div>
+              <div>
+                <Lbl c="نوع الطلب"/>
+                <select value={form.requestType} onChange={f("requestType")} style={IST}>
+                  <option>إيجار</option><option>شراء</option><option>إيجار وشراء</option>
+                </select>
+              </div>
+              <div style={{gridColumn:"1/-1"}}><Lbl c="الميزانية (﷼)"/><input type="number" value={form.budget} onChange={f("budget")} style={IST} placeholder="مثال: 500000"/></div>
+              {form.requestType==="شراء"&&(
+                <div style={{gridColumn:"1/-1"}}>
+                  <Lbl c="طريقة الدفع"/>
+                  <div style={{display:"flex",gap:8}}>
+                    {["كاش","تمويل بنكي","كاش وتمويل"].map(opt=>(
+                      <button key={opt} onClick={()=>setForm(p=>({...p,paymentType:opt}))} style={{flex:1,padding:"8px",borderRadius:9,border:`1px solid ${form.paymentType===opt?"#2563c7":"#1e3a7a"}`,background:form.paymentType===opt?"#1a4faa":"#071840",color:form.paymentType===opt?"#fff":"#4a6fa5",cursor:"pointer",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12}}>{opt}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div style={{gridColumn:"1/-1"}}><Lbl c="ملاحظات"/><textarea value={form.notes} onChange={f("notes")} rows={3} style={{...IST,resize:"none"}} placeholder="أي تفاصيل إضافية..."/></div>
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={save} style={{flex:1,background:"linear-gradient(135deg,#1a4faa,#2563c7)",color:"#fff",border:"none",borderRadius:11,padding:"12px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer"}}>✅ حفظ العميل</button>
+              <button onClick={()=>setShowForm(false)} style={{background:"#071840",border:"1px solid #1e3a7a",color:"#6b8cc4",borderRadius:11,padding:"12px 18px",fontFamily:"'Cairo',sans-serif",cursor:"pointer"}}>إلغاء</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirm */}
+      {delId&&(
+        <div style={{position:"fixed",inset:0,background:"#000c",zIndex:700,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:"1px solid #ef444440",borderRadius:20,padding:28,maxWidth:300,textAlign:"center"}}>
+            <div style={{fontSize:36,marginBottom:10}}>⚠️</div>
+            <div style={{fontWeight:900,fontSize:15,color:"#e8eef8",marginBottom:6}}>حذف العميل</div>
+            <div style={{color:"#4a6fa5",marginBottom:20,fontSize:13}}>سيتم الحذف نهائياً</div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>del(delId)} style={{flex:1,background:"#ef4444",color:"#fff",border:"none",borderRadius:11,padding:"10px",fontFamily:"'Cairo',sans-serif",fontWeight:700,cursor:"pointer"}}>احذف</button>
+              <button onClick={()=>setDelId(null)} style={{flex:1,background:"#071840",border:"1px solid #1e3a7a",color:"#6b8cc4",borderRadius:11,padding:"10px",fontFamily:"'Cairo',sans-serif",cursor:"pointer"}}>إلغاء</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
   const isEn=lang==="en";
   return (
     <div style={{paddingTop:64,minHeight:"100vh",background:T.bg}}>
@@ -1028,6 +1184,7 @@ export default function App() {
       {page==="properties" && <PropertiesPage props={props} isAdmin={isAdmin} onEdit={openEdit} onDelete={id=>setDelId(id)} onChangeStatus={changeStatus} setLightbox={setLightbox} onShare={setShareP} onOpenAdd={openAdd} lang={lang} darkMode={darkMode} T={T}/>}
       {page==="services"   && <HomePage setPage={setPage} lang={lang} darkMode={darkMode} T={T}/>}
       {page==="about"      && <AboutPage lang={lang} darkMode={darkMode} T={T}/>}
+      {page==="clients"    && <ClientsPage lang={lang} darkMode={darkMode} T={T}/>}
 
       {/* ── Floating WhatsApp Button ── */}
       <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer"
