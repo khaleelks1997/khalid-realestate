@@ -3,8 +3,8 @@ import { db } from "./firebase";
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "firebase/firestore";
 
 const USERS = [
-  { username: "Khalil", password: "Khalilks1997", role: "admin" },
-  { username: "emp", password: "emp1234", role: "employee" },
+  { username: "Khalil", password: "1234", role: "admin" },
+  { username: "موظف1", password: "emp123", role: "employee" },
 ];
 const WA_NUMBER = "966568300022";
 const PHONE = "0568300022";
@@ -862,7 +862,7 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
   const [delId, setDelId] = useState(null);
   const [commentId, setCommentId] = useState(null);
   const [commentText, setCommentText] = useState("");
-  const emptyClient = { name:"", phone:"", area:"", requestType:"إيجار", budget:"", paymentType:"", notes:"", contactDate:"", clientStatus:"معلق" };
+  const emptyClient = { name:"", phone:"", area:"", clientType:"مستأجر", requestType:"إيجار", budget:"", paymentType:"", ownerPropertyType:"", investorType:"", notes:"", contactDate:"", clientStatus:"معلق" };
   const [form, setForm] = useState(emptyClient);
 
   useEffect(()=>{
@@ -895,8 +895,8 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
   };
 
   const exportClients = () => {
-    const headers = ["#","الاسم","الجوال","الحي","نوع الطلب","الميزانية","طريقة الدفع","الحالة","تاريخ التواصل","تاريخ التسجيل","ملاحظات"];
-    const rows = clients.map(c=>[c.clientNo||"",c.name||"",c.phone||"",c.area||"",c.requestType||"",c.budget||"",c.paymentType||"",c.clientStatus||"معلق",c.contactDate||"",c.createdDate||"",c.notes||""]);
+    const headers = ["#","الاسم","الجوال","التصنيف","الحي","الميزانية","نوع العقار (مالك)","نوع الاستثمار","طريقة الدفع","الحالة","تاريخ التواصل","تاريخ التسجيل","ملاحظات"];
+    const rows = clients.map(c=>[c.clientNo||"",c.name||"",c.phone||"",c.clientType||"",c.area||"",c.budget||"",c.ownerPropertyType||"",c.investorType||"",c.paymentType||"",c.clientStatus||"معلق",c.contactDate||"",c.createdDate||"",c.notes||""]);
     const csv = [headers,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
     const blob = new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});
     const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="عملاء.csv"; a.click();
@@ -906,6 +906,7 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
   const IST = { width:"100%", boxSizing:"border-box", background:"#071840", border:"1px solid #1e3a7a", borderRadius:10, padding:"9px 12px", color:"#e8eef8", fontFamily:"'Cairo',sans-serif", fontSize:13 };
   const Lbl = ({c}) => <div style={{fontSize:11,color:"#6b8cc4",marginBottom:5,fontWeight:600}}>{c}</div>;
 
+  const clientTypeColor = {"مستأجر":"#4ade80","مشتري":"#fbbf24","مالك":"#93c5fd","مستثمر":"#e879f9"};
   const requestColor = {"إيجار":"#4ade80","شراء":"#fbbf24","إيجار وشراء":"#e879f9"};
   const statusColor = {"معلق":"#fbbf24","مغلق":"#f87171"};
 
@@ -928,9 +929,9 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:9,marginBottom:20}}>
           {[
             {l:"إجمالي العملاء",v:clients.length,i:"👥",c:"#93c5fd"},
-            {l:"طلبات إيجار",v:clients.filter(c=>c.requestType==="إيجار").length,i:"🏠",c:"#4ade80"},
-            {l:"طلبات شراء",v:clients.filter(c=>c.requestType==="شراء").length,i:"💰",c:"#fbbf24"},
-            {l:"معلق",v:clients.filter(c=>!c.clientStatus||c.clientStatus==="معلق").length,i:"⏳",c:"#fbbf24"},
+            {l:"مستأجرين",v:clients.filter(c=>c.clientType==="مستأجر").length,i:"🏠",c:"#4ade80"},
+            {l:"ملاك",v:clients.filter(c=>c.clientType==="مالك").length,i:"🔑",c:"#60a5fa"},
+            {l:"مستثمرين",v:clients.filter(c=>c.clientType==="مستثمر").length,i:"📈",c:"#e879f9"},
           ].map((s,i)=>(
             <div key={i} style={{background:"linear-gradient(135deg,#071840,#0e2563)",border:`1px solid ${s.c}22`,borderRadius:12,padding:"12px 10px",position:"relative",overflow:"hidden"}}>
               <div style={{fontSize:20,marginBottom:4}}>{s.i}</div>
@@ -954,12 +955,17 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
                     <div style={{width:40,height:40,borderRadius:12,background:"#1a4faa33",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,color:"#93c5fd",fontSize:13,flexShrink:0}}>#{c.clientNo||"—"}</div>
                     <div>
                       <div style={{fontWeight:900,fontSize:15,color:"#e8eef8"}}>{c.name}</div>
-                      <div style={{fontSize:12,color:"#4a6fa5"}}>📞 {c.phone}</div>
+                      {(isManager||c.clientType!=="مالك") ? (
+                        <div style={{fontSize:12,color:"#4a6fa5"}}>📞 {c.phone}</div>
+                      ) : (
+                        <div style={{fontSize:11,color:"#f87171"}}>🔒 جوال المالك محجوب</div>
+                      )}
                     </div>
                   </div>
                   <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-                    {/* Status badge + change */}
-                    <span style={{background:sc+"20",color:sc,border:`1px solid ${sc}40`,borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{cStatus}</span>
+                    {/* Client type badge */}
+                    {c.clientType&&<span style={{background:clientTypeColor[c.clientType]+"20",color:clientTypeColor[c.clientType],border:`1px solid ${clientTypeColor[c.clientType]}40`,borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{c.clientType}</span>}
+                    <span style={{background:statusColor[c.clientStatus||"معلق"]+"20",color:statusColor[c.clientStatus||"معلق"],border:`1px solid ${statusColor[c.clientStatus||"معلق"]}40`,borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{c.clientStatus||"معلق"}</span>
                     <select value={cStatus} onChange={e=>changeStatus(c.id,e.target.value)} style={{background:"#071840",border:"1px solid #1e3a7a",color:"#93c5fd",borderRadius:8,padding:"3px 8px",fontSize:11,cursor:"pointer",fontFamily:"'Cairo',sans-serif"}}>
                       <option>معلق</option><option>مغلق</option>
                     </select>
@@ -971,6 +977,8 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:8,marginTop:12}}>
                   {c.area&&<div style={{background:"#03102e",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#4a6fa5"}}>📍 الحي: </span><span style={{color:"#93c5fd",fontWeight:700}}>{c.area}</span></div>}
                   {c.budget&&<div style={{background:"#03102e",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#4a6fa5"}}>💰 الميزانية: </span><span style={{color:"#4ade80",fontWeight:700}}>{Number(c.budget).toLocaleString()} ﷼</span></div>}
+                  {c.ownerPropertyType&&<div style={{background:"#03102e",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#4a6fa5"}}>🏠 نوع العقار: </span><span style={{color:"#93c5fd",fontWeight:700}}>{c.ownerPropertyType}</span></div>}
+                  {c.investorType&&<div style={{background:"#03102e",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#4a6fa5"}}>📈 الاستثمار: </span><span style={{color:"#e879f9",fontWeight:700}}>{c.investorType}</span></div>}
                   {c.contactDate&&<div style={{background:"#03102e",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#4a6fa5"}}>📞 تواصل: </span><span style={{color:"#93c5fd",fontWeight:700}}>{c.contactDate}</span></div>}
                   <div style={{background:"#03102e",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#4a6fa5"}}>📅 تسجيل: </span><span style={{color:"#93c5fd",fontWeight:700}}>{c.createdDate}</span></div>
                 </div>
@@ -1016,19 +1024,58 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
               <div style={{gridColumn:"1/-1"}}><Lbl c="الاسم *"/><input value={form.name} onChange={f("name")} style={IST} placeholder="اسم العميل"/></div>
               <div><Lbl c="رقم الجوال *"/><input value={form.phone} onChange={f("phone")} style={IST} placeholder="05xxxxxxxx"/></div>
               <div><Lbl c="تاريخ التواصل"/><input type="date" value={form.contactDate} onChange={f("contactDate")} style={IST}/></div>
-              <div><Lbl c="الحي / الموقع المطلوب"/><input value={form.area} onChange={f("area")} style={IST} placeholder="مثال: العزيزية، الخبر"/></div>
-              <div><Lbl c="نوع الطلب"/><select value={form.requestType} onChange={f("requestType")} style={IST}><option>إيجار</option><option>شراء</option><option>إيجار وشراء</option></select></div>
-              <div style={{gridColumn:"1/-1"}}><Lbl c="الميزانية (﷼)"/><input type="number" value={form.budget} onChange={f("budget")} style={IST} placeholder="مثال: 500000"/></div>
-              {form.requestType==="شراء"&&(
+
+              {/* Client Type */}
+              <div style={{gridColumn:"1/-1"}}>
+                <Lbl c="تصنيف العميل"/>
+                <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+                  {["مستأجر","مشتري","مالك","مستثمر"].map(t=>(
+                    <button key={t} type="button" onClick={()=>setForm(p=>({...p,clientType:t}))} style={{flex:1,minWidth:80,padding:"8px",borderRadius:9,border:`1px solid ${form.clientType===t?clientTypeColor[t]:"#1e3a7a"}`,background:form.clientType===t?clientTypeColor[t]+"33":"#071840",color:form.clientType===t?clientTypeColor[t]:"#4a6fa5",cursor:"pointer",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13}}>{t}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* مستأجر - نوع الطلب */}
+              {form.clientType==="مستأجر"&&<div style={{gridColumn:"1/-1"}}><Lbl c="نوع الإيجار المطلوب"/><select value={form.requestType} onChange={f("requestType")} style={IST}><option>سكني</option><option>تجاري</option><option>مفروش</option></select></div>}
+
+              {/* مشتري - طريقة الدفع */}
+              {form.clientType==="مشتري"&&(
                 <div style={{gridColumn:"1/-1"}}>
                   <Lbl c="طريقة الدفع"/>
                   <div style={{display:"flex",gap:8}}>
                     {["كاش","تمويل بنكي","كاش وتمويل"].map(opt=>(
-                      <button key={opt} onClick={()=>setForm(p=>({...p,paymentType:opt}))} style={{flex:1,padding:"8px",borderRadius:9,border:`1px solid ${form.paymentType===opt?"#2563c7":"#1e3a7a"}`,background:form.paymentType===opt?"#1a4faa":"#071840",color:form.paymentType===opt?"#fff":"#4a6fa5",cursor:"pointer",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12}}>{opt}</button>
+                      <button key={opt} type="button" onClick={()=>setForm(p=>({...p,paymentType:opt}))} style={{flex:1,padding:"8px",borderRadius:9,border:`1px solid ${form.paymentType===opt?"#2563c7":"#1e3a7a"}`,background:form.paymentType===opt?"#1a4faa":"#071840",color:form.paymentType===opt?"#fff":"#4a6fa5",cursor:"pointer",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12}}>{opt}</button>
                     ))}
                   </div>
                 </div>
               )}
+
+              {/* مالك - نوع الملكية */}
+              {form.clientType==="مالك"&&(
+                <div style={{gridColumn:"1/-1"}}>
+                  <Lbl c="نوع العقار المملوك"/>
+                  <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+                    {["شقة","فيلا","عمارة","أرض","محل تجاري","مكتب"].map(t=>(
+                      <button key={t} type="button" onClick={()=>setForm(p=>({...p,ownerPropertyType:t}))} style={{padding:"7px 12px",borderRadius:9,border:`1px solid ${form.ownerPropertyType===t?"#60a5fa":"#1e3a7a"}`,background:form.ownerPropertyType===t?"#1e40af":"#071840",color:form.ownerPropertyType===t?"#fff":"#4a6fa5",cursor:"pointer",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12}}>{t}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* مستثمر - نوع الاستثمار */}
+              {form.clientType==="مستثمر"&&(
+                <div style={{gridColumn:"1/-1"}}>
+                  <Lbl c="نوع الاستثمار المطلوب"/>
+                  <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+                    {["أراضي","عمائر","شقق","محطات وقود","محلات تجارية","مشاريع متعددة"].map(t=>(
+                      <button key={t} type="button" onClick={()=>setForm(p=>({...p,investorType:t}))} style={{padding:"7px 12px",borderRadius:9,border:`1px solid ${form.investorType===t?"#e879f9":"#1e3a7a"}`,background:form.investorType===t?"#7e22ce":"#071840",color:form.investorType===t?"#fff":"#4a6fa5",cursor:"pointer",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12}}>{t}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div><Lbl c="الحي / الموقع المطلوب"/><input value={form.area} onChange={f("area")} style={IST} placeholder="مثال: العزيزية، الخبر"/></div>
+              <div style={{gridColumn:"1/-1"}}><Lbl c="الميزانية (﷼)"/><input type="number" value={form.budget} onChange={f("budget")} style={IST} placeholder="مثال: 500000"/></div>
               <div style={{gridColumn:"1/-1"}}><Lbl c="ملاحظات"/><textarea value={form.notes} onChange={f("notes")} rows={3} style={{...IST,resize:"none"}} placeholder="أي تفاصيل إضافية..."/></div>
             </div>
             <div style={{display:"flex",gap:10}}>
