@@ -3,8 +3,8 @@ import { db } from "./firebase";
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "firebase/firestore";
 
 const USERS = [
-  { username: "Khalil", password: "1234", role: "admin" },
-  { username: "موظف1", password: "emp123", role: "employee" },
+  { username: "Khalil", password: "Khalilks1997", role: "admin" },
+  { username: "emp", password: "emp1234", role: "employee" },
 ];
 const WA_NUMBER = "966568300022";
 const PHONE = "0568300022";
