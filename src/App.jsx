@@ -918,6 +918,16 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
   const requestColor = {"إيجار":"#4ade80","شراء":"#fbbf24","إيجار وشراء":"#e879f9"};
   const statusColor = {"معلق":"#fbbf24","مغلق":"#f87171"};
 
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("الكل");
+  const [statusFilter, setStatusFilter] = useState("الكل");
+
+  const filtered = clients.filter(c=>
+    (typeFilter==="الكل"||c.clientType===typeFilter) &&
+    (statusFilter==="الكل"||(c.clientStatus||"معلق")===statusFilter) &&
+    (c.name?.includes(search)||c.phone?.includes(search)||c.area?.includes(search)||search==="")
+  );
+
   return (
     <div style={{paddingTop:64,minHeight:"100vh",background:T.bg}}>
       <div style={{background:"linear-gradient(135deg,#0e2563,#1a4faa)",padding:"28px 24px 24px"}}>
@@ -934,26 +944,40 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
       </div>
 
       <div style={{maxWidth:1100,margin:"0 auto",padding:"20px 22px 0"}}>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:9,marginBottom:20}}>
+        {/* Stats - clickable filters */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:9,marginBottom:16}}>
           {[
-            {l:"إجمالي العملاء",v:clients.length,i:"👥",c:"#93c5fd"},
-            {l:"مستأجرين",v:clients.filter(c=>c.clientType==="مستأجر").length,i:"🏠",c:"#4ade80"},
-            {l:"ملاك",v:clients.filter(c=>c.clientType==="مالك").length,i:"🔑",c:"#60a5fa"},
-            {l:"مستثمرين",v:clients.filter(c=>c.clientType==="مستثمر").length,i:"📈",c:"#e879f9"},
+            {l:"الكل",v:clients.length,i:"👥",c:"#93c5fd",key:"الكل"},
+            {l:"مستأجرين",v:clients.filter(c=>c.clientType==="مستأجر").length,i:"🏠",c:"#4ade80",key:"مستأجر"},
+            {l:"مشترين",v:clients.filter(c=>c.clientType==="مشتري").length,i:"💰",c:"#fbbf24",key:"مشتري"},
+            {l:"ملاك",v:clients.filter(c=>c.clientType==="مالك").length,i:"🔑",c:"#93c5fd",key:"مالك"},
+            {l:"مستثمرين",v:clients.filter(c=>c.clientType==="مستثمر").length,i:"📈",c:"#e879f9",key:"مستثمر"},
           ].map((s,i)=>(
-            <div key={i} style={{background:"linear-gradient(135deg,#071840,#0e2563)",border:`1px solid ${s.c}22`,borderRadius:12,padding:"12px 10px",position:"relative",overflow:"hidden"}}>
+            <div key={i} onClick={()=>setTypeFilter(s.key)} style={{background:typeFilter===s.key?`linear-gradient(135deg,${s.c}33,${s.c}11)`:"linear-gradient(135deg,#071840,#0e2563)",border:`1px solid ${typeFilter===s.key?s.c+"66":s.c+"22"}`,borderRadius:12,padding:"12px 10px",cursor:"pointer",transition:"all .2s",position:"relative",overflow:"hidden"}}>
               <div style={{fontSize:20,marginBottom:4}}>{s.i}</div>
               <div style={{fontWeight:900,fontSize:18,color:s.c}}>{s.v}</div>
-              <div style={{fontSize:10,color:"#4a6fa5"}}>{s.l}</div>
+              <div style={{fontSize:10,color:typeFilter===s.key?s.c:"#4a6fa5"}}>{s.l}</div>
+              {typeFilter===s.key&&<div style={{position:"absolute",top:6,left:6,width:6,height:6,borderRadius:"50%",background:s.c}}/>}
             </div>
           ))}
         </div>
 
-        {!loaded ? <div style={{textAlign:"center",padding:40,color:"#4a6fa5"}}>جاري التحميل...</div> : clients.length===0 ? (
-          <div style={{textAlign:"center",padding:60,color:"#1e3a7a"}}><div style={{fontSize:46,marginBottom:10}}>👤</div><div style={{fontSize:13}}>لا يوجد عملاء بعد</div></div>
+        {/* Search + status filter */}
+        <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap",alignItems:"center"}}>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 ابحث بالاسم أو الجوال أو الحي..." style={{flex:1,minWidth:200,background:"#071840",border:"1px solid #1e3a7a",borderRadius:10,padding:"9px 14px",color:"#e8eef8",fontFamily:"'Cairo',sans-serif",fontSize:13}}/>
+          <div style={{display:"flex",gap:6}}>
+            {["الكل","معلق","مغلق"].map(s=>(
+              <button key={s} onClick={()=>setStatusFilter(s)} style={{padding:"8px 14px",borderRadius:20,cursor:"pointer",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,background:statusFilter===s?(s==="مغلق"?"#f8717133":"#fbbf2433"):"#071840",color:statusFilter===s?(s==="مغلق"?"#f87171":"#fbbf24"):"#4a6fa5",border:statusFilter===s?`1px solid ${s==="مغلق"?"#f8717144":"#fbbf2444"}`:"1px solid #1e3a7a"}}>{s==="الكل"?"🗂️ الكل":s==="معلق"?"⏳ معلق":"✅ مغلق"}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{fontSize:11,color:"#4a6fa5",marginBottom:10}}>{filtered.length} عميل</div>
+
+        {!loaded ? <div style={{textAlign:"center",padding:40,color:"#4a6fa5"}}>جاري التحميل...</div> : filtered.length===0 ? (
+          <div style={{textAlign:"center",padding:60,color:"#1e3a7a"}}><div style={{fontSize:46,marginBottom:10}}>👤</div><div style={{fontSize:13}}>{search?"لا توجد نتائج للبحث":"لا يوجد عملاء بعد"}</div></div>
         ) : (
           <div style={{display:"flex",flexDirection:"column",gap:10,paddingBottom:30}}>
-            {clients.map(c=>{
+            {filtered.map(c=>{
               const cStatus = c.clientStatus||"معلق";
               const sc = statusColor[cStatus]||"#fbbf24";
               return (
