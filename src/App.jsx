@@ -2,7 +2,10 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { db } from "./firebase";
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "firebase/firestore";
 
-const USERS = [{ username: "Khalil", password: "1234" }];
+const USERS = [
+  { username: "Khalil", password: "Khalilks1997", role: "admin" },
+  { username: "emp", password: "emp1234", role: "employee" },
+];
 const WA_NUMBER = "966568300022";
 const PHONE = "0568300022";
 
@@ -305,7 +308,7 @@ function CodeInput({ label, value, onChange }) {
 }
 
 // ── NAVBAR ────────────────────────────────────────────────────────────────────
-function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang, scrolled, darkMode, setDarkMode, T }) {
+function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang, scrolled, darkMode, setDarkMode, T, userRole }) {
   const isEn = lang==="en";
   const [menuOpen, setMenuOpen] = useState(false);
   const navItems = isEn
@@ -391,7 +394,7 @@ function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang,
         </div>
       )}
 
-      {isAdmin&&(<div style={{background:"#1a4faa18",borderTop:"1px solid #2563c733",padding:"5px 20px",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}><span style={{fontSize:11,color:"#93c5fd",fontWeight:600}}>🔒 {isEn?"Admin Mode":"وضع الإدارة"}</span></div>)}
+      {isAdmin&&(<div style={{background:"#1a4faa18",borderTop:"1px solid #2563c733",padding:"5px 20px",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}><span style={{fontSize:11,color:"#93c5fd",fontWeight:600}}>{isAdmin&&userRole==="admin"?"👑 وضع المدير":"👤 وضع الموظف"}</span></div>)}
     </div>
   );
 }
@@ -400,7 +403,7 @@ function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang,
 function LoginModal({ onSuccess, onClose, lang }) {
   const isEn=lang==="en";
   const [un,setUn]=useState(""); const [pw,setPw]=useState(""); const [show,setShow]=useState(false); const [err,setErr]=useState(""); const [loading,setLoading]=useState(false);
-  const login=()=>{ setLoading(true); setTimeout(()=>{ const ok=USERS.find(u=>u.username===un&&u.password===pw); if(ok) onSuccess(); else { setErr(isEn?"Incorrect credentials":"بيانات الدخول غير صحيحة"); setLoading(false); } },600); };
+  const login=()=>{ setLoading(true); setTimeout(()=>{ const ok=USERS.find(u=>u.username===un&&u.password===pw); if(ok) onSuccess(ok.role); else { setErr(isEn?"Incorrect credentials":"بيانات الدخول غير صحيحة"); setLoading(false); } },600); };
   const IST={width:"100%",boxSizing:"border-box",background:"#071840",border:"1px solid #1e3a7a",borderRadius:10,padding:"10px 13px",color:"#e8eef8",fontFamily:"'Cairo',sans-serif",fontSize:14};
   return (
     <div style={{position:"fixed",inset:0,background:"#000c",zIndex:1500,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
@@ -626,7 +629,7 @@ function PublicCard({ p, setLightbox, onShare, lang }) {
 }
 
 // ── Admin Card ────────────────────────────────────────────────────────────────
-function AdminCard({ p, onEdit, onDelete, onChangeStatus, setLightbox, onShare }) {
+function AdminCard({ p, onEdit, onDelete, onChangeStatus, setLightbox, onShare, userRole }) {
   const [hov,setHov]=useState(false);
   const imgs=p.images||[]; const sc=SC[p.status]||SC["متوفر"];
   return (
@@ -644,7 +647,8 @@ function AdminCard({ p, onEdit, onDelete, onChangeStatus, setLightbox, onShare }
         <div style={{background:"#03102e",borderRadius:9,padding:"8px 10px",marginBottom:7,border:"1px solid #0e2050"}}>
           <div style={{fontSize:9,color:p.adLicenseNo?"#4ade80":"#f87171",marginBottom:2}}>🏛️ رخصة: {p.adLicenseNo||"غير مُدخل ⚠️"}</div>
           <div style={{fontSize:9,color:"#6b8cc4",marginBottom:2}}>📋 عقد: {p.marketingContractNo||"—"}</div>
-          {p.ownerName&&<div style={{fontSize:9,color:"#93c5fd",marginBottom:2}}>👤 {p.ownerName} {p.ownerPhone&&"— "+p.ownerPhone}</div>}
+          {userRole==="admin"&&p.ownerName&&<div style={{fontSize:9,color:"#93c5fd",marginBottom:2}}>👤 {p.ownerName} {p.ownerPhone&&"— "+p.ownerPhone}</div>}
+          {userRole==="employee"&&<div style={{fontSize:9,color:"#f87171",marginBottom:2}}>🔒 بيانات المالك محجوبة</div>}
           <div style={{fontSize:9,color:"#a5b4fc",fontWeight:700}}>👁️ {p.views||0} مشاهدة</div>
         </div>
         <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:7}}>
@@ -654,11 +658,11 @@ function AdminCard({ p, onEdit, onDelete, onChangeStatus, setLightbox, onShare }
         </div>
         <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:8}}>{STATUS_OPTIONS.map(s=>(<button key={s} onClick={()=>onChangeStatus(p.id,s)} style={{padding:"3px 8px",borderRadius:6,border:"none",cursor:"pointer",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:9,background:p.status===s?"linear-gradient(135deg,#1a4faa,#2563c7)":"#0e2050",color:p.status===s?"#fff":"#4a6fa5"}}>{s}</button>))}</div>
         <div style={{display:"flex",gap:6}}>
-          <button onClick={()=>onEdit(p)} style={{flex:1,background:"#0e2563",border:"1px solid #2563c7",color:"#93c5fd",borderRadius:8,padding:"7px",fontFamily:"'Cairo',sans-serif",fontWeight:600,fontSize:11,cursor:"pointer"}}>✏️ تعديل</button>
+          {userRole==="admin"&&<button onClick={()=>onEdit(p)} style={{flex:1,background:"#0e2563",border:"1px solid #2563c7",color:"#93c5fd",borderRadius:8,padding:"7px",fontFamily:"'Cairo',sans-serif",fontWeight:600,fontSize:11,cursor:"pointer"}}>✏️ تعديل</button>}
           <button onClick={()=>onShare(p)} style={{background:"#6366f118",border:"1px solid #6366f130",color:"#a5b4fc",borderRadius:8,padding:"7px 10px",cursor:"pointer",fontSize:11}}>📤</button>
           {imgs.length>0&&<button onClick={()=>setLightbox({images:imgs,idx:0})} style={{background:"#1a4faa22",border:"1px solid #2563c740",color:"#93c5fd",borderRadius:8,padding:"7px 10px",cursor:"pointer",fontSize:11}}>🖼️</button>}
           {p.mapUrl&&<a href={p.mapUrl} target="_blank" rel="noopener noreferrer" style={{background:"#16a34a18",border:"1px solid #16a34a40",color:"#4ade80",borderRadius:8,padding:"7px 10px",fontSize:11,textDecoration:"none",display:"flex",alignItems:"center"}}>📍</a>}
-          <button onClick={()=>onDelete(p.id)} style={{background:"#ef444414",border:"1px solid #ef444428",color:"#f87171",borderRadius:8,padding:"7px 10px",cursor:"pointer",fontSize:11}}>🗑️</button>
+          {userRole==="admin"&&<button onClick={()=>onDelete(p.id)} style={{background:"#ef444414",border:"1px solid #ef444428",color:"#f87171",borderRadius:8,padding:"7px 10px",cursor:"pointer",fontSize:11}}>🗑️</button>}
         </div>
       </div>
     </div>
@@ -754,7 +758,7 @@ function HomePage({ setPage, lang, darkMode, T }) {
   );
 }
 
-function PropertiesPage({ props, isAdmin, onEdit, onDelete, onChangeStatus, setLightbox, onShare, onOpenAdd, lang, darkMode, T }) {
+function PropertiesPage({ props, isAdmin, userRole, onEdit, onDelete, onChangeStatus, setLightbox, onShare, onOpenAdd, lang, darkMode, T }) {
   const isEn=lang==="en";
 
   const dealLabels = isEn
@@ -796,7 +800,7 @@ function PropertiesPage({ props, isAdmin, onEdit, onDelete, onChangeStatus, setL
         <div style={{maxWidth:1200,margin:"0 auto",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
           <div><div style={{fontWeight:900,fontSize:22,color:"#fff",marginBottom:3}}>{isAdmin?(isEn?"🔒 Admin Panel":"🔒 لوحة الإدارة"):(isEn?"🏘️ Available Properties":"🏘️ العقارات المتاحة")}</div><div style={{fontSize:12,color:"rgba(255,255,255,.5)"}}>Khalid M. A. Ghafour Al-Shaikh Est.</div></div>
           {isAdmin&&<div style={{display:"flex",gap:8}}>
-            <button onClick={()=>exportToExcel(props)} style={{background:"#16a34a22",border:"1px solid #16a34a44",color:"#4ade80",borderRadius:11,padding:"10px 18px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"}}>📊 {isEn?"Export Excel":"تصدير Excel"}</button>
+            {userRole==="admin"&&<button onClick={()=>exportToExcel(props)} style={{background:"#16a34a22",border:"1px solid #16a34a44",color:"#4ade80",borderRadius:11,padding:"10px 18px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"}}>📊 {isEn?"Export Excel":"تصدير Excel"}</button>}
             <button onClick={onOpenAdd} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:11,padding:"10px 22px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ {isEn?"Add Property":"إضافة عقار"}</button>
           </div>}
         </div>
@@ -838,7 +842,7 @@ function PropertiesPage({ props, isAdmin, onEdit, onDelete, onChangeStatus, setL
         {filtered.length===0?(<div style={{textAlign:"center",padding:"60px 0",color:"#1e3a7a"}}><div style={{fontSize:46,marginBottom:10}}>🏚️</div><div style={{fontSize:13,fontWeight:600}}>{isEn?"No results":"لا توجد نتائج"}</div></div>):(
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(295px,1fr))",gap:15}}>
             {filtered.map(p=>isAdmin
-              ? <AdminCard key={p.id} p={p} onEdit={onEdit} onDelete={onDelete} onChangeStatus={onChangeStatus} setLightbox={setLightbox} onShare={onShare}/>
+              ? <AdminCard key={p.id} p={p} onEdit={onEdit} onDelete={onDelete} onChangeStatus={onChangeStatus} setLightbox={setLightbox} onShare={onShare} userRole={userRole}/>
               : <PublicCard key={p.id} p={p} setLightbox={setLightbox} onShare={onShare} lang={lang}/>
             )}
           </div>
@@ -849,13 +853,16 @@ function PropertiesPage({ props, isAdmin, onEdit, onDelete, onChangeStatus, setL
 }
 
 // ── Clients Page ──────────────────────────────────────────────────────────────
-function ClientsPage({ lang, T, darkMode }) {
+function ClientsPage({ lang, T, darkMode, userRole }) {
   const isEn = lang==="en";
+  const isManager = userRole==="admin";
   const [clients, setClients] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [delId, setDelId] = useState(null);
-  const emptyClient = { name:"", phone:"", area:"", requestType:"إيجار", budget:"", paymentType:"", notes:"", contactDate:"" };
+  const [commentId, setCommentId] = useState(null);
+  const [commentText, setCommentText] = useState("");
+  const emptyClient = { name:"", phone:"", area:"", requestType:"إيجار", budget:"", paymentType:"", notes:"", contactDate:"", clientStatus:"معلق" };
   const [form, setForm] = useState(emptyClient);
 
   useEffect(()=>{
@@ -869,39 +876,61 @@ function ClientsPage({ lang, T, darkMode }) {
   const save = async () => {
     if(!form.name||!form.phone) return alert("الاسم ورقم الجوال مطلوبان");
     const num = clients.length + 1;
-    await addDoc(collection(db,"clients"),{...form, clientNo:num, createdAt:new Date().toISOString(), createdDate:new Date().toLocaleDateString("ar-SA") });
+    await addDoc(collection(db,"clients"),{...form, clientNo:num, createdAt:new Date().toISOString(), createdDate:new Date().toLocaleDateString("ar-SA"), comments:[] });
     setForm(emptyClient); setShowForm(false);
   };
 
   const del = async (id) => { await deleteDoc(doc(db,"clients",id)); setDelId(null); };
+
+  const changeStatus = async (id, status) => {
+    await updateDoc(doc(db,"clients",id),{clientStatus:status});
+  };
+
+  const addComment = async (id) => {
+    if(!commentText.trim()) return;
+    const client = clients.find(c=>c.id===id);
+    const comments = [...(client?.comments||[]), { text:commentText, date:new Date().toLocaleDateString("ar-SA"), time:new Date().toLocaleTimeString("ar-SA",{hour:"2-digit",minute:"2-digit"}) }];
+    await updateDoc(doc(db,"clients",id),{comments});
+    setCommentText(""); setCommentId(null);
+  };
+
+  const exportClients = () => {
+    const headers = ["#","الاسم","الجوال","الحي","نوع الطلب","الميزانية","طريقة الدفع","الحالة","تاريخ التواصل","تاريخ التسجيل","ملاحظات"];
+    const rows = clients.map(c=>[c.clientNo||"",c.name||"",c.phone||"",c.area||"",c.requestType||"",c.budget||"",c.paymentType||"",c.clientStatus||"معلق",c.contactDate||"",c.createdDate||"",c.notes||""]);
+    const csv = [headers,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});
+    const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="عملاء.csv"; a.click();
+  };
 
   const f = key => e => setForm(p=>({...p,[key]:e.target.value}));
   const IST = { width:"100%", boxSizing:"border-box", background:"#071840", border:"1px solid #1e3a7a", borderRadius:10, padding:"9px 12px", color:"#e8eef8", fontFamily:"'Cairo',sans-serif", fontSize:13 };
   const Lbl = ({c}) => <div style={{fontSize:11,color:"#6b8cc4",marginBottom:5,fontWeight:600}}>{c}</div>;
 
   const requestColor = {"إيجار":"#4ade80","شراء":"#fbbf24","إيجار وشراء":"#e879f9"};
+  const statusColor = {"معلق":"#fbbf24","مغلق":"#f87171"};
 
   return (
     <div style={{paddingTop:64,minHeight:"100vh",background:T.bg}}>
-      {/* Header */}
       <div style={{background:"linear-gradient(135deg,#0e2563,#1a4faa)",padding:"28px 24px 24px"}}>
         <div style={{maxWidth:1100,margin:"0 auto",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
           <div>
             <div style={{fontWeight:900,fontSize:22,color:"#fff",marginBottom:3}}>👥 سجل العملاء المحتملين</div>
             <div style={{fontSize:12,color:"rgba(255,255,255,.5)"}}>Khalid M. A. Ghafour Al-Shaikh Est.</div>
           </div>
-          <button onClick={()=>setShowForm(true)} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:11,padding:"10px 22px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ إضافة عميل</button>
+          <div style={{display:"flex",gap:8}}>
+            {isManager&&<button onClick={exportClients} style={{background:"#16a34a22",border:"1px solid #16a34a44",color:"#4ade80",borderRadius:11,padding:"10px 18px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"}}>📊 تصدير Excel</button>}
+            <button onClick={()=>setShowForm(true)} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:11,padding:"10px 22px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ إضافة عميل</button>
+          </div>
         </div>
       </div>
 
-      {/* Stats */}
       <div style={{maxWidth:1100,margin:"0 auto",padding:"20px 22px 0"}}>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:9,marginBottom:20}}>
           {[
             {l:"إجمالي العملاء",v:clients.length,i:"👥",c:"#93c5fd"},
             {l:"طلبات إيجار",v:clients.filter(c=>c.requestType==="إيجار").length,i:"🏠",c:"#4ade80"},
             {l:"طلبات شراء",v:clients.filter(c=>c.requestType==="شراء").length,i:"💰",c:"#fbbf24"},
-            {l:"اليوم",v:clients.filter(c=>c.createdDate===new Date().toLocaleDateString("ar-SA")).length,i:"📅",c:"#e879f9"},
+            {l:"معلق",v:clients.filter(c=>!c.clientStatus||c.clientStatus==="معلق").length,i:"⏳",c:"#fbbf24"},
           ].map((s,i)=>(
             <div key={i} style={{background:"linear-gradient(135deg,#071840,#0e2563)",border:`1px solid ${s.c}22`,borderRadius:12,padding:"12px 10px",position:"relative",overflow:"hidden"}}>
               <div style={{fontSize:20,marginBottom:4}}>{s.i}</div>
@@ -911,13 +940,15 @@ function ClientsPage({ lang, T, darkMode }) {
           ))}
         </div>
 
-        {/* Client list */}
         {!loaded ? <div style={{textAlign:"center",padding:40,color:"#4a6fa5"}}>جاري التحميل...</div> : clients.length===0 ? (
           <div style={{textAlign:"center",padding:60,color:"#1e3a7a"}}><div style={{fontSize:46,marginBottom:10}}>👤</div><div style={{fontSize:13}}>لا يوجد عملاء بعد</div></div>
         ) : (
           <div style={{display:"flex",flexDirection:"column",gap:10,paddingBottom:30}}>
-            {clients.map(c=>(
-              <div key={c.id} style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:"1px solid #1e3a7a",borderRadius:16,padding:"14px 16px"}}>
+            {clients.map(c=>{
+              const cStatus = c.clientStatus||"معلق";
+              const sc = statusColor[cStatus]||"#fbbf24";
+              return (
+              <div key={c.id} style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:`1px solid ${sc}30`,borderRadius:16,padding:"14px 16px"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8}}>
                   <div style={{display:"flex",alignItems:"center",gap:12}}>
                     <div style={{width:40,height:40,borderRadius:12,background:"#1a4faa33",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,color:"#93c5fd",fontSize:13,flexShrink:0}}>#{c.clientNo||"—"}</div>
@@ -927,20 +958,48 @@ function ClientsPage({ lang, T, darkMode }) {
                     </div>
                   </div>
                   <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+                    {/* Status badge + change */}
+                    <span style={{background:sc+"20",color:sc,border:`1px solid ${sc}40`,borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{cStatus}</span>
+                    <select value={cStatus} onChange={e=>changeStatus(c.id,e.target.value)} style={{background:"#071840",border:"1px solid #1e3a7a",color:"#93c5fd",borderRadius:8,padding:"3px 8px",fontSize:11,cursor:"pointer",fontFamily:"'Cairo',sans-serif"}}>
+                      <option>معلق</option><option>مغلق</option>
+                    </select>
                     <span style={{background:requestColor[c.requestType]+"20",color:requestColor[c.requestType],border:`1px solid ${requestColor[c.requestType]}40`,borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{c.requestType}</span>
                     {c.paymentType&&c.requestType==="شراء"&&<span style={{background:"#1a4faa22",color:"#93c5fd",border:"1px solid #2563c740",borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{c.paymentType}</span>}
-                    <button onClick={()=>setDelId(c.id)} style={{background:"#ef444414",border:"1px solid #ef444428",color:"#f87171",borderRadius:8,padding:"4px 10px",cursor:"pointer",fontSize:11}}>🗑️</button>
+                    {isManager&&<button onClick={()=>setDelId(c.id)} style={{background:"#ef444414",border:"1px solid #ef444428",color:"#f87171",borderRadius:8,padding:"4px 10px",cursor:"pointer",fontSize:11}}>🗑️</button>}
                   </div>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:8,marginTop:12}}>
                   {c.area&&<div style={{background:"#03102e",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#4a6fa5"}}>📍 الحي: </span><span style={{color:"#93c5fd",fontWeight:700}}>{c.area}</span></div>}
                   {c.budget&&<div style={{background:"#03102e",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#4a6fa5"}}>💰 الميزانية: </span><span style={{color:"#4ade80",fontWeight:700}}>{Number(c.budget).toLocaleString()} ﷼</span></div>}
-                  {c.contactDate&&<div style={{background:"#03102e",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#4a6fa5"}}>📞 تاريخ التواصل: </span><span style={{color:"#93c5fd",fontWeight:700}}>{c.contactDate}</span></div>}
+                  {c.contactDate&&<div style={{background:"#03102e",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#4a6fa5"}}>📞 تواصل: </span><span style={{color:"#93c5fd",fontWeight:700}}>{c.contactDate}</span></div>}
                   <div style={{background:"#03102e",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#4a6fa5"}}>📅 تسجيل: </span><span style={{color:"#93c5fd",fontWeight:700}}>{c.createdDate}</span></div>
                 </div>
                 {c.notes&&<div style={{marginTop:8,background:"#03102e",borderRadius:8,padding:"6px 10px",fontSize:11,color:"#4a6fa5",whiteSpace:"pre-line",lineHeight:1.7}}>💬 {c.notes}</div>}
+
+                {/* Comments */}
+                {(c.comments||[]).length>0&&(
+                  <div style={{marginTop:8,background:"#03102e",borderRadius:8,padding:"8px 10px"}}>
+                    {(c.comments||[]).map((cm,i)=>(
+                      <div key={i} style={{borderBottom:i<c.comments.length-1?"1px solid #1e3a7a":"none",paddingBottom:i<c.comments.length-1?6:0,marginBottom:i<c.comments.length-1?6:0}}>
+                        <div style={{fontSize:10,color:"#4a6fa5",marginBottom:2}}>{cm.date} {cm.time}</div>
+                        <div style={{fontSize:12,color:"#93c5fd"}}>{cm.text}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Comment input */}
+                {commentId===c.id ? (
+                  <div style={{marginTop:8,display:"flex",gap:6}}>
+                    <input value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addComment(c.id)} placeholder="اكتب تعليقك..." style={{flex:1,background:"#071840",border:"1px solid #1e3a7a",borderRadius:8,padding:"6px 10px",color:"#e8eef8",fontFamily:"'Cairo',sans-serif",fontSize:12}}/>
+                    <button onClick={()=>addComment(c.id)} style={{background:"#1a4faa",border:"none",color:"#fff",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontSize:12,fontFamily:"'Cairo',sans-serif",fontWeight:700}}>إرسال</button>
+                    <button onClick={()=>{setCommentId(null);setCommentText("");}} style={{background:"#071840",border:"1px solid #1e3a7a",color:"#6b8cc4",borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:12}}>إلغاء</button>
+                  </div>
+                ) : (
+                  <button onClick={()=>setCommentId(c.id)} style={{marginTop:8,background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)",color:"#6b8cc4",borderRadius:8,padding:"5px 12px",cursor:"pointer",fontSize:11,fontFamily:"'Cairo',sans-serif",width:"100%"}}>+ إضافة تعليق</button>
+                )}
               </div>
-            ))}
+            );})}
           </div>
         )}
       </div>
@@ -958,12 +1017,7 @@ function ClientsPage({ lang, T, darkMode }) {
               <div><Lbl c="رقم الجوال *"/><input value={form.phone} onChange={f("phone")} style={IST} placeholder="05xxxxxxxx"/></div>
               <div><Lbl c="تاريخ التواصل"/><input type="date" value={form.contactDate} onChange={f("contactDate")} style={IST}/></div>
               <div><Lbl c="الحي / الموقع المطلوب"/><input value={form.area} onChange={f("area")} style={IST} placeholder="مثال: العزيزية، الخبر"/></div>
-              <div>
-                <Lbl c="نوع الطلب"/>
-                <select value={form.requestType} onChange={f("requestType")} style={IST}>
-                  <option>إيجار</option><option>شراء</option><option>إيجار وشراء</option>
-                </select>
-              </div>
+              <div><Lbl c="نوع الطلب"/><select value={form.requestType} onChange={f("requestType")} style={IST}><option>إيجار</option><option>شراء</option><option>إيجار وشراء</option></select></div>
               <div style={{gridColumn:"1/-1"}}><Lbl c="الميزانية (﷼)"/><input type="number" value={form.budget} onChange={f("budget")} style={IST} placeholder="مثال: 500000"/></div>
               {form.requestType==="شراء"&&(
                 <div style={{gridColumn:"1/-1"}}>
@@ -985,7 +1039,6 @@ function ClientsPage({ lang, T, darkMode }) {
         </div>
       )}
 
-      {/* Delete confirm */}
       {delId&&(
         <div style={{position:"fixed",inset:0,background:"#000c",zIndex:700,display:"flex",alignItems:"center",justifyContent:"center"}}>
           <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:"1px solid #ef444440",borderRadius:20,padding:28,maxWidth:300,textAlign:"center"}}>
@@ -1093,6 +1146,7 @@ export default function App() {
   const [saving,setSaving]       = useState(false);
   const [scrolled,setScrolled]   = useState(false);
   const [isAdmin,setIsAdmin]     = useState(false);
+  const [userRole,setUserRole]   = useState(null); // "admin" | "employee"
   const [showLogin,setShowLogin] = useState(false);
   const [showForm,setShowForm]   = useState(false);
   const [editId,setEditId]       = useState(null);
@@ -1175,7 +1229,7 @@ export default function App() {
       <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"/>
 
       {lightbox&&<Lightbox images={lightbox.images} startIndex={lightbox.idx} onClose={()=>setLightbox(null)}/>}
-      {showLogin&&<LoginModal onSuccess={()=>{setIsAdmin(true);setShowLogin(false);showToast(isEn?"Welcome! Admin mode active 🔓":"مرحباً! وضع الإدارة مفعّل 🔓");}} onClose={()=>setShowLogin(false)} lang={lang}/>}
+      {showLogin&&<LoginModal onSuccess={(role)=>{setIsAdmin(true);setUserRole(role);setShowLogin(false);showToast(role==="admin"?"مرحباً! وضع الإدارة مفعّل 🔓":"مرحباً! وضع الموظف مفعّل 👤");}} onClose={()=>setShowLogin(false)} lang={lang}/>}
       {showForm&&<PropForm form={form} setForm={setForm} onSave={save} onClose={()=>setShowForm(false)} editId={editId} T={T}/>}
       {shareP&&<ShareModal p={shareP} onClose={()=>setShareP(null)}/>}
 
@@ -1196,13 +1250,13 @@ export default function App() {
         </div>
       )}
 
-      <Navbar page={page} setPage={setPage} isAdmin={isAdmin} onLoginClick={()=>setShowLogin(true)} onLogout={()=>{setIsAdmin(false);showToast(isEn?"Logged out":"تم تسجيل الخروج");}} lang={lang} setLang={setLang} scrolled={scrolled} darkMode={darkMode} setDarkMode={setDarkMode} T={T}/>
+      <Navbar page={page} setPage={setPage} isAdmin={isAdmin} onLoginClick={()=>setShowLogin(true)} onLogout={()=>{setIsAdmin(false);setUserRole(null);showToast(isEn?"Logged out":"تم تسجيل الخروج");}} lang={lang} setLang={setLang} scrolled={scrolled} darkMode={darkMode} setDarkMode={setDarkMode} T={T} userRole={userRole}/>
 
       {page==="home"       && <HomePage setPage={setPage} lang={lang} darkMode={darkMode} T={T}/>}
-      {page==="properties" && <PropertiesPage props={props} isAdmin={isAdmin} onEdit={openEdit} onDelete={id=>setDelId(id)} onChangeStatus={changeStatus} setLightbox={setLightbox} onShare={setShareP} onOpenAdd={openAdd} lang={lang} darkMode={darkMode} T={T}/>}
+      {page==="properties" && <PropertiesPage props={props} isAdmin={isAdmin} userRole={userRole} onEdit={openEdit} onDelete={id=>setDelId(id)} onChangeStatus={changeStatus} setLightbox={setLightbox} onShare={setShareP} onOpenAdd={openAdd} lang={lang} darkMode={darkMode} T={T}/>}
       {page==="services"   && <HomePage setPage={setPage} lang={lang} darkMode={darkMode} T={T}/>}
       {page==="about"      && <AboutPage lang={lang} darkMode={darkMode} T={T}/>}
-      {page==="clients"    && <ClientsPage lang={lang} darkMode={darkMode} T={T}/>}
+      {page==="clients"    && <ClientsPage lang={lang} darkMode={darkMode} T={T} userRole={userRole}/>}
 
       {/* ── Floating WhatsApp Button ── */}
       <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer"
