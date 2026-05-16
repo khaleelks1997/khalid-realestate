@@ -898,12 +898,25 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
 
   const save = async () => {
     if(!form.name||!form.phone) return alert("الاسم ورقم الجوال مطلوبان");
+
+    // تحقق من تكرار الجوال
+    const duplicate = clients.find(c =>
+      c.phone === form.phone &&
+      c.id !== editClientId
+    );
+    if(duplicate) {
+      const confirmSave = window.confirm(
+        `⚠️ تنبيه: رقم الجوال مكرر!\n\nهذا الرقم مسجل مسبقاً للعميل:\n"${duplicate.name}" — رقم #${duplicate.clientNo}\n\nهل تريد الحفظ رغم التكرار؟`
+      );
+      if(!confirmSave) return;
+    }
+
     if(editClientId) {
-      await updateDoc(doc(db,"clients",editClientId),{...form, updatedAt:new Date().toISOString()});
+      await updateDoc(doc(db,"clients",editClientId),{...form, updatedAt:new Date().toISOString(), isDuplicate:!!duplicate});
     } else {
       const maxNum = clients.reduce((max,c)=>Math.max(max, c.clientNo||0), 0);
       const num = maxNum + 1;
-      await addDoc(collection(db,"clients"),{...form, clientNo:num, createdAt:new Date().toISOString(), createdDate:new Date().toLocaleDateString("ar-SA"), comments:[] });
+      await addDoc(collection(db,"clients"),{...form, clientNo:num, createdAt:new Date().toISOString(), createdDate:new Date().toLocaleDateString("ar-SA"), comments:[], isDuplicate:!!duplicate});
     }
     setForm(emptyClient); setShowForm(false); setEditClientId(null);
   };
@@ -1004,7 +1017,10 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
               <div key={c.id} style={{background:"linear-gradient(160deg,#ffffff,#f5f8ff)",border:`1px solid ${sc}30`,borderRadius:16,padding:"14px 16px"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8}}>
                   <div style={{display:"flex",alignItems:"center",gap:12}}>
-                    <div style={{width:40,height:40,borderRadius:12,background:"#1a4faa33",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,color:"#2a4d9b",fontSize:13,flexShrink:0}}>#{c.clientNo||"—"}</div>
+                    <div style={{position:"relative"}}>
+                      <div style={{width:40,height:40,borderRadius:12,background:c.isDuplicate?"#fef2f2":"rgba(74,158,255,.1)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,color:c.isDuplicate?"#ef4444":"#2a4d9b",fontSize:13,flexShrink:0,border:c.isDuplicate?"2px solid #ef444440":"none"}}>#{c.clientNo||"—"}</div>
+                      {c.isDuplicate&&<div style={{position:"absolute",top:-6,right:-6,background:"#ef4444",color:"#fff",fontSize:8,fontWeight:900,borderRadius:10,padding:"1px 5px",whiteSpace:"nowrap"}}>مكرر</div>}
+                    </div>
                     <div>
                       <div style={{fontWeight:900,fontSize:15,color:"#1e3a7a"}}>{c.name}</div>
                       {(isManager||c.clientType!=="مالك") ? (
@@ -1075,7 +1091,15 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:14}}>
               <div style={{gridColumn:"1/-1"}}><Lbl c="الاسم *"/><input value={form.name} onChange={f("name")} style={IST} placeholder="اسم العميل"/></div>
-              <div><Lbl c="رقم الجوال *"/><input value={form.phone} onChange={f("phone")} style={IST} placeholder="05xxxxxxxx"/></div>
+              <div>
+                <Lbl c="رقم الجوال *"/>
+                <input value={form.phone} onChange={f("phone")} style={{...IST, borderColor: clients.find(c=>c.phone===form.phone&&c.id!==editClientId)?"#ef4444":"rgba(74,158,255,.2)"}} placeholder="05xxxxxxxx"/>
+                {form.phone&&clients.find(c=>c.phone===form.phone&&c.id!==editClientId)&&(
+                  <div style={{fontSize:11,color:"#ef4444",marginTop:4,fontWeight:700}}>
+                    ⚠️ مكرر! مسجل للعميل: "{clients.find(c=>c.phone===form.phone&&c.id!==editClientId)?.name}" — #{clients.find(c=>c.phone===form.phone&&c.id!==editClientId)?.clientNo}
+                  </div>
+                )}
+              </div>
               <div><Lbl c="تاريخ التواصل"/><input type="date" value={form.contactDate} onChange={f("contactDate")} style={IST}/></div>
 
               {/* Client Type */}
@@ -1163,7 +1187,7 @@ function ProvidersPage({ lang, T, darkMode }) {
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState(null);
   const [delId, setDelId] = useState(null);
-  const [showWork, setShowWork] = useState(null); // provider id to add work
+  const [showWork, setShowWork] = useState(null);
   const [workText, setWorkText] = useState("");
   const emptyForm = { name:"", phone:"", specialty:"تكييف", rating:"ممتاز", notes:"" };
   const [form, setForm] = useState(emptyForm);
@@ -1179,6 +1203,14 @@ function ProvidersPage({ lang, T, darkMode }) {
     }, ()=>setLoaded(true));
     return ()=>unsub();
   },[]);
+
+  const exportProviders = () => {
+    const headers = ["الاسم","الجوال","التخصص","التقييم","ملاحظات","عدد الأعمال"];
+    const rows = providers.map(p=>[p.name||"",p.phone||"",p.specialty||"",p.rating||"",(p.notes||""),(p.works||[]).length]);
+    const csv = [headers,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});
+    const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="مزودو-الخدمات.csv"; a.click();
+  };
 
   const save = async () => {
     if(!form.name||!form.phone) return alert("الاسم والجوال مطلوبان");
@@ -1212,7 +1244,10 @@ function ProvidersPage({ lang, T, darkMode }) {
             <div style={{fontWeight:900,fontSize:22,color:"#fff",marginBottom:3}}>🔧 مزودو الخدمات</div>
             <div style={{fontSize:12,color:"rgba(255,255,255,.5)"}}>للمدير فقط</div>
           </div>
-          <button onClick={()=>{setForm(emptyForm);setEditId(null);setShowForm(true);}} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:11,padding:"10px 22px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ إضافة مزود</button>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={exportProviders} style={{background:"#16a34a22",border:"1px solid #16a34a44",color:"#4ade80",borderRadius:11,padding:"10px 18px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"}}>📊 تصدير Excel</button>
+            <button onClick={()=>{setForm(emptyForm);setEditId(null);setShowForm(true);}} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:11,padding:"10px 22px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ إضافة مزود</button>
+          </div>
         </div>
       </div>
 
