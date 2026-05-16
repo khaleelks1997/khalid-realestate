@@ -1333,7 +1333,7 @@ function ProvidersPage({ lang, T, darkMode }) {
   );
 }
 
-
+function AboutPage({ lang, darkMode, T }) {
   const isEn=lang==="en";
   return (
     <div style={{paddingTop:64,minHeight:"100vh",background:T.bg}}>
