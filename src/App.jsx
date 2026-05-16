@@ -213,16 +213,29 @@ function Lightbox({ images, startIndex, onClose }) {
 
   return (
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"#000e",zIndex:3000,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-      <div style={{position:"relative",userSelect:"none"}} onClick={e=>e.stopPropagation()}
+      {/* Close button */}
+      <button onClick={onClose} style={{position:"absolute",top:16,right:16,width:36,height:36,background:"#ef4444",border:"none",borderRadius:"50%",color:"#fff",fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",zIndex:10}}>×</button>
+
+      {/* Counter */}
+      <div style={{position:"absolute",top:20,left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,.6)",color:"#fff",padding:"4px 14px",borderRadius:20,fontSize:13,fontWeight:700,zIndex:10}}>{idx+1} / {images.length}</div>
+
+      {/* Image */}
+      <div style={{position:"relative",userSelect:"none",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",padding:"0 56px",boxSizing:"border-box"}}
+        onClick={e=>e.stopPropagation()}
         onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
         onMouseDown={onMouseDown} onMouseUp={onMouseUp}
       >
-        <img src={images[idx]} alt="" style={{maxWidth:"88vw",maxHeight:"75vh",borderRadius:14,objectFit:"contain",display:"block",cursor:"grab",draggable:"false"}}/>
-        <button onClick={onClose} style={{position:"absolute",top:-12,left:-12,width:32,height:32,background:"#ef4444",border:"none",borderRadius:"50%",color:"#fff",fontSize:17,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
-        {images.length>1&&<><button onClick={()=>setIdx(i=>(i-1+images.length)%images.length)} style={{position:"absolute",top:"50%",right:-50,transform:"translateY(-50%)",background:"#1a4faa",border:"1px solid rgba(74,158,255,.35)",color:"#fff",width:40,height:40,borderRadius:"50%",fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button><button onClick={()=>setIdx(i=>(i+1)%images.length)} style={{position:"absolute",top:"50%",left:-50,transform:"translateY(-50%)",background:"#1a4faa",border:"1px solid rgba(74,158,255,.35)",color:"#fff",width:40,height:40,borderRadius:"50%",fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>›</button></>}
-        <div style={{textAlign:"center",marginTop:8,color:"#2a4d9b",fontSize:12}}>{idx+1} / {images.length}</div>
+        <img src={images[idx]} alt="" style={{maxWidth:"100%",maxHeight:"70vh",borderRadius:14,objectFit:"contain",display:"block",cursor:"grab"}}/>
       </div>
-      {images.length>1&&(<div style={{display:"flex",gap:6,marginTop:10,overflowX:"auto",maxWidth:"88vw"}}>{images.map((img,i)=>(<img key={i} src={img} onClick={e=>{e.stopPropagation();setIdx(i);}} alt="" style={{width:54,height:54,objectFit:"cover",borderRadius:8,cursor:"pointer",flexShrink:0,border:i===idx?"2px solid #60a5fa":"2px solid transparent",opacity:i===idx?1:.5,transition:"all .2s"}}/>))}</div>)}
+
+      {/* Arrows - always inside screen */}
+      {images.length>1&&<>
+        <button onClick={e=>{e.stopPropagation();setIdx(i=>(i-1+images.length)%images.length);}} style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:"rgba(30,58,122,.9)",border:"1px solid rgba(74,158,255,.4)",color:"#fff",width:44,height:44,borderRadius:"50%",fontSize:24,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",zIndex:10}}>‹</button>
+        <button onClick={e=>{e.stopPropagation();setIdx(i=>(i+1)%images.length);}} style={{position:"absolute",left:8,top:"50%",transform:"translateY(-50%)",background:"rgba(30,58,122,.9)",border:"1px solid rgba(74,158,255,.4)",color:"#fff",width:44,height:44,borderRadius:"50%",fontSize:24,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",zIndex:10}}>›</button>
+      </>}
+
+      {/* Thumbnails */}
+      {images.length>1&&(<div style={{display:"flex",gap:6,marginTop:14,overflowX:"auto",maxWidth:"88vw",padding:"0 4px"}} onClick={e=>e.stopPropagation()}>{images.map((img,i)=>(<img key={i} src={img} onClick={()=>setIdx(i)} alt="" style={{width:54,height:54,objectFit:"cover",borderRadius:8,cursor:"pointer",flexShrink:0,border:i===idx?"2px solid #4a9eff":"2px solid transparent",opacity:i===idx?1:.5,transition:"all .2s"}}/>))}</div>)}
     </div>
   );
 }
@@ -366,6 +379,7 @@ function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang,
               </button>
             ))}
             {isAdmin&&<button onClick={()=>go("clients")} style={{background:page==="clients"?"rgba(255,255,255,.12)":"rgba(255,255,255,.04)",border:`1px solid ${page==="clients"?"rgba(255,255,255,.2)":"rgba(255,255,255,.07)"}`,color:page==="clients"?"#fff":"rgba(255,255,255,.6)",borderRadius:9,padding:"9px 10px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer",textAlign:"right"}}>👥 سجل العملاء</button>}
+            {isAdmin&&userRole==="admin"&&<button onClick={()=>go("providers")} style={{background:page==="providers"?"rgba(255,255,255,.12)":"rgba(255,255,255,.04)",border:`1px solid ${page==="providers"?"rgba(255,255,255,.2)":"rgba(255,255,255,.07)"}`,color:page==="providers"?"#fff":"rgba(255,255,255,.6)",borderRadius:9,padding:"9px 10px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer",textAlign:"right"}}>🔧 مزودو الخدمات</button>}
           </div>
 
           <div style={{height:1,background:"rgba(255,255,255,.07)",margin:"2px 0"}}/>
@@ -882,7 +896,8 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
     if(editClientId) {
       await updateDoc(doc(db,"clients",editClientId),{...form, updatedAt:new Date().toISOString()});
     } else {
-      const num = clients.length + 1;
+      const maxNum = clients.reduce((max,c)=>Math.max(max, c.clientNo||0), 0);
+      const num = maxNum + 1;
       await addDoc(collection(db,"clients"),{...form, clientNo:num, createdAt:new Date().toISOString(), createdDate:new Date().toLocaleDateString("ar-SA"), comments:[] });
     }
     setForm(emptyClient); setShowForm(false); setEditClientId(null);
@@ -1136,7 +1151,189 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
   );
 }
 
-function AboutPage({ lang, darkMode, T }) {
+// ── Providers Page ─────────────────────────────────────────────────────────────
+function ProvidersPage({ lang, T, darkMode }) {
+  const [providers, setProviders] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [delId, setDelId] = useState(null);
+  const [showWork, setShowWork] = useState(null); // provider id to add work
+  const [workText, setWorkText] = useState("");
+  const emptyForm = { name:"", phone:"", specialty:"تكييف", rating:"ممتاز", notes:"" };
+  const [form, setForm] = useState(emptyForm);
+
+  const SPECIALTIES = ["تكييف","نجارة","سباكة","كهرباء","دهانات","تنظيف","حراسة","صيانة عامة","بناء","زجاج","ألمنيوم","أجهزة كهربائية"];
+  const RATINGS = ["ممتاز","وسط","مقبول"];
+  const ratingColor = {"ممتاز":"#4ade80","وسط":"#fbbf24","مقبول":"#f87171"};
+
+  useEffect(()=>{
+    const unsub = onSnapshot(collection(db,"providers"), snap=>{
+      setProviders(snap.docs.map(d=>({id:d.id,...d.data()})));
+      setLoaded(true);
+    }, ()=>setLoaded(true));
+    return ()=>unsub();
+  },[]);
+
+  const save = async () => {
+    if(!form.name||!form.phone) return alert("الاسم والجوال مطلوبان");
+    if(editId) {
+      await updateDoc(doc(db,"providers",editId),{...form});
+    } else {
+      await addDoc(collection(db,"providers"),{...form, works:[], createdAt:new Date().toISOString()});
+    }
+    setForm(emptyForm); setShowForm(false); setEditId(null);
+  };
+
+  const del = async (id) => { await deleteDoc(doc(db,"providers",id)); setDelId(null); };
+
+  const addWork = async (id) => {
+    if(!workText.trim()) return;
+    const p = providers.find(p=>p.id===id);
+    const works = [...(p?.works||[]), { text:workText, date:new Date().toLocaleDateString("ar-SA") }];
+    await updateDoc(doc(db,"providers",id),{works});
+    setWorkText(""); setShowWork(null);
+  };
+
+  const f = key => e => setForm(p=>({...p,[key]:e.target.value}));
+  const IST = { width:"100%", boxSizing:"border-box", background:darkMode?"#0f1f4a":"#f5f8ff", border:`1px solid rgba(74,158,255,.25)`, borderRadius:10, padding:"9px 12px", color:T.text, fontFamily:"'Cairo',sans-serif", fontSize:13 };
+  const Lbl = ({c}) => <div style={{fontSize:11,color:T.text3,marginBottom:5,fontWeight:600}}>{c}</div>;
+
+  return (
+    <div style={{paddingTop:64,minHeight:"100vh",background:T.bg}}>
+      <div style={{background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",padding:"28px 24px 24px"}}>
+        <div style={{maxWidth:1100,margin:"0 auto",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
+          <div>
+            <div style={{fontWeight:900,fontSize:22,color:"#fff",marginBottom:3}}>🔧 مزودو الخدمات</div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,.5)"}}>للمدير فقط</div>
+          </div>
+          <button onClick={()=>{setForm(emptyForm);setEditId(null);setShowForm(true);}} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:11,padding:"10px 22px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ إضافة مزود</button>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div style={{maxWidth:1100,margin:"0 auto",padding:"20px 22px 0"}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:9,marginBottom:20}}>
+          {[
+            {l:"الإجمالي",v:providers.length,i:"🔧",c:"#7ab8ff"},
+            {l:"ممتاز",v:providers.filter(p=>p.rating==="ممتاز").length,i:"⭐",c:"#4ade80"},
+            {l:"وسط",v:providers.filter(p=>p.rating==="وسط").length,i:"👍",c:"#fbbf24"},
+            {l:"مقبول",v:providers.filter(p=>p.rating==="مقبول").length,i:"⚠️",c:"#f87171"},
+          ].map((s,i)=>(
+            <div key={i} style={{background:darkMode?"linear-gradient(135deg,#0f1f4a,#1a2d6b)":"white",border:`1px solid ${s.c}22`,borderRadius:12,padding:"12px 10px",boxShadow:"0 2px 10px rgba(30,58,122,.07)"}}>
+              <div style={{fontSize:20,marginBottom:4}}>{s.i}</div>
+              <div style={{fontWeight:900,fontSize:18,color:s.c}}>{s.v}</div>
+              <div style={{fontSize:10,color:T.text3}}>{s.l}</div>
+            </div>
+          ))}
+        </div>
+
+        {!loaded ? <div style={{textAlign:"center",padding:40,color:T.text3}}>جاري التحميل...</div> : providers.length===0 ? (
+          <div style={{textAlign:"center",padding:60,color:T.text3}}><div style={{fontSize:46,marginBottom:10}}>🔧</div><div style={{fontSize:13}}>لا يوجد مزودو خدمات بعد</div></div>
+        ) : (
+          <div style={{display:"flex",flexDirection:"column",gap:10,paddingBottom:30}}>
+            {providers.map(p=>(
+              <div key={p.id} style={{background:darkMode?"linear-gradient(160deg,#0f1f4a,#1a2d6b)":"white",border:`1px solid rgba(74,158,255,.15)`,borderRadius:16,padding:"14px 16px",boxShadow:"0 2px 10px rgba(30,58,122,.06)"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8,marginBottom:10}}>
+                  <div style={{display:"flex",alignItems:"center",gap:12}}>
+                    <div style={{width:44,height:44,borderRadius:12,background:"rgba(74,158,255,.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>🔧</div>
+                    <div>
+                      <div style={{fontWeight:900,fontSize:15,color:T.text}}>{p.name}</div>
+                      <div style={{fontSize:12,color:T.text3}}>📞 {p.phone}</div>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+                    <span style={{background:"rgba(74,158,255,.1)",color:"#4a9eff",border:"1px solid rgba(74,158,255,.25)",borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{p.specialty}</span>
+                    <span style={{background:ratingColor[p.rating]+"20",color:ratingColor[p.rating],border:`1px solid ${ratingColor[p.rating]}40`,borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{p.rating}</span>
+                    <button onClick={()=>{setForm({name:p.name,phone:p.phone,specialty:p.specialty,rating:p.rating,notes:p.notes||""});setEditId(p.id);setShowForm(true);}} style={{background:"rgba(74,158,255,.1)",border:"1px solid rgba(74,158,255,.25)",color:"#4a9eff",borderRadius:8,padding:"4px 10px",cursor:"pointer",fontSize:11}}>✏️</button>
+                    <button onClick={()=>setDelId(p.id)} style={{background:"#ef444414",border:"1px solid #ef444428",color:"#f87171",borderRadius:8,padding:"4px 10px",cursor:"pointer",fontSize:11}}>🗑️</button>
+                  </div>
+                </div>
+
+                {p.notes&&<div style={{fontSize:11,color:T.text3,background:darkMode?"#0a1538":"#f5f8ff",borderRadius:8,padding:"6px 10px",marginBottom:10}}>📝 {p.notes}</div>}
+
+                {/* Works */}
+                {(p.works||[]).length>0&&(
+                  <div style={{background:darkMode?"#0a1538":"#f5f8ff",borderRadius:10,padding:"10px 12px",marginBottom:8}}>
+                    <div style={{fontSize:11,color:T.text3,fontWeight:700,marginBottom:6}}>🛠️ الأعمال المنجزة:</div>
+                    {(p.works||[]).map((w,i)=>(
+                      <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:i<p.works.length-1?`1px solid rgba(74,158,255,.1)`:"none",paddingBottom:i<p.works.length-1?6:0,marginBottom:i<p.works.length-1?6:0}}>
+                        <div style={{fontSize:12,color:T.text}}>• {w.text}</div>
+                        <div style={{fontSize:10,color:T.text3,flexShrink:0,marginRight:8}}>{w.date}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add work */}
+                {showWork===p.id ? (
+                  <div style={{display:"flex",gap:6}}>
+                    <input value={workText} onChange={e=>setWorkText(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addWork(p.id)} placeholder="اكتب العمل المنجز..." style={{flex:1,background:darkMode?"#0a1538":"#f5f8ff",border:"1px solid rgba(74,158,255,.25)",borderRadius:8,padding:"6px 10px",color:T.text,fontFamily:"'Cairo',sans-serif",fontSize:12}}/>
+                    <button onClick={()=>addWork(p.id)} style={{background:"#1e3a7a",border:"none",color:"#fff",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontSize:12,fontFamily:"'Cairo',sans-serif",fontWeight:700}}>إضافة</button>
+                    <button onClick={()=>{setShowWork(null);setWorkText("");}} style={{background:darkMode?"#0a1538":"#f5f8ff",border:"1px solid rgba(74,158,255,.2)",color:T.text3,borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:12}}>إلغاء</button>
+                  </div>
+                ) : (
+                  <button onClick={()=>setShowWork(p.id)} style={{background:darkMode?"rgba(74,158,255,.08)":"rgba(74,158,255,.06)",border:"1px solid rgba(74,158,255,.2)",color:"#4a9eff",borderRadius:8,padding:"5px 12px",cursor:"pointer",fontSize:11,fontFamily:"'Cairo',sans-serif",width:"100%"}}>+ إضافة عمل منجز</button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Add/Edit Modal */}
+      {showForm&&(
+        <div style={{position:"fixed",inset:0,background:"#000b",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>{setShowForm(false);setEditId(null);}}>
+          <div style={{background:darkMode?"linear-gradient(160deg,#0f1f4a,#1a2d6b)":"white",border:"1px solid rgba(74,158,255,.25)",borderRadius:22,padding:24,maxWidth:480,width:"100%",maxHeight:"90vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,paddingBottom:14,borderBottom:"1px solid rgba(74,158,255,.15)"}}>
+              <div style={{fontWeight:900,fontSize:16,color:T.text}}>{editId?"✏️ تعديل المزود":"🔧 إضافة مزود خدمات"}</div>
+              <button onClick={()=>{setShowForm(false);setEditId(null);}} style={{background:"rgba(74,158,255,.1)",border:"none",color:T.text3,width:30,height:30,borderRadius:"50%",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:14}}>
+              <div style={{gridColumn:"1/-1"}}><Lbl c="الاسم *"/><input value={form.name} onChange={f("name")} style={IST} placeholder="اسم المزود"/></div>
+              <div><Lbl c="رقم الجوال *"/><input value={form.phone} onChange={f("phone")} style={IST} placeholder="05xxxxxxxx"/></div>
+              <div>
+                <Lbl c="التخصص"/>
+                <select value={form.specialty} onChange={f("specialty")} style={IST}>
+                  {SPECIALTIES.map(s=><option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div style={{gridColumn:"1/-1"}}>
+                <Lbl c="التقييم"/>
+                <div style={{display:"flex",gap:8}}>
+                  {RATINGS.map(r=>(
+                    <button key={r} onClick={()=>setForm(p=>({...p,rating:r}))} style={{flex:1,padding:"8px",borderRadius:9,border:`1px solid ${form.rating===r?ratingColor[r]:"rgba(74,158,255,.2)"}`,background:form.rating===r?ratingColor[r]+"22":darkMode?"#0a1538":"#f5f8ff",color:form.rating===r?ratingColor[r]:T.text3,cursor:"pointer",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13}}>{r}</button>
+                  ))}
+                </div>
+              </div>
+              <div style={{gridColumn:"1/-1"}}><Lbl c="ملاحظات"/><textarea value={form.notes} onChange={f("notes")} rows={2} style={{...IST,resize:"none"}} placeholder="أي معلومات إضافية..."/></div>
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={save} style={{flex:1,background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",color:"#fff",border:"none",borderRadius:11,padding:"12px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer"}}>{editId?"💾 حفظ التعديلات":"✅ حفظ المزود"}</button>
+              <button onClick={()=>{setShowForm(false);setEditId(null);}} style={{background:darkMode?"#0a1538":"#f5f8ff",border:"1px solid rgba(74,158,255,.2)",color:T.text3,borderRadius:11,padding:"12px 18px",fontFamily:"'Cairo',sans-serif",cursor:"pointer"}}>إلغاء</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {delId&&(
+        <div style={{position:"fixed",inset:0,background:"#000c",zIndex:700,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <div style={{background:darkMode?"linear-gradient(160deg,#0f1f4a,#1a2d6b)":"white",border:"1px solid #ef444440",borderRadius:20,padding:28,maxWidth:300,textAlign:"center"}}>
+            <div style={{fontSize:36,marginBottom:10}}>⚠️</div>
+            <div style={{fontWeight:900,fontSize:15,color:T.text,marginBottom:6}}>حذف المزود</div>
+            <div style={{color:T.text3,marginBottom:20,fontSize:13}}>سيتم الحذف نهائياً</div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>del(delId)} style={{flex:1,background:"#ef4444",color:"#fff",border:"none",borderRadius:11,padding:"10px",fontFamily:"'Cairo',sans-serif",fontWeight:700,cursor:"pointer"}}>احذف</button>
+              <button onClick={()=>setDelId(null)} style={{flex:1,background:darkMode?"#0a1538":"#f5f8ff",border:"1px solid rgba(74,158,255,.2)",color:T.text3,borderRadius:11,padding:"10px",fontFamily:"'Cairo',sans-serif",cursor:"pointer"}}>إلغاء</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
   const isEn=lang==="en";
   return (
     <div style={{paddingTop:64,minHeight:"100vh",background:T.bg}}>
@@ -1337,6 +1534,7 @@ export default function App() {
       {page==="services"   && <HomePage setPage={setPage} lang={lang} darkMode={darkMode} T={T}/>}
       {page==="about"      && <AboutPage lang={lang} darkMode={darkMode} T={T}/>}
       {page==="clients"    && <ClientsPage lang={lang} darkMode={darkMode} T={T} userRole={userRole}/>}
+      {page==="providers"  && <ProvidersPage lang={lang} darkMode={darkMode} T={T}/>}
 
       {/* ── Floating WhatsApp Button ── */}
       <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer"
