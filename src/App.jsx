@@ -439,7 +439,7 @@ function LoginModal({ onSuccess, onClose, lang }) {
 }
 
 // ── Prop Form ─────────────────────────────────────────────────────────────────
-function PropForm({ form, setForm, onSave, onClose, editId }) {
+function PropForm({ form, setForm, onSave, onClose, editId, T, userRole }) {
   const f=key=>e=>setForm(p=>({...p,[key]:e.target.value}));
   const IST={width:"100%",boxSizing:"border-box",background:"#f0f4fc",border:"1px solid rgba(74,158,255,.2)",borderRadius:10,padding:"9px 12px",color:"#1e3a7a",fontFamily:"'Cairo',sans-serif",fontSize:13};
   const Lbl=({c})=><div style={{fontSize:11,color:"#5a6a90",marginBottom:5,fontWeight:600}}>{c}</div>;
@@ -483,7 +483,12 @@ function PropForm({ form, setForm, onSave, onClose, editId }) {
 
         <Sec c="👤 المالك"/>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:16}}>
-          {[["اسم المالك","ownerName"],["رقم الجوال","ownerPhone"]].map(([lbl,key])=>(<div key={key}><Lbl c={lbl}/><input value={form[key]} onChange={f(key)} style={IST}/></div>))}
+          <div><Lbl c="اسم المالك"/><input value={form.ownerName} onChange={f("ownerName")} style={IST}/></div>
+          {userRole==="admin" ? (
+            <div><Lbl c="رقم الجوال"/><input value={form.ownerPhone} onChange={f("ownerPhone")} style={IST}/></div>
+          ) : (
+            <div><Lbl c="رقم الجوال"/><div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"9px 12px",fontSize:12,color:"#ef4444",fontWeight:600}}>🔒 محجوب للموظف</div></div>
+          )}
         </div>
 
         <Sec c="🔐 رموز الدخول"/>
@@ -658,12 +663,12 @@ function AdminCard({ p, onEdit, onDelete, onChangeStatus, setLightbox, onShare, 
       <div style={{padding:"11px 13px"}}>
         <div style={{fontWeight:900,fontSize:13,color:"#1e3a7a",marginBottom:2}}>{p.name}</div>
         <div style={{fontSize:10,color:"#5a6a90",marginBottom:7}}>📍 {p.address}</div>
-        <div style={{background:"#edf1fb",borderRadius:9,padding:"8px 10px",marginBottom:7,border:"1px solid #0e2050"}}>
-          <div style={{fontSize:9,color:p.adLicenseNo?"#4ade80":"#f87171",marginBottom:2}}>🏛️ رخصة: {p.adLicenseNo||"غير مُدخل ⚠️"}</div>
+        <div style={{background:"#f0f4fc",borderRadius:9,padding:"8px 10px",marginBottom:7,border:"1px solid rgba(74,158,255,.15)"}}>
+          <div style={{fontSize:9,color:p.adLicenseNo?"#16a34a":"#ef4444",marginBottom:2}}>🏛️ رخصة: {p.adLicenseNo||"غير مُدخل ⚠️"}</div>
           <div style={{fontSize:9,color:"#5a6a90",marginBottom:2}}>📋 عقد: {p.marketingContractNo||"—"}</div>
-          {userRole==="admin"&&p.ownerName&&<div style={{fontSize:9,color:"#2a4d9b",marginBottom:2}}>👤 {p.ownerName} {p.ownerPhone&&"— "+p.ownerPhone}</div>}
-          {userRole==="employee"&&<div style={{fontSize:9,color:"#f87171",marginBottom:2}}>🔒 بيانات المالك محجوبة</div>}
-          <div style={{fontSize:9,color:"#a5b4fc",fontWeight:700}}>👁️ {p.views||0} مشاهدة</div>
+          {userRole==="admin"&&p.ownerName&&<div style={{fontSize:9,color:"#1e3a7a",marginBottom:2}}>👤 {p.ownerName} {p.ownerPhone&&"— "+p.ownerPhone}</div>}
+          {userRole==="employee"&&<div style={{fontSize:9,color:"#ef4444",marginBottom:2}}>🔒 بيانات المالك محجوبة</div>}
+          <div style={{fontSize:9,color:"#2a4d9b",fontWeight:700}}>👁️ {p.views||0} مشاهدة</div>
         </div>
         <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:7}}>
           {p.rentPrice&&<div style={{background:"#4ade8015",border:"1px solid #4ade8025",borderRadius:7,padding:"3px 8px",fontSize:9,color:"#4ade80",fontWeight:700}}>إيجار: {Number(p.rentPrice).toLocaleString()}</div>}
@@ -820,7 +825,7 @@ function PropertiesPage({ props, isAdmin, userRole, onEdit, onDelete, onChangeSt
         </div>
       </div>
       <div style={{maxWidth:1200,margin:"0 auto",padding:"22px"}}>
-        {isAdmin&&(()=>{const st={total:props.length,available:props.filter(p=>p.status==="متوفر").length,rented:props.filter(p=>p.status==="مؤجر").length,income:props.filter(p=>p.rentPrice).reduce((s,p)=>s+Number(p.rentPrice),0),noLicense:props.filter(p=>!p.adLicenseNo).length};return(<div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:9,marginBottom:20}}>{[{l:isEn?"Total":"الإجمالي",v:st.total,i:"🏢",c:"#93c5fd"},{l:isEn?"Available":"متوفر",v:st.available,i:"✅",c:"#4ade80"},{l:isEn?"Rented":"مؤجر",v:st.rented,i:"🔑",c:"#a5b4fc"},{l:isEn?"Annual Income":"الدخل السنوي",v:st.income.toLocaleString()+" ﷼",i:"💰",c:"#fbbf24"},{l:isEn?"No License":"بدون ترخيص",v:st.noLicense,i:"⚠️",c:"#f87171"}].map((s,i)=>(<div key={i} style={{background:"linear-gradient(135deg,#071840,#0e2563)",border:`1px solid ${s.c}22`,borderRadius:12,padding:"12px 10px",position:"relative",overflow:"hidden"}}><div style={{position:"absolute",top:-8,left:-8,width:32,height:32,background:s.c+"15",borderRadius:"50%"}}/><div style={{fontSize:17,marginBottom:5}}>{s.i}</div><div style={{fontWeight:900,fontSize:15,color:s.c}}>{s.v}</div><div style={{fontSize:10,color:"#5a6a90",marginTop:1}}>{s.l}</div></div>))}</div>);})()}
+        {isAdmin&&(()=>{const st={total:props.length,available:props.filter(p=>p.status==="متوفر").length,rented:props.filter(p=>p.status==="مؤجر").length,income:props.filter(p=>p.rentPrice).reduce((s,p)=>s+Number(p.rentPrice),0),noLicense:props.filter(p=>!p.adLicenseNo).length};return(<div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:9,marginBottom:20}}>{[{l:isEn?"Total":"الإجمالي",v:st.total,i:"🏢",c:"#2a4d9b"},{l:isEn?"Available":"متوفر",v:st.available,i:"✅",c:"#16a34a"},{l:isEn?"Rented":"مؤجر",v:st.rented,i:"🔑",c:"#7c3aed"},{l:isEn?"Annual Income":"الدخل السنوي",v:st.income.toLocaleString()+" ﷼",i:"💰",c:"#b45309"},{l:isEn?"No License":"بدون ترخيص",v:st.noLicense,i:"⚠️",c:"#dc2626"}].map((s,i)=>(<div key={i} style={{background:"white",border:`1px solid ${s.c}22`,borderRadius:12,padding:"12px 10px",position:"relative",overflow:"hidden",boxShadow:"0 2px 8px rgba(30,58,122,.07)"}}><div style={{position:"absolute",top:-8,left:-8,width:32,height:32,background:s.c+"15",borderRadius:"50%"}}/><div style={{fontSize:17,marginBottom:5}}>{s.i}</div><div style={{fontWeight:900,fontSize:15,color:s.c}}>{s.v}</div><div style={{fontSize:10,color:"#5a6a90",marginTop:1}}>{s.l}</div></div>))}</div>);})()}
 
         {/* Search */}
         <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={isEn?"🔍 Search...":"🔍 ابحث بالاسم أو الموقع..."} style={{width:"100%",boxSizing:"border-box",background:T.bg2,border:`1px solid ${T.border}`,borderRadius:12,padding:"10px 16px",color:T.text,fontFamily:"'Cairo',sans-serif",fontSize:13,marginBottom:12}}/>
@@ -1507,7 +1512,7 @@ export default function App() {
 
       {lightbox&&<Lightbox images={lightbox.images} startIndex={lightbox.idx} onClose={()=>setLightbox(null)}/>}
       {showLogin&&<LoginModal onSuccess={(role)=>{setIsAdmin(true);setUserRole(role);setShowLogin(false);showToast(role==="admin"?"مرحباً! وضع الإدارة مفعّل 🔓":"مرحباً! وضع الموظف مفعّل 👤");}} onClose={()=>setShowLogin(false)} lang={lang}/>}
-      {showForm&&<PropForm form={form} setForm={setForm} onSave={save} onClose={()=>setShowForm(false)} editId={editId} T={T}/>}
+      {showForm&&<PropForm form={form} setForm={setForm} onSave={save} onClose={()=>setShowForm(false)} editId={editId} T={T} userRole={userRole}/>}
       {shareP&&<ShareModal p={shareP} onClose={()=>setShareP(null)}/>}
 
       {toast&&(<div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",background:toast.type==="err"?"#ef4444":"#1a4faa",border:`1px solid ${toast.type==="err"?"#ef4444":"#2563c7"}`,color:"#fff",padding:"10px 24px",borderRadius:12,zIndex:9999,fontWeight:700,fontSize:13,boxShadow:"0 8px 32px #000a",whiteSpace:"nowrap"}}>{toast.msg}</div>)}
