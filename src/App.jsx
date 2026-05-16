@@ -94,7 +94,7 @@ function ShareModal({ p, onClose }) {
 
   return (
     <div style={{position:"fixed",inset:0,background:"#000c",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20,overflowY:"auto"}} onClick={onClose}>
-      <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:"1px solid #2563c7",borderRadius:20,padding:26,maxWidth:440,width:"100%"}} onClick={e=>e.stopPropagation()}>
+      <div style={{background:"linear-gradient(160deg,#ffffff,#f5f8ff)",border:"1px solid rgba(74,158,255,.35)",borderRadius:20,padding:26,maxWidth:440,width:"100%"}} onClick={e=>e.stopPropagation()}>
         
         {/* Header */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
@@ -114,7 +114,7 @@ function ShareModal({ p, onClose }) {
           
           {/* Logo + Title */}
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:18,position:"relative"}}>
-            <img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777727982/WhatsApp_Image_2026-04-30_at_1.38.52_AM_bx1fuy.jpg"
+            <img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1778958489/WhatsApp_Image_2026-05-16_at_9.59.47_PM_zhmw6y.jpg"
               alt="Logo" style={{width:52,height:52,borderRadius:12,objectFit:"cover",flexShrink:0}}/>
             <div>
               <div style={{fontWeight:900,fontSize:13,color:"#fff",lineHeight:1.3}}>مؤسسة خالد محمد عبدالغفور الشيخ</div>
@@ -144,18 +144,18 @@ function ShareModal({ p, onClose }) {
             </div>}
             {p.area&&<div style={{background:"rgba(255,255,255,.07)",borderRadius:10,padding:"8px 12px"}}>
               <div style={{fontSize:10,color:"rgba(255,255,255,.4)"}}>المساحة</div>
-              <div style={{fontSize:15,fontWeight:900,color:"#93c5fd"}}>{p.area} م²</div>
+              <div style={{fontSize:15,fontWeight:900,color:"#2a4d9b"}}>{p.area} م²</div>
             </div>}
             {p.rooms&&<div style={{background:"rgba(255,255,255,.07)",borderRadius:10,padding:"8px 12px"}}>
               <div style={{fontSize:10,color:"rgba(255,255,255,.4)"}}>الغرف</div>
-              <div style={{fontSize:15,fontWeight:900,color:"#93c5fd"}}>{p.rooms} غرف</div>
+              <div style={{fontSize:15,fontWeight:900,color:"#2a4d9b"}}>{p.rooms} غرف</div>
             </div>}
           </div>
 
           {/* Tags */}
           <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14,position:"relative"}}>
-            <span style={{background:"#1a4faa44",color:"#93c5fd",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:14}}>{p.type}</span>
-            <span style={{background:"#1a4faa44",color:"#93c5fd",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:14}}>{p.dealType}</span>
+            <span style={{background:"#1a4faa44",color:"#2a4d9b",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:14}}>{p.type}</span>
+            <span style={{background:"#1a4faa44",color:"#2a4d9b",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:14}}>{p.dealType}</span>
             {p.furnished&&<span style={{background:"#fbbf2420",color:"#fbbf24",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:14}}>🛋️ مفروش</span>}
           </div>
 
@@ -174,7 +174,7 @@ function ShareModal({ p, onClose }) {
 
         {/* Action buttons */}
         <div style={{display:"flex",flexDirection:"column",gap:9}}>
-          <button onClick={downloadImage} disabled={generating} style={{display:"flex",alignItems:"center",gap:10,background:"linear-gradient(135deg,#1a4faa,#2563c7)",border:"none",color:"#fff",borderRadius:12,padding:"11px 18px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:generating?"not-allowed":"pointer",justifyContent:"center",opacity:generating?.7:1}}>
+          <button onClick={downloadImage} disabled={generating} style={{display:"flex",alignItems:"center",gap:10,background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",border:"none",color:"#fff",borderRadius:12,padding:"11px 18px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:generating?"not-allowed":"pointer",justifyContent:"center",opacity:generating?.7:1}}>
             {generating?"⏳ جاري التوليد...":"🖼️ حفظ كصورة"}
           </button>
           <a href={`https://wa.me/?text=${waMsg}`} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",gap:10,background:"#25d36620",border:"1px solid #25d36640",color:"#25d366",borderRadius:12,padding:"11px 18px",textDecoration:"none",fontWeight:700,fontSize:14,justifyContent:"center"}}><WaIcon size={18}/> مشاركة عبر واتساب</a>
@@ -219,8 +219,8 @@ function Lightbox({ images, startIndex, onClose }) {
       >
         <img src={images[idx]} alt="" style={{maxWidth:"88vw",maxHeight:"75vh",borderRadius:14,objectFit:"contain",display:"block",cursor:"grab",draggable:"false"}}/>
         <button onClick={onClose} style={{position:"absolute",top:-12,left:-12,width:32,height:32,background:"#ef4444",border:"none",borderRadius:"50%",color:"#fff",fontSize:17,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
-        {images.length>1&&<><button onClick={()=>setIdx(i=>(i-1+images.length)%images.length)} style={{position:"absolute",top:"50%",right:-50,transform:"translateY(-50%)",background:"#1a4faa",border:"1px solid #2563c7",color:"#fff",width:40,height:40,borderRadius:"50%",fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button><button onClick={()=>setIdx(i=>(i+1)%images.length)} style={{position:"absolute",top:"50%",left:-50,transform:"translateY(-50%)",background:"#1a4faa",border:"1px solid #2563c7",color:"#fff",width:40,height:40,borderRadius:"50%",fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>›</button></>}
-        <div style={{textAlign:"center",marginTop:8,color:"#93c5fd",fontSize:12}}>{idx+1} / {images.length}</div>
+        {images.length>1&&<><button onClick={()=>setIdx(i=>(i-1+images.length)%images.length)} style={{position:"absolute",top:"50%",right:-50,transform:"translateY(-50%)",background:"#1a4faa",border:"1px solid rgba(74,158,255,.35)",color:"#fff",width:40,height:40,borderRadius:"50%",fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button><button onClick={()=>setIdx(i=>(i+1)%images.length)} style={{position:"absolute",top:"50%",left:-50,transform:"translateY(-50%)",background:"#1a4faa",border:"1px solid rgba(74,158,255,.35)",color:"#fff",width:40,height:40,borderRadius:"50%",fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>›</button></>}
+        <div style={{textAlign:"center",marginTop:8,color:"#2a4d9b",fontSize:12}}>{idx+1} / {images.length}</div>
       </div>
       {images.length>1&&(<div style={{display:"flex",gap:6,marginTop:10,overflowX:"auto",maxWidth:"88vw"}}>{images.map((img,i)=>(<img key={i} src={img} onClick={e=>{e.stopPropagation();setIdx(i);}} alt="" style={{width:54,height:54,objectFit:"cover",borderRadius:8,cursor:"pointer",flexShrink:0,border:i===idx?"2px solid #60a5fa":"2px solid transparent",opacity:i===idx?1:.5,transition:"all .2s"}}/>))}</div>)}
     </div>
@@ -293,7 +293,7 @@ function ImageUploader({ images, onChange }) {
             <div style={{height:6,background:"#1e3a7a",borderRadius:4}}><div style={{height:"100%",background:"linear-gradient(90deg,#1a4faa,#60a5fa)",borderRadius:4,width:progress+"%",transition:"width .3s"}}/></div>
           </div>
         ) : (
-          <div style={{color:"#6b8cc4",fontSize:13}}>اسحب الصور أو <span style={{color:"#60a5fa",fontWeight:700}}>اضغط للاختيار</span><br/><span style={{fontSize:11,color:"#4a6fa5"}}>يتم ضغط الصور تلقائياً ⚡</span></div>
+          <div style={{color:"#5a6a90",fontSize:13}}>اسحب الصور أو <span style={{color:"#60a5fa",fontWeight:700}}>اضغط للاختيار</span><br/><span style={{fontSize:11,color:"#5a6a90"}}>يتم ضغط الصور تلقائياً ⚡</span></div>
         )}
         <input ref={ref} type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>process(e.target.files)}/>
       </div>
@@ -304,7 +304,7 @@ function ImageUploader({ images, onChange }) {
 
 function CodeInput({ label, value, onChange }) {
   const [show, setShow] = useState(false);
-  return (<div><div style={{fontSize:11,color:"#6b8cc4",marginBottom:5,fontWeight:600}}>{label}</div><div style={{position:"relative"}}><input type={show?"text":"password"} value={value} onChange={onChange} placeholder="—" style={{width:"100%",boxSizing:"border-box",background:"#071840",border:"1px solid #fbbf2444",borderRadius:10,padding:"9px 36px 9px 12px",color:"#fbbf24",fontFamily:"inherit",fontSize:13,fontWeight:700}}/><button onClick={()=>setShow(s=>!s)} style={{position:"absolute",top:"50%",left:9,transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:14,padding:0}}>{show?"🙈":"👁️"}</button></div></div>);
+  return (<div><div style={{fontSize:11,color:"#5a6a90",marginBottom:5,fontWeight:600}}>{label}</div><div style={{position:"relative"}}><input type={show?"text":"password"} value={value} onChange={onChange} placeholder="—" style={{width:"100%",boxSizing:"border-box",background:"#f0f4fc",border:"1px solid #fbbf2444",borderRadius:10,padding:"9px 36px 9px 12px",color:"#fbbf24",fontFamily:"inherit",fontSize:13,fontWeight:700}}/><button onClick={()=>setShow(s=>!s)} style={{position:"absolute",top:"50%",left:9,transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:14,padding:0}}>{show?"🙈":"👁️"}</button></div></div>);
 }
 
 // ── NAVBAR ────────────────────────────────────────────────────────────────────
@@ -318,12 +318,12 @@ function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang,
   const go = (p) => { setPage(p); setMenuOpen(false); };
 
   return (
-    <div style={{position:"fixed",top:0,left:0,right:0,zIndex:200,background:T.navbar,backdropFilter:"blur(18px)",borderBottom:`1px solid ${T.navbarBorder}`,transition:"background .3s"}}>
+    <div style={{position:"fixed",top:0,left:0,right:0,zIndex:200,background:T.navbar,backdropFilter:"blur(18px)",borderBottom:`2px solid rgba(74,158,255,.3)`,transition:"background .3s"}}>
       <div style={{maxWidth:1200,margin:"0 auto",padding:"0 16px",display:"flex",alignItems:"center",justifyContent:"space-between",height:64}}>
 
         {/* Brand */}
         <button onClick={()=>go("home")} style={{display:"flex",alignItems:"center",gap:10,background:"none",border:"none",cursor:"pointer",padding:0,flexShrink:0}}>
-          <div style={{width:44,height:44,borderRadius:10,overflow:"hidden",flexShrink:0,boxShadow:"0 2px 10px #1a4faa55"}}><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777727982/WhatsApp_Image_2026-04-30_at_1.38.52_AM_bx1fuy.jpg" alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
+          <div style={{width:44,height:44,borderRadius:10,overflow:"hidden",flexShrink:0,boxShadow:"0 2px 10px #1a4faa55"}}><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1778958489/WhatsApp_Image_2026-05-16_at_9.59.47_PM_zhmw6y.jpg" alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
           <div style={{textAlign:"right"}}>
             <div style={{fontWeight:900,fontSize:11,color:T.text,fontFamily:"'Cairo',sans-serif",lineHeight:1.2,whiteSpace:"nowrap"}}>{isEn?"Khalid Al-Shaikh Est.":"مؤسسة خالد محمد عبدالغفور الشيخ"}</div>
             <div style={{fontSize:9,color:T.text3,fontFamily:"'Cairo',sans-serif"}}>{isEn?"Real Estate Services":"للخدمات العقارية"}</div>
@@ -344,7 +344,7 @@ function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang,
             <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer" style={{background:"#25d36622",border:"1px solid #25d36640",color:"#25d366",borderRadius:8,padding:"6px 9px",textDecoration:"none",display:"flex",alignItems:"center"}}><WaIcon size={12}/></a>
             {isAdmin
               ? <button onClick={onLogout} style={{background:"#ef444422",border:"1px solid #ef444444",color:"#f87171",borderRadius:8,padding:"6px 10px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11,cursor:"pointer"}}>🔓</button>
-              : <button onClick={onLoginClick} style={{background:"linear-gradient(135deg,#1a4faa,#2563c7)",border:"none",color:"#fff",borderRadius:8,padding:"7px 12px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11,cursor:"pointer",whiteSpace:"nowrap"}}>🔐 {isEn?"Admin":"الإدارة"}</button>
+              : <button onClick={onLoginClick} style={{background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",border:"none",color:"#fff",borderRadius:8,padding:"7px 12px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11,cursor:"pointer",whiteSpace:"nowrap"}}>🔐 {isEn?"Admin":"الإدارة"}</button>
             }
           </div>
           {/* Hamburger - always visible */}
@@ -389,12 +389,12 @@ function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang,
           {/* Admin button */}
           {isAdmin
             ? <button onClick={()=>{onLogout();setMenuOpen(false);}} style={{background:"#ef444418",border:"1px solid #ef444430",color:"#f87171",borderRadius:9,padding:"9px 12px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer",textAlign:"right",width:"100%"}}>🔓 {isEn?"Logout":"تسجيل خروج"}</button>
-            : <button onClick={()=>{onLoginClick();setMenuOpen(false);}} style={{background:"linear-gradient(135deg,#1a4faa,#2563c7)",border:"none",color:"#fff",borderRadius:9,padding:"9px 12px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer",textAlign:"right",width:"100%"}}>🔐 {isEn?"Admin Login":"دخول الإدارة"}</button>
+            : <button onClick={()=>{onLoginClick();setMenuOpen(false);}} style={{background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",border:"none",color:"#fff",borderRadius:9,padding:"9px 12px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer",textAlign:"right",width:"100%"}}>🔐 {isEn?"Admin Login":"دخول الإدارة"}</button>
           }
         </div>
       )}
 
-      {isAdmin&&(<div style={{background:"#1a4faa18",borderTop:"1px solid #2563c733",padding:"5px 20px",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}><span style={{fontSize:11,color:"#93c5fd",fontWeight:600}}>{isAdmin&&userRole==="admin"?"👑 وضع المدير":"👤 وضع الموظف"}</span></div>)}
+      {isAdmin&&(<div style={{background:"rgba(74,158,255,.1)",borderTop:"1px solid rgba(74,158,255,.2)",padding:"5px 20px",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}><span style={{fontSize:11,color:"#7ab8ff",fontWeight:600}}>{isAdmin&&userRole==="admin"?"👑 وضع المدير":"👤 وضع الموظف"}</span></div>)}
     </div>
   );
 }
@@ -404,21 +404,21 @@ function LoginModal({ onSuccess, onClose, lang }) {
   const isEn=lang==="en";
   const [un,setUn]=useState(""); const [pw,setPw]=useState(""); const [show,setShow]=useState(false); const [err,setErr]=useState(""); const [loading,setLoading]=useState(false);
   const login=()=>{ setLoading(true); setTimeout(()=>{ const ok=USERS.find(u=>u.username===un&&u.password===pw); if(ok) onSuccess(ok.role); else { setErr(isEn?"Incorrect credentials":"بيانات الدخول غير صحيحة"); setLoading(false); } },600); };
-  const IST={width:"100%",boxSizing:"border-box",background:"#071840",border:"1px solid #1e3a7a",borderRadius:10,padding:"10px 13px",color:"#e8eef8",fontFamily:"'Cairo',sans-serif",fontSize:14};
+  const IST={width:"100%",boxSizing:"border-box",background:"#f0f4fc",border:"1px solid rgba(74,158,255,.2)",borderRadius:10,padding:"10px 13px",color:"#1e3a7a",fontFamily:"'Cairo',sans-serif",fontSize:14};
   return (
     <div style={{position:"fixed",inset:0,background:"#000c",zIndex:1500,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
-      <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:"2px solid #2563c7",borderRadius:22,padding:32,maxWidth:380,width:"100%",boxShadow:"0 24px 60px #1a4faa33"}} onClick={e=>e.stopPropagation()}>
+      <div style={{background:"linear-gradient(160deg,#ffffff,#f5f8ff)",border:"2px solid #2563c7",borderRadius:22,padding:32,maxWidth:380,width:"100%",boxShadow:"0 24px 60px #1a4faa33"}} onClick={e=>e.stopPropagation()}>
         <div style={{textAlign:"center",marginBottom:24}}>
-          <div style={{width:60,height:60,borderRadius:16,background:"linear-gradient(135deg,#1a4faa,#2563c7)",margin:"0 auto 14px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28}}>🏛️</div>
+          <div style={{width:60,height:60,borderRadius:16,background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",margin:"0 auto 14px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28}}>🏛️</div>
           <div style={{fontWeight:900,fontSize:18,color:"#fff",marginBottom:4}}>{isEn?"Admin Login":"دخول الإدارة"}</div>
-          <div style={{fontSize:11,color:"#4a6fa5"}}>Khalid M. A. Ghafour Al-Shaikh Est.</div>
+          <div style={{fontSize:11,color:"#5a6a90"}}>Khalid M. A. Ghafour Al-Shaikh Est.</div>
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:14,marginBottom:16}}>
-          <div><div style={{fontSize:12,color:"#6b8cc4",marginBottom:6,fontWeight:600}}>{isEn?"Username":"اسم المستخدم"}</div><input value={un} onChange={e=>setUn(e.target.value)} onKeyDown={e=>e.key==="Enter"&&login()} style={IST}/></div>
-          <div><div style={{fontSize:12,color:"#6b8cc4",marginBottom:6,fontWeight:600}}>{isEn?"Password":"كلمة السر"}</div><div style={{position:"relative"}}><input type={show?"text":"password"} value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&login()} style={{...IST,paddingLeft:42}}/><button onClick={()=>setShow(s=>!s)} style={{position:"absolute",top:"50%",left:12,transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:16,padding:0}}>{show?"🙈":"👁️"}</button></div></div>
+          <div><div style={{fontSize:12,color:"#5a6a90",marginBottom:6,fontWeight:600}}>{isEn?"Username":"اسم المستخدم"}</div><input value={un} onChange={e=>setUn(e.target.value)} onKeyDown={e=>e.key==="Enter"&&login()} style={IST}/></div>
+          <div><div style={{fontSize:12,color:"#5a6a90",marginBottom:6,fontWeight:600}}>{isEn?"Password":"كلمة السر"}</div><div style={{position:"relative"}}><input type={show?"text":"password"} value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&login()} style={{...IST,paddingLeft:42}}/><button onClick={()=>setShow(s=>!s)} style={{position:"absolute",top:"50%",left:12,transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:16,padding:0}}>{show?"🙈":"👁️"}</button></div></div>
         </div>
         {err&&<div style={{background:"#ef444418",border:"1px solid #ef444430",color:"#f87171",borderRadius:10,padding:"9px 14px",fontSize:13,fontWeight:600,marginBottom:14,textAlign:"center"}}>⚠️ {err}</div>}
-        <button onClick={login} disabled={loading} style={{width:"100%",background:"linear-gradient(135deg,#1a4faa,#2563c7)",color:"#fff",border:"none",borderRadius:12,padding:"13px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:15,cursor:"pointer",opacity:loading?.7:1}}>{loading?(isEn?"Verifying...":"⏳ جاري التحقق..."):(isEn?"Login 🔓":"دخول 🔓")}</button>
+        <button onClick={login} disabled={loading} style={{width:"100%",background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",color:"#fff",border:"none",borderRadius:12,padding:"13px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:15,cursor:"pointer",opacity:loading?.7:1}}>{loading?(isEn?"Verifying...":"⏳ جاري التحقق..."):(isEn?"Login 🔓":"دخول 🔓")}</button>
       </div>
     </div>
   );
@@ -427,16 +427,16 @@ function LoginModal({ onSuccess, onClose, lang }) {
 // ── Prop Form ─────────────────────────────────────────────────────────────────
 function PropForm({ form, setForm, onSave, onClose, editId }) {
   const f=key=>e=>setForm(p=>({...p,[key]:e.target.value}));
-  const IST={width:"100%",boxSizing:"border-box",background:"#071840",border:"1px solid #1e3a7a",borderRadius:10,padding:"9px 12px",color:"#e8eef8",fontFamily:"'Cairo',sans-serif",fontSize:13};
-  const Lbl=({c})=><div style={{fontSize:11,color:"#6b8cc4",marginBottom:5,fontWeight:600}}>{c}</div>;
+  const IST={width:"100%",boxSizing:"border-box",background:"#f0f4fc",border:"1px solid rgba(74,158,255,.2)",borderRadius:10,padding:"9px 12px",color:"#1e3a7a",fontFamily:"'Cairo',sans-serif",fontSize:13};
+  const Lbl=({c})=><div style={{fontSize:11,color:"#5a6a90",marginBottom:5,fontWeight:600}}>{c}</div>;
   const Sec=({c})=><div style={{fontSize:11,color:"#60a5fa",fontWeight:700,marginBottom:10,padding:"6px 12px",background:"#1a4faa18",borderRadius:9,border:"1px solid #1a4faa33"}}>{c}</div>;
   return (
     <div style={{position:"fixed",inset:0,background:"#000b",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={onClose}>
-      <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:"1px solid #1a4faa",borderRadius:22,padding:24,maxWidth:600,width:"100%",maxHeight:"93vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+      <div style={{background:"linear-gradient(160deg,#ffffff,#f5f8ff)",border:"1px solid #1a4faa",borderRadius:22,padding:24,maxWidth:600,width:"100%",maxHeight:"93vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20,paddingBottom:14,borderBottom:"1px solid #1e3a7a"}}>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
-            <div style={{width:36,height:36,borderRadius:10,background:"linear-gradient(135deg,#1a4faa,#2563c7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>🏢</div>
-            <div><div style={{fontWeight:900,fontSize:14,color:"#e8eef8"}}>{editId?"تعديل العقار":"إضافة عقار جديد"}</div><div style={{fontSize:10,color:"#4a6fa5"}}>مؤسسة خالد محمد عبدالغفور الشيخ</div></div>
+            <div style={{width:36,height:36,borderRadius:10,background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>🏢</div>
+            <div><div style={{fontWeight:900,fontSize:14,color:"#1e3a7a"}}>{editId?"تعديل العقار":"إضافة عقار جديد"}</div><div style={{fontSize:10,color:"#5a6a90"}}>مؤسسة خالد محمد عبدالغفور الشيخ</div></div>
           </div>
           <button onClick={onClose} style={{background:"#1e3a7a",border:"none",color:"#aaa",width:30,height:30,borderRadius:"50%",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
         </div>
@@ -482,7 +482,7 @@ function PropForm({ form, setForm, onSave, onClose, editId }) {
         <div style={{marginBottom:14}}>
           <Lbl c="رابط قوقل ماب"/>
           <input value={form.mapUrl} onChange={f("mapUrl")} placeholder="https://maps.google.com/?q=..." style={{...IST,borderColor:"#16a34a33",color:"#4ade80"}}/>
-          <div style={{fontSize:10,color:"#4a6fa5",marginTop:5}}>💡 قوقل ماب → ابحث عن الموقع → مشاركة → نسخ الرابط</div>
+          <div style={{fontSize:10,color:"#5a6a90",marginTop:5}}>💡 قوقل ماب → ابحث عن الموقع → مشاركة → نسخ الرابط</div>
         </div>
 
         <div style={{marginBottom:14}}><Lbl c="📝 ملاحظات"/><textarea value={form.notes} onChange={f("notes")} rows={5} placeholder="كل سطر يظهر منفصلاً..." style={{...IST,resize:"vertical",whiteSpace:"pre-wrap",lineHeight:1.7}}/></div>
@@ -491,8 +491,8 @@ function PropForm({ form, setForm, onSave, onClose, editId }) {
         <div style={{marginBottom:20}}><ImageUploader images={form.images||[]} onChange={imgs=>setForm(p=>({...p,images:typeof imgs==="function"?imgs(p.images||[]):imgs}))}/></div>
 
         <div style={{display:"flex",gap:10}}>
-          <button onClick={onSave} style={{flex:1,background:"linear-gradient(135deg,#1a4faa,#2563c7)",color:"#fff",border:"none",borderRadius:11,padding:"12px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer"}}>{editId?"حفظ التعديلات":"إضافة العقار"}</button>
-          <button onClick={onClose} style={{background:"#071840",border:"1px solid #1e3a7a",color:"#6b8cc4",borderRadius:11,padding:"12px 18px",fontFamily:"'Cairo',sans-serif",cursor:"pointer",fontWeight:600}}>إلغاء</button>
+          <button onClick={onSave} style={{flex:1,background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",color:"#fff",border:"none",borderRadius:11,padding:"12px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer"}}>{editId?"حفظ التعديلات":"إضافة العقار"}</button>
+          <button onClick={onClose} style={{background:"#f0f4fc",border:"1px solid rgba(74,158,255,.2)",color:"#5a6a90",borderRadius:11,padding:"12px 18px",fontFamily:"'Cairo',sans-serif",cursor:"pointer",fontWeight:600}}>إلغاء</button>
         </div>
       </div>
     </div>
@@ -511,10 +511,10 @@ function PropertyModal({ p, onClose, setLightbox, onShare, lang }) {
 
   return (
     <div style={{position:"fixed",inset:0,background:"#000d",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16,overflowY:"auto"}} onClick={onClose}>
-      <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:`1px solid ${sc.c}33`,borderRadius:22,maxWidth:600,width:"100%",overflow:"hidden",maxHeight:"90vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+      <div style={{background:"linear-gradient(160deg,#ffffff,#f5f8ff)",border:`1px solid ${sc.c}33`,borderRadius:22,maxWidth:600,width:"100%",overflow:"hidden",maxHeight:"90vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
 
         {/* Header image */}
-        <div style={{position:"relative",height:240,background:"#03102e",cursor:imgs.length>0?"pointer":"default"}} onClick={()=>imgs.length>0&&setLightbox({images:imgs,idx:0})}>
+        <div style={{position:"relative",height:240,background:"#edf1fb",cursor:imgs.length>0?"pointer":"default"}} onClick={()=>imgs.length>0&&setLightbox({images:imgs,idx:0})}>
           {imgs.length>0?(<><img src={imgs[0]} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/><div style={{position:"absolute",inset:0,background:"linear-gradient(to top,#071840cc,transparent 60%)",pointerEvents:"none"}}/></>):(<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:52,color:"#1e3a7a"}}>🏠</div>)}
           <button onClick={onClose} style={{position:"absolute",top:12,right:12,background:"rgba(0,0,0,.6)",border:"none",color:"#fff",width:34,height:34,borderRadius:"50%",cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
           {imgs.length>1&&<div style={{position:"absolute",bottom:12,left:12,background:"rgba(0,0,0,.6)",color:"#fff",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:18}}>📷 {imgs.length} {isEn?"photos":"صور"}</div>}
@@ -523,8 +523,8 @@ function PropertyModal({ p, onClose, setLightbox, onShare, lang }) {
 
         <div style={{padding:"20px 22px"}}>
           {/* Title */}
-          <div style={{fontWeight:900,fontSize:20,color:"#e8eef8",marginBottom:4}}>{p.name}</div>
-          <div style={{fontSize:12,color:"#4a6fa5",marginBottom:14}}>📍 {p.address}</div>
+          <div style={{fontWeight:900,fontSize:20,color:"#1e3a7a",marginBottom:4}}>{p.name}</div>
+          <div style={{fontSize:12,color:"#5a6a90",marginBottom:14}}>📍 {p.address}</div>
 
           {/* Price */}
           <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}>
@@ -542,25 +542,25 @@ function PropertyModal({ p, onClose, setLightbox, onShare, lang }) {
               p.furnished!==undefined&&{l:isEn?"Furnished":"مفروش",v:p.furnished?(isEn?"Yes":"نعم"):(isEn?"No":"لا"),i:"🛋️"},
               p.refNo&&{l:isEn?"Ref":"المرجع",v:p.refNo,i:"🔖"},
             ].filter(Boolean).map((s,i)=>(
-              <div key={i} style={{background:"#03102e",borderRadius:10,padding:"10px 12px",border:"1px solid #1e3a7a"}}>
-                <div style={{fontSize:10,color:"#4a6fa5",marginBottom:3}}>{s.i} {s.l}</div>
-                <div style={{fontSize:13,fontWeight:700,color:"#93c5fd"}}>{s.v}</div>
+              <div key={i} style={{background:"#edf1fb",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(74,158,255,.2)"}}>
+                <div style={{fontSize:10,color:"#5a6a90",marginBottom:3}}>{s.i} {s.l}</div>
+                <div style={{fontSize:13,fontWeight:700,color:"#2a4d9b"}}>{s.v}</div>
               </div>
             ))}
           </div>
 
           {/* License */}
-          {p.adLicenseNo&&<div style={{background:"#1a4faa18",border:"1px solid #2563c740",borderRadius:10,padding:"8px 12px",marginBottom:14,fontSize:11,color:"#93c5fd",fontWeight:700}}>🏛️ {isEn?"Ad License:":"رخصة إعلانية:"} {p.adLicenseNo}</div>}
+          {p.adLicenseNo&&<div style={{background:"#1a4faa18",border:"1px solid #2563c740",borderRadius:10,padding:"8px 12px",marginBottom:14,fontSize:11,color:"#2a4d9b",fontWeight:700}}>🏛️ {isEn?"Ad License:":"رخصة إعلانية:"} {p.adLicenseNo}</div>}
 
           {/* Notes */}
-          {p.notes&&<div style={{background:"#03102e",border:"1px solid #1e3a7a",borderRadius:12,padding:"12px 14px",marginBottom:16,fontSize:13,color:"#93c5fd",lineHeight:1.9,whiteSpace:"pre-line",direction:"auto"}}>{p.notes}</div>}
+          {p.notes&&<div style={{background:"#edf1fb",border:"1px solid rgba(74,158,255,.2)",borderRadius:12,padding:"12px 14px",marginBottom:16,fontSize:13,color:"#2a4d9b",lineHeight:1.9,whiteSpace:"pre-line",direction:"auto"}}>{p.notes}</div>}
 
           {/* Map */}
           {p.mapUrl&&<a href={p.mapUrl} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"#16a34a18",border:"1px solid #16a34a40",color:"#4ade80",borderRadius:11,padding:"10px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,width:"100%",boxSizing:"border-box",marginBottom:12}}>📍 {isEn?"View on Map":"عرض على الخريطة"}</a>}
 
           {/* Actions */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-            <a href={`tel:${PHONE}`} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"linear-gradient(135deg,#1a4faa,#2563c7)",color:"#fff",borderRadius:11,padding:"11px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12}}>📞 {isEn?"Call":"اتصال"}</a>
+            <a href={`tel:${PHONE}`} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",color:"#fff",borderRadius:11,padding:"11px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12}}>📞 {isEn?"Call":"اتصال"}</a>
             <a href={`https://wa.me/${WA_NUMBER}?text=${waMsg}`} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"#25d36618",border:"1px solid #25d36640",color:"#25d366",borderRadius:11,padding:"11px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12}}><WaIcon size={13}/> {isEn?"WhatsApp":"واتساب"}</a>
             <button onClick={()=>onShare(p)} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"#6366f118",border:"1px solid #6366f140",color:"#a5b4fc",borderRadius:11,padding:"11px 6px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer"}}>📤 {isEn?"Share":"شارك"}</button>
           </div>
@@ -584,9 +584,9 @@ function PublicCard({ p, setLightbox, onShare, lang }) {
   return (
     <>
     {showModal&&<PropertyModal p={p} onClose={()=>setShowModal(false)} setLightbox={setLightbox} onShare={onShare} lang={lang}/>}
-    <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:`1px solid ${sc.c}25`,borderRadius:18,overflow:"hidden",transition:"all .15s",transform:hov?"translateY(-3px)":"none",boxShadow:hov?`0 12px 36px ${sc.c}18`:"none",display:"flex",flexDirection:"column"}}
+    <div style={{background:"linear-gradient(160deg,#ffffff,#f5f8ff)",border:`1px solid ${sc.c}25`,borderRadius:18,overflow:"hidden",transition:"all .15s",transform:hov?"translateY(-3px)":"none",boxShadow:hov?`0 12px 36px ${sc.c}18`:"none",display:"flex",flexDirection:"column"}}
       onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
-      <div style={{position:"relative",height:185,background:"#03102e",cursor:imgs.length>0?"pointer":"default"}} onClick={()=>{if(imgs.length>0){setLightbox({images:imgs,idx:0});trackView();}}}>
+      <div style={{position:"relative",height:185,background:"#edf1fb",cursor:imgs.length>0?"pointer":"default"}} onClick={()=>{if(imgs.length>0){setLightbox({images:imgs,idx:0});trackView();}}}>
         {imgs.length>0?(<><img src={imgs[0]} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/><div style={{position:"absolute",inset:0,background:"linear-gradient(to top,#07184088,transparent 55%)",pointerEvents:"none"}}/>{imgs.length>1&&<div style={{position:"absolute",bottom:10,left:10,background:"#000a",color:"#fff",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:18}}>📷 {imgs.length}</div>}</>):(
           <div style={{width:"100%",height:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:"#1e3a7a",gap:8}}><span style={{fontSize:38}}>🏠</span></div>
         )}
@@ -595,29 +595,29 @@ function PublicCard({ p, setLightbox, onShare, lang }) {
         <button onClick={e=>{e.stopPropagation();onShare(p);}} style={{position:"absolute",bottom:10,left:10,background:"#1a4faa",border:"none",color:"#fff",borderRadius:20,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer"}}>📤 {isEn?"Share":"مشاركة"}</button>
       </div>
       <div style={{padding:"14px 16px",display:"flex",flexDirection:"column",flex:1}}>
-        <div style={{fontWeight:900,fontSize:15,color:"#e8eef8",marginBottom:3}}>{p.name}</div>
-        <div style={{fontSize:11,color:"#4a6fa5",marginBottom:8}}>📍 {p.address}</div>
-        <div style={{marginBottom:9}}>{p.adLicenseNo?<span style={{display:"inline-flex",alignItems:"center",gap:5,background:"#1a4faa22",border:"1px solid #2563c744",color:"#93c5fd",borderRadius:8,padding:"3px 10px",fontSize:10,fontWeight:700}}>🏛️ {isEn?"Ad License:":"رخصة إعلانية:"} {p.adLicenseNo}</span>:<span style={{display:"inline-flex",alignItems:"center",gap:5,background:"#ef444418",border:"1px solid #ef444430",color:"#f87171",borderRadius:8,padding:"3px 10px",fontSize:10,fontWeight:700}}>⚠️ {isEn?"Pending License":"قيد الترخيص"}</span>}</div>
+        <div style={{fontWeight:900,fontSize:15,color:"#1e3a7a",marginBottom:3}}>{p.name}</div>
+        <div style={{fontSize:11,color:"#5a6a90",marginBottom:8}}>📍 {p.address}</div>
+        <div style={{marginBottom:9}}>{p.adLicenseNo?<span style={{display:"inline-flex",alignItems:"center",gap:5,background:"#1a4faa22",border:"1px solid #2563c744",color:"#2a4d9b",borderRadius:8,padding:"3px 10px",fontSize:10,fontWeight:700}}>🏛️ {isEn?"Ad License:":"رخصة إعلانية:"} {p.adLicenseNo}</span>:<span style={{display:"inline-flex",alignItems:"center",gap:5,background:"#ef444418",border:"1px solid #ef444430",color:"#f87171",borderRadius:8,padding:"3px 10px",fontSize:10,fontWeight:700}}>⚠️ {isEn?"Pending License":"قيد الترخيص"}</span>}</div>
         <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:9}}>
           {p.rentPrice&&<div style={{background:"#4ade8015",border:"1px solid #4ade8028",borderRadius:9,padding:"5px 10px",fontSize:11,color:"#4ade80",fontWeight:700}}>🏠 {Number(p.rentPrice).toLocaleString()} {isEn?"SAR/yr":"﷼/سنة"}</div>}
           {p.salePrice&&<div style={{background:"#fbbf2415",border:"1px solid #fbbf2428",borderRadius:9,padding:"5px 10px",fontSize:11,color:"#fbbf24",fontWeight:700}}>💰 {Number(p.salePrice).toLocaleString()} {isEn?"SAR":"﷼"}</div>}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:10}}>
-          {p.area&&<div style={{background:"#071840",borderRadius:8,padding:"5px 9px",fontSize:11,color:"#6b8cc4"}}>📐 {p.area} م²</div>}
-          {p.builtArea&&<div style={{background:"#071840",borderRadius:8,padding:"5px 9px",fontSize:11,color:"#6b8cc4"}}>🏗️ {p.builtArea} م²</div>}
+          {p.area&&<div style={{background:"#f0f4fc",borderRadius:8,padding:"5px 9px",fontSize:11,color:"#5a6a90"}}>📐 {p.area} م²</div>}
+          {p.builtArea&&<div style={{background:"#f0f4fc",borderRadius:8,padding:"5px 9px",fontSize:11,color:"#5a6a90"}}>🏗️ {p.builtArea} م²</div>}
         </div>
 
         {/* Notes preview - 2 lines only */}
-        {p.notes&&<div style={{fontSize:11,color:"#4a6fa5",background:"#071840",borderRadius:8,padding:"6px 10px",marginBottom:10,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",lineHeight:1.7}}>💬 {p.notes}</div>}
+        {p.notes&&<div style={{fontSize:11,color:"#5a6a90",background:"#f0f4fc",borderRadius:8,padding:"6px 10px",marginBottom:10,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",lineHeight:1.7}}>💬 {p.notes}</div>}
 
         {/* View details button */}
-        <button onClick={()=>{setShowModal(true);trackView();}} style={{width:"100%",background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",color:"#93c5fd",borderRadius:10,padding:"9px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:9,transition:"background .2s"}}
+        <button onClick={()=>{setShowModal(true);trackView();}} style={{width:"100%",background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",color:"#2a4d9b",borderRadius:10,padding:"9px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:9,transition:"background .2s"}}
           onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,.1)"}
           onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,.06)"}
         >🔍 {isEn?"View Full Details":"عرض التفاصيل كاملة"}</button>
 
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:7,marginBottom:p.mapUrl?8:0}}>
-          <a href={`tel:${PHONE}`} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"linear-gradient(135deg,#1a4faa,#2563c7)",color:"#fff",borderRadius:10,padding:"9px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11}}>📞 {isEn?"Call":"اتصال"}</a>
+          <a href={`tel:${PHONE}`} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",color:"#fff",borderRadius:10,padding:"9px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11}}>📞 {isEn?"Call":"اتصال"}</a>
           <a href={`https://wa.me/${WA_NUMBER}?text=${waMsg}`} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"#25d36618",border:"1px solid #25d36640",color:"#25d366",borderRadius:10,padding:"9px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11}}><WaIcon size={12}/> {isEn?"WhatsApp":"واتساب"}</a>
           <button onClick={()=>onShare(p)} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"#6366f118",border:"1px solid #6366f140",color:"#a5b4fc",borderRadius:10,padding:"9px 6px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11,cursor:"pointer"}}>📤 {isEn?"Share":"شارك"}</button>
         </div>
@@ -633,21 +633,21 @@ function AdminCard({ p, onEdit, onDelete, onChangeStatus, setLightbox, onShare, 
   const [hov,setHov]=useState(false);
   const imgs=p.images||[]; const sc=SC[p.status]||SC["متوفر"];
   return (
-    <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:`1px solid ${!p.adLicenseNo?"#ef444435":sc.c+"25"}`,borderRadius:18,overflow:"hidden",transition:"all .15s",transform:hov?"translateY(-3px)":"none"}}
+    <div style={{background:"linear-gradient(160deg,#ffffff,#f5f8ff)",border:`1px solid ${!p.adLicenseNo?"#ef444435":sc.c+"25"}`,borderRadius:18,overflow:"hidden",transition:"all .15s",transform:hov?"translateY(-3px)":"none"}}
       onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
       {!p.adLicenseNo&&<div style={{background:"#ef444415",borderBottom:"1px solid #ef444428",padding:"5px 12px",fontSize:10,color:"#f87171",fontWeight:700}}>⚠️ يجب إضافة رقم الترخيص الإعلاني</div>}
-      <div style={{position:"relative",height:148,background:"#03102e",cursor:imgs.length>0?"pointer":"default"}} onClick={()=>imgs.length>0&&setLightbox({images:imgs,idx:0})}>
+      <div style={{position:"relative",height:148,background:"#edf1fb",cursor:imgs.length>0?"pointer":"default"}} onClick={()=>imgs.length>0&&setLightbox({images:imgs,idx:0})}>
         {imgs.length>0?(<><img src={imgs[0]} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/><div style={{position:"absolute",inset:0,background:"linear-gradient(to top,#07184088,transparent 55%)",pointerEvents:"none"}}/></>):(<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",color:"#1e3a7a",fontSize:32}}>🏠</div>)}
         <div style={{position:"absolute",top:8,right:8}}><span style={{display:"inline-flex",alignItems:"center",gap:4,padding:"3px 10px",borderRadius:20,background:sc.bg,color:sc.c,fontSize:10,fontWeight:700,border:`1px solid ${sc.c}33`}}><span style={{width:5,height:5,borderRadius:"50%",background:sc.c}}/>{p.status}</span></div>
         {p.refNo&&<div style={{position:"absolute",bottom:8,left:8,background:"#1a4faa",color:"#fff",fontSize:9,padding:"2px 7px",borderRadius:12,fontWeight:700}}>{p.refNo}</div>}
       </div>
       <div style={{padding:"11px 13px"}}>
-        <div style={{fontWeight:900,fontSize:13,color:"#e8eef8",marginBottom:2}}>{p.name}</div>
-        <div style={{fontSize:10,color:"#4a6fa5",marginBottom:7}}>📍 {p.address}</div>
-        <div style={{background:"#03102e",borderRadius:9,padding:"8px 10px",marginBottom:7,border:"1px solid #0e2050"}}>
+        <div style={{fontWeight:900,fontSize:13,color:"#1e3a7a",marginBottom:2}}>{p.name}</div>
+        <div style={{fontSize:10,color:"#5a6a90",marginBottom:7}}>📍 {p.address}</div>
+        <div style={{background:"#edf1fb",borderRadius:9,padding:"8px 10px",marginBottom:7,border:"1px solid #0e2050"}}>
           <div style={{fontSize:9,color:p.adLicenseNo?"#4ade80":"#f87171",marginBottom:2}}>🏛️ رخصة: {p.adLicenseNo||"غير مُدخل ⚠️"}</div>
-          <div style={{fontSize:9,color:"#6b8cc4",marginBottom:2}}>📋 عقد: {p.marketingContractNo||"—"}</div>
-          {userRole==="admin"&&p.ownerName&&<div style={{fontSize:9,color:"#93c5fd",marginBottom:2}}>👤 {p.ownerName} {p.ownerPhone&&"— "+p.ownerPhone}</div>}
+          <div style={{fontSize:9,color:"#5a6a90",marginBottom:2}}>📋 عقد: {p.marketingContractNo||"—"}</div>
+          {userRole==="admin"&&p.ownerName&&<div style={{fontSize:9,color:"#2a4d9b",marginBottom:2}}>👤 {p.ownerName} {p.ownerPhone&&"— "+p.ownerPhone}</div>}
           {userRole==="employee"&&<div style={{fontSize:9,color:"#f87171",marginBottom:2}}>🔒 بيانات المالك محجوبة</div>}
           <div style={{fontSize:9,color:"#a5b4fc",fontWeight:700}}>👁️ {p.views||0} مشاهدة</div>
         </div>
@@ -656,11 +656,11 @@ function AdminCard({ p, onEdit, onDelete, onChangeStatus, setLightbox, onShare, 
           {p.salePrice&&<div style={{background:"#fbbf2415",border:"1px solid #fbbf2425",borderRadius:7,padding:"3px 8px",fontSize:9,color:"#fbbf24",fontWeight:700}}>بيع: {Number(p.salePrice).toLocaleString()}</div>}
           {p.minPrice&&<div style={{background:"#f8717115",border:"1px solid #f8717125",borderRadius:7,padding:"3px 8px",fontSize:9,color:"#f87171",fontWeight:700}}>أدنى: {Number(p.minPrice).toLocaleString()}</div>}
         </div>
-        <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:8}}>{STATUS_OPTIONS.map(s=>(<button key={s} onClick={()=>onChangeStatus(p.id,s)} style={{padding:"3px 8px",borderRadius:6,border:"none",cursor:"pointer",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:9,background:p.status===s?"linear-gradient(135deg,#1a4faa,#2563c7)":"#0e2050",color:p.status===s?"#fff":"#4a6fa5"}}>{s}</button>))}</div>
+        <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:8}}>{STATUS_OPTIONS.map(s=>(<button key={s} onClick={()=>onChangeStatus(p.id,s)} style={{padding:"3px 8px",borderRadius:6,border:"none",cursor:"pointer",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:9,background:p.status===s?"linear-gradient(135deg,#1e3a7a,#2a4d9b)":"#0e2050",color:p.status===s?"#fff":"#4a6fa5"}}>{s}</button>))}</div>
         <div style={{display:"flex",gap:6}}>
-          {userRole==="admin"&&<button onClick={()=>onEdit(p)} style={{flex:1,background:"#0e2563",border:"1px solid #2563c7",color:"#93c5fd",borderRadius:8,padding:"7px",fontFamily:"'Cairo',sans-serif",fontWeight:600,fontSize:11,cursor:"pointer"}}>✏️ تعديل</button>}
+          {userRole==="admin"&&<button onClick={()=>onEdit(p)} style={{flex:1,background:"#ddeeff",border:"1px solid rgba(74,158,255,.35)",color:"#2a4d9b",borderRadius:8,padding:"7px",fontFamily:"'Cairo',sans-serif",fontWeight:600,fontSize:11,cursor:"pointer"}}>✏️ تعديل</button>}
           <button onClick={()=>onShare(p)} style={{background:"#6366f118",border:"1px solid #6366f130",color:"#a5b4fc",borderRadius:8,padding:"7px 10px",cursor:"pointer",fontSize:11}}>📤</button>
-          {imgs.length>0&&<button onClick={()=>setLightbox({images:imgs,idx:0})} style={{background:"#1a4faa22",border:"1px solid #2563c740",color:"#93c5fd",borderRadius:8,padding:"7px 10px",cursor:"pointer",fontSize:11}}>🖼️</button>}
+          {imgs.length>0&&<button onClick={()=>setLightbox({images:imgs,idx:0})} style={{background:"#1a4faa22",border:"1px solid #2563c740",color:"#2a4d9b",borderRadius:8,padding:"7px 10px",cursor:"pointer",fontSize:11}}>🖼️</button>}
           {p.mapUrl&&<a href={p.mapUrl} target="_blank" rel="noopener noreferrer" style={{background:"#16a34a18",border:"1px solid #16a34a40",color:"#4ade80",borderRadius:8,padding:"7px 10px",fontSize:11,textDecoration:"none",display:"flex",alignItems:"center"}}>📍</a>}
           {userRole==="admin"&&<button onClick={()=>onDelete(p.id)} style={{background:"#ef444414",border:"1px solid #ef444428",color:"#f87171",borderRadius:8,padding:"7px 10px",cursor:"pointer",fontSize:11}}>🗑️</button>}
         </div>
@@ -693,7 +693,7 @@ function HomePage({ setPage, lang, darkMode, T }) {
   ];
   return (
     <div style={{paddingTop:64,background:T.bg}}>
-      <div style={{minHeight:"calc(100vh - 64px)",background:darkMode?"linear-gradient(160deg,#07103a 0%,#0e2563 55%,#1a4faa 100%)":"linear-gradient(160deg,#eff6ff 0%,#dbeafe 55%,#bfdbfe 100%)",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",padding:"60px 24px"}}>
+      <div style={{minHeight:"calc(100vh - 64px)",background:darkMode?"linear-gradient(150deg,#0a1538 0%,#1e3a7a 60%,#2a4d9b 100%)":"linear-gradient(150deg,#0a1538 0%,#1e3a7a 60%,#2a4d9b 100%)",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",padding:"60px 24px"}}>
         <div style={{position:"absolute",inset:0,backgroundImage:"linear-gradient(rgba(255,255,255,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.015) 1px,transparent 1px)",backgroundSize:"48px 48px"}}/>
         <div style={{position:"relative",zIndex:2,textAlign:"center",maxWidth:780}}>
           <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.13)",borderRadius:30,padding:"6px 18px",fontSize:12,color:"rgba(255,255,255,.65)",marginBottom:28}}>
@@ -702,22 +702,22 @@ function HomePage({ setPage, lang, darkMode, T }) {
           </div>
           {/* Hero Logo */}
           <div style={{marginBottom:24,display:"flex",justifyContent:"center"}}>
-            <img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777727982/WhatsApp_Image_2026-04-30_at_1.38.52_AM_bx1fuy.jpg"
+            <img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1778958489/WhatsApp_Image_2026-05-16_at_9.59.47_PM_zhmw6y.jpg"
               alt="Logo" style={{width:160,height:160,objectFit:"cover",borderRadius:24,boxShadow:"0 8px 40px #00000055"}}/>
           </div>
-          <h1 style={{fontSize:"clamp(28px,5vw,54px)",fontWeight:900,color:darkMode?"#fff":"#1e3a6e",lineHeight:1.15,marginBottom:10}}>
+          <h1 style={{fontSize:"clamp(28px,5vw,54px)",fontWeight:900,color:"#fff",lineHeight:1.15,marginBottom:10}}>
             {isEn?"Khalid M. A. Ghafour":"مؤسسة خالد محمد"}<br/>
             <span style={{background:"linear-gradient(135deg,#60a5fa,#93c5fd)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>{isEn?"Al-Shaikh Est.":"عبدالغفور الشيخ"}</span>
           </h1>
-          <p style={{fontSize:13,color:darkMode?"rgba(255,255,255,.45)":"rgba(30,58,110,.5)",marginBottom:14}}>Khalid M. A. Ghafour Al-Shaikh Est. | Real Estate Services</p>
-          <p style={{fontSize:15,color:darkMode?"rgba(255,255,255,.62)":"rgba(30,58,110,.7)",lineHeight:1.8,maxWidth:580,margin:"0 auto 36px"}}>{isEn?"Your trusted partner for all real estate services":"شريكك الموثوق في جميع الخدمات العقارية"}</p>
+          <p style={{fontSize:13,color:"rgba(255,255,255,.45)",marginBottom:14}}>Khalid M. A. Ghafour Al-Shaikh Est. | Real Estate Services</p>
+          <p style={{fontSize:15,color:"rgba(255,255,255,.65)",lineHeight:1.8,maxWidth:580,margin:"0 auto 36px"}}>{isEn?"Your trusted partner for all real estate services":"شريكك الموثوق في جميع الخدمات العقارية"}</p>
           <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
-            <button onClick={()=>setPage("properties")} style={{background:"linear-gradient(135deg,#1a4faa,#2563c7)",color:"#fff",border:"none",borderRadius:13,padding:"13px 28px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:15,cursor:"pointer"}}>🏘️ {isEn?"Browse Properties":"تصفح العقارات"}</button>
+            <button onClick={()=>setPage("properties")} style={{background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",color:"#fff",border:"none",borderRadius:13,padding:"13px 28px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:15,cursor:"pointer"}}>🏘️ {isEn?"Browse Properties":"تصفح العقارات"}</button>
             <a href={`tel:${PHONE}`} style={{background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.18)",color:"#fff",borderRadius:13,padding:"13px 24px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:15,display:"flex",alignItems:"center",gap:7}}>📞 {isEn?"Contact Us":"تواصل الآن"}</a>
           </div>
           <div style={{display:"flex",justifyContent:"center",gap:40,marginTop:52,paddingTop:36,borderTop:"1px solid rgba(255,255,255,.07)",flexWrap:"wrap"}}>
             {[[isEn?"8+":"٨+",isEn?"Services":"خدمة عقارية"],[isEn?"100%":"١٠٠٪",isEn?"Authority Compliant":"امتثال للهيئة"],[isEn?"24/7":"٢٤/٧",isEn?"Available":"تواصل مستمر"]].map(([n,l])=>(
-              <div key={l} style={{textAlign:"center"}}><div style={{fontSize:28,fontWeight:900,color:darkMode?"#fff":"#1e3a6e"}}>{n}</div><div style={{fontSize:11,color:darkMode?"rgba(255,255,255,.4)":"rgba(30,58,110,.5)",marginTop:3}}>{l}</div></div>
+              <div key={l} style={{textAlign:"center"}}><div style={{fontSize:28,fontWeight:900,color:"#7ab8ff"}}>{n}</div><div style={{fontSize:11,color:"rgba(255,255,255,.4)",marginTop:3}}>{l}</div></div>
             ))}
           </div>
         </div>
@@ -725,7 +725,7 @@ function HomePage({ setPage, lang, darkMode, T }) {
       <div style={{background:T.bg,padding:"70px 24px"}}>
         <div style={{maxWidth:1100,margin:"0 auto"}}>
           <div style={{textAlign:"center",marginBottom:46}}>
-            <div style={{display:"inline-block",background:"#1a4faa22",border:"1px solid #1a4faa44",color:"#93c5fd",borderRadius:20,padding:"5px 16px",fontSize:11,fontWeight:700,marginBottom:12}}>{isEn?"Our Services":"خدماتنا"}</div>
+            <div style={{display:"inline-block",background:"#1a4faa22",border:"1px solid #1a4faa44",color:"#2a4d9b",borderRadius:20,padding:"5px 16px",fontSize:11,fontWeight:700,marginBottom:12}}>{isEn?"Our Services":"خدماتنا"}</div>
             <h2 style={{fontSize:"clamp(20px,3.5vw,32px)",fontWeight:900,color:T.text}}>{isEn?"Complete Real Estate Services":"خدمات عقارية متكاملة تحت سقف واحد"}</h2>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:14}}>
@@ -737,7 +737,7 @@ function HomePage({ setPage, lang, darkMode, T }) {
           </div>
         </div>
       </div>
-      <div style={{background:"linear-gradient(135deg,#0e2563,#1a4faa)",padding:"66px 24px",textAlign:"center"}}>
+      <div style={{background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",padding:"66px 24px",textAlign:"center"}}>
         <h2 style={{fontSize:"clamp(20px,3.5vw,34px)",fontWeight:900,color:"#fff",marginBottom:10}}>{isEn?"Looking for a property?":"هل تبحث عن عقار؟"}</h2>
         <p style={{color:"rgba(255,255,255,.6)",fontSize:14,marginBottom:28}}>{isEn?"Our team is ready 24/7":"فريقنا جاهز لمساعدتك على مدار الساعة"}</p>
         <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
@@ -748,8 +748,8 @@ function HomePage({ setPage, lang, darkMode, T }) {
       <div style={{background:T.bg4,borderTop:`1px solid ${T.border}`,padding:"28px 24px"}}>
         <div style={{maxWidth:1100,margin:"0 auto",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:14}}>
           <div style={{display:"flex",alignItems:"center",gap:11}}>
-            <div style={{width:36,height:36,borderRadius:10,overflow:"hidden"}}><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777727982/WhatsApp_Image_2026-04-30_at_1.38.52_AM_bx1fuy.jpg" alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
-            <div><div style={{fontWeight:800,fontSize:12,color:"#fff"}}>مؤسسة خالد محمد عبدالغفور الشيخ</div><div style={{fontSize:10,color:"#4a6fa5"}}>Khalid M. A. Ghafour Al-Shaikh Est.</div></div>
+            <div style={{width:36,height:36,borderRadius:10,overflow:"hidden"}}><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1778958489/WhatsApp_Image_2026-05-16_at_9.59.47_PM_zhmw6y.jpg" alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
+            <div><div style={{fontWeight:800,fontSize:12,color:"#fff"}}>مؤسسة خالد محمد عبدالغفور الشيخ</div><div style={{fontSize:10,color:"#5a6a90"}}>Khalid M. A. Ghafour Al-Shaikh Est.</div></div>
           </div>
           <div style={{fontSize:11,color:"#2a3a6a"}}>© 2025 | {isEn?"Licensed by Real Estate General Authority":"مرخصة من الهيئة العامة للعقار"}</div>
         </div>
@@ -796,7 +796,7 @@ function PropertiesPage({ props, isAdmin, userRole, onEdit, onDelete, onChangeSt
 
   return (
     <div style={{paddingTop:isAdmin?90:64,minHeight:"100vh",background:T.bg}}>
-      <div style={{background:"linear-gradient(135deg,#0e2563,#1a4faa)",padding:"28px 24px 24px"}}>
+      <div style={{background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",padding:"28px 24px 24px"}}>
         <div style={{maxWidth:1200,margin:"0 auto",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
           <div><div style={{fontWeight:900,fontSize:22,color:"#fff",marginBottom:3}}>{isAdmin?(isEn?"🔒 Admin Panel":"🔒 لوحة الإدارة"):(isEn?"🏘️ Available Properties":"🏘️ العقارات المتاحة")}</div><div style={{fontSize:12,color:"rgba(255,255,255,.5)"}}>Khalid M. A. Ghafour Al-Shaikh Est.</div></div>
           {isAdmin&&<div style={{display:"flex",gap:8}}>
@@ -806,7 +806,7 @@ function PropertiesPage({ props, isAdmin, userRole, onEdit, onDelete, onChangeSt
         </div>
       </div>
       <div style={{maxWidth:1200,margin:"0 auto",padding:"22px"}}>
-        {isAdmin&&(()=>{const st={total:props.length,available:props.filter(p=>p.status==="متوفر").length,rented:props.filter(p=>p.status==="مؤجر").length,income:props.filter(p=>p.rentPrice).reduce((s,p)=>s+Number(p.rentPrice),0),noLicense:props.filter(p=>!p.adLicenseNo).length};return(<div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:9,marginBottom:20}}>{[{l:isEn?"Total":"الإجمالي",v:st.total,i:"🏢",c:"#93c5fd"},{l:isEn?"Available":"متوفر",v:st.available,i:"✅",c:"#4ade80"},{l:isEn?"Rented":"مؤجر",v:st.rented,i:"🔑",c:"#a5b4fc"},{l:isEn?"Annual Income":"الدخل السنوي",v:st.income.toLocaleString()+" ﷼",i:"💰",c:"#fbbf24"},{l:isEn?"No License":"بدون ترخيص",v:st.noLicense,i:"⚠️",c:"#f87171"}].map((s,i)=>(<div key={i} style={{background:"linear-gradient(135deg,#071840,#0e2563)",border:`1px solid ${s.c}22`,borderRadius:12,padding:"12px 10px",position:"relative",overflow:"hidden"}}><div style={{position:"absolute",top:-8,left:-8,width:32,height:32,background:s.c+"15",borderRadius:"50%"}}/><div style={{fontSize:17,marginBottom:5}}>{s.i}</div><div style={{fontWeight:900,fontSize:15,color:s.c}}>{s.v}</div><div style={{fontSize:10,color:"#4a6fa5",marginTop:1}}>{s.l}</div></div>))}</div>);})()}
+        {isAdmin&&(()=>{const st={total:props.length,available:props.filter(p=>p.status==="متوفر").length,rented:props.filter(p=>p.status==="مؤجر").length,income:props.filter(p=>p.rentPrice).reduce((s,p)=>s+Number(p.rentPrice),0),noLicense:props.filter(p=>!p.adLicenseNo).length};return(<div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:9,marginBottom:20}}>{[{l:isEn?"Total":"الإجمالي",v:st.total,i:"🏢",c:"#93c5fd"},{l:isEn?"Available":"متوفر",v:st.available,i:"✅",c:"#4ade80"},{l:isEn?"Rented":"مؤجر",v:st.rented,i:"🔑",c:"#a5b4fc"},{l:isEn?"Annual Income":"الدخل السنوي",v:st.income.toLocaleString()+" ﷼",i:"💰",c:"#fbbf24"},{l:isEn?"No License":"بدون ترخيص",v:st.noLicense,i:"⚠️",c:"#f87171"}].map((s,i)=>(<div key={i} style={{background:"linear-gradient(135deg,#071840,#0e2563)",border:`1px solid ${s.c}22`,borderRadius:12,padding:"12px 10px",position:"relative",overflow:"hidden"}}><div style={{position:"absolute",top:-8,left:-8,width:32,height:32,background:s.c+"15",borderRadius:"50%"}}/><div style={{fontSize:17,marginBottom:5}}>{s.i}</div><div style={{fontWeight:900,fontSize:15,color:s.c}}>{s.v}</div><div style={{fontSize:10,color:"#5a6a90",marginTop:1}}>{s.l}</div></div>))}</div>);})()}
 
         {/* Search */}
         <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={isEn?"🔍 Search...":"🔍 ابحث بالاسم أو الموقع..."} style={{width:"100%",boxSizing:"border-box",background:T.bg2,border:`1px solid ${T.border}`,borderRadius:12,padding:"10px 16px",color:T.text,fontFamily:"'Cairo',sans-serif",fontSize:13,marginBottom:12}}/>
@@ -911,8 +911,8 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
   };
 
   const f = key => e => setForm(p=>({...p,[key]:e.target.value}));
-  const IST = { width:"100%", boxSizing:"border-box", background:"#071840", border:"1px solid #1e3a7a", borderRadius:10, padding:"9px 12px", color:"#e8eef8", fontFamily:"'Cairo',sans-serif", fontSize:13 };
-  const Lbl = ({c}) => <div style={{fontSize:11,color:"#6b8cc4",marginBottom:5,fontWeight:600}}>{c}</div>;
+  const IST = { width:"100%", boxSizing:"border-box", background:"#f0f4fc", border:"1px solid rgba(74,158,255,.2)", borderRadius:10, padding:"9px 12px", color:"#1e3a7a", fontFamily:"'Cairo',sans-serif", fontSize:13 };
+  const Lbl = ({c}) => <div style={{fontSize:11,color:"#5a6a90",marginBottom:5,fontWeight:600}}>{c}</div>;
 
   const clientTypeColor = {"مستأجر":"#4ade80","مشتري":"#fbbf24","مالك":"#93c5fd","مستثمر":"#e879f9"};
   const requestColor = {"إيجار":"#4ade80","شراء":"#fbbf24","إيجار وشراء":"#e879f9"};
@@ -930,7 +930,7 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
 
   return (
     <div style={{paddingTop:64,minHeight:"100vh",background:T.bg}}>
-      <div style={{background:"linear-gradient(135deg,#0e2563,#1a4faa)",padding:"28px 24px 24px"}}>
+      <div style={{background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",padding:"28px 24px 24px"}}>
         <div style={{maxWidth:1100,margin:"0 auto",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
           <div>
             <div style={{fontWeight:900,fontSize:22,color:"#fff",marginBottom:3}}>👥 سجل العملاء المحتملين</div>
@@ -964,16 +964,16 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
 
         {/* Search + status filter */}
         <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap",alignItems:"center"}}>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 ابحث بالاسم أو الجوال أو الحي..." style={{flex:1,minWidth:200,background:"#071840",border:"1px solid #1e3a7a",borderRadius:10,padding:"9px 14px",color:"#e8eef8",fontFamily:"'Cairo',sans-serif",fontSize:13}}/>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 ابحث بالاسم أو الجوال أو الحي..." style={{flex:1,minWidth:200,background:"#f0f4fc",border:"1px solid rgba(74,158,255,.2)",borderRadius:10,padding:"9px 14px",color:"#1e3a7a",fontFamily:"'Cairo',sans-serif",fontSize:13}}/>
           <div style={{display:"flex",gap:6}}>
             {["الكل","معلق","مغلق"].map(s=>(
               <button key={s} onClick={()=>setStatusFilter(s)} style={{padding:"8px 14px",borderRadius:20,cursor:"pointer",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,background:statusFilter===s?(s==="مغلق"?"#f8717133":"#fbbf2433"):"#071840",color:statusFilter===s?(s==="مغلق"?"#f87171":"#fbbf24"):"#4a6fa5",border:statusFilter===s?`1px solid ${s==="مغلق"?"#f8717144":"#fbbf2444"}`:"1px solid #1e3a7a"}}>{s==="الكل"?"🗂️ الكل":s==="معلق"?"⏳ معلق":"✅ مغلق"}</button>
             ))}
           </div>
         </div>
-        <div style={{fontSize:11,color:"#4a6fa5",marginBottom:10}}>{filtered.length} عميل</div>
+        <div style={{fontSize:11,color:"#5a6a90",marginBottom:10}}>{filtered.length} عميل</div>
 
-        {!loaded ? <div style={{textAlign:"center",padding:40,color:"#4a6fa5"}}>جاري التحميل...</div> : filtered.length===0 ? (
+        {!loaded ? <div style={{textAlign:"center",padding:40,color:"#5a6a90"}}>جاري التحميل...</div> : filtered.length===0 ? (
           <div style={{textAlign:"center",padding:60,color:"#1e3a7a"}}><div style={{fontSize:46,marginBottom:10}}>👤</div><div style={{fontSize:13}}>{search?"لا توجد نتائج للبحث":"لا يوجد عملاء بعد"}</div></div>
         ) : (
           <div style={{display:"flex",flexDirection:"column",gap:10,paddingBottom:30}}>
@@ -981,14 +981,14 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
               const cStatus = c.clientStatus||"معلق";
               const sc = statusColor[cStatus]||"#fbbf24";
               return (
-              <div key={c.id} style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:`1px solid ${sc}30`,borderRadius:16,padding:"14px 16px"}}>
+              <div key={c.id} style={{background:"linear-gradient(160deg,#ffffff,#f5f8ff)",border:`1px solid ${sc}30`,borderRadius:16,padding:"14px 16px"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8}}>
                   <div style={{display:"flex",alignItems:"center",gap:12}}>
-                    <div style={{width:40,height:40,borderRadius:12,background:"#1a4faa33",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,color:"#93c5fd",fontSize:13,flexShrink:0}}>#{c.clientNo||"—"}</div>
+                    <div style={{width:40,height:40,borderRadius:12,background:"#1a4faa33",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,color:"#2a4d9b",fontSize:13,flexShrink:0}}>#{c.clientNo||"—"}</div>
                     <div>
-                      <div style={{fontWeight:900,fontSize:15,color:"#e8eef8"}}>{c.name}</div>
+                      <div style={{fontWeight:900,fontSize:15,color:"#1e3a7a"}}>{c.name}</div>
                       {(isManager||c.clientType!=="مالك") ? (
-                        <div style={{fontSize:12,color:"#4a6fa5"}}>📞 {c.phone}</div>
+                        <div style={{fontSize:12,color:"#5a6a90"}}>📞 {c.phone}</div>
                       ) : (
                         <div style={{fontSize:11,color:"#f87171"}}>🔒 جوال المالك محجوب</div>
                       )}
@@ -998,32 +998,32 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
                     {/* Client type badge */}
                     {c.clientType&&<span style={{background:clientTypeColor[c.clientType]+"20",color:clientTypeColor[c.clientType],border:`1px solid ${clientTypeColor[c.clientType]}40`,borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{c.clientType}</span>}
                     <span style={{background:statusColor[c.clientStatus||"معلق"]+"20",color:statusColor[c.clientStatus||"معلق"],border:`1px solid ${statusColor[c.clientStatus||"معلق"]}40`,borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{c.clientStatus||"معلق"}</span>
-                    <select value={cStatus} onChange={e=>changeStatus(c.id,e.target.value)} style={{background:"#071840",border:"1px solid #1e3a7a",color:"#93c5fd",borderRadius:8,padding:"3px 8px",fontSize:11,cursor:"pointer",fontFamily:"'Cairo',sans-serif"}}>
+                    <select value={cStatus} onChange={e=>changeStatus(c.id,e.target.value)} style={{background:"#f0f4fc",border:"1px solid rgba(74,158,255,.2)",color:"#2a4d9b",borderRadius:8,padding:"3px 8px",fontSize:11,cursor:"pointer",fontFamily:"'Cairo',sans-serif"}}>
                       <option>معلق</option><option>مغلق</option>
                     </select>
                     <span style={{background:requestColor[c.requestType]+"20",color:requestColor[c.requestType],border:`1px solid ${requestColor[c.requestType]}40`,borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{c.requestType}</span>
-                    {c.paymentType&&c.requestType==="شراء"&&<span style={{background:"#1a4faa22",color:"#93c5fd",border:"1px solid #2563c740",borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{c.paymentType}</span>}
+                    {c.paymentType&&c.requestType==="شراء"&&<span style={{background:"#1a4faa22",color:"#2a4d9b",border:"1px solid #2563c740",borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{c.paymentType}</span>}
                     {isManager&&<button onClick={()=>setDelId(c.id)} style={{background:"#ef444414",border:"1px solid #ef444428",color:"#f87171",borderRadius:8,padding:"4px 10px",cursor:"pointer",fontSize:11}}>🗑️</button>}
-                    <button onClick={()=>openEdit(c)} style={{background:"#1a4faa22",border:"1px solid #2563c740",color:"#93c5fd",borderRadius:8,padding:"4px 10px",cursor:"pointer",fontSize:11}}>✏️ تعديل</button>
+                    <button onClick={()=>openEdit(c)} style={{background:"#1a4faa22",border:"1px solid #2563c740",color:"#2a4d9b",borderRadius:8,padding:"4px 10px",cursor:"pointer",fontSize:11}}>✏️ تعديل</button>
                   </div>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:8,marginTop:12}}>
-                  {c.area&&<div style={{background:"#03102e",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#4a6fa5"}}>📍 الحي: </span><span style={{color:"#93c5fd",fontWeight:700}}>{c.area}</span></div>}
-                  {c.budget&&<div style={{background:"#03102e",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#4a6fa5"}}>💰 الميزانية: </span><span style={{color:"#4ade80",fontWeight:700}}>{Number(c.budget).toLocaleString()} ﷼</span></div>}
-                  {c.ownerPropertyType&&<div style={{background:"#03102e",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#4a6fa5"}}>🏠 نوع العقار: </span><span style={{color:"#93c5fd",fontWeight:700}}>{c.ownerPropertyType}</span></div>}
-                  {c.investorType&&<div style={{background:"#03102e",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#4a6fa5"}}>📈 الاستثمار: </span><span style={{color:"#e879f9",fontWeight:700}}>{c.investorType}</span></div>}
-                  {c.contactDate&&<div style={{background:"#03102e",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#4a6fa5"}}>📞 تواصل: </span><span style={{color:"#93c5fd",fontWeight:700}}>{c.contactDate}</span></div>}
-                  <div style={{background:"#03102e",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#4a6fa5"}}>📅 تسجيل: </span><span style={{color:"#93c5fd",fontWeight:700}}>{c.createdDate}</span></div>
+                  {c.area&&<div style={{background:"#edf1fb",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#5a6a90"}}>📍 الحي: </span><span style={{color:"#2a4d9b",fontWeight:700}}>{c.area}</span></div>}
+                  {c.budget&&<div style={{background:"#edf1fb",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#5a6a90"}}>💰 الميزانية: </span><span style={{color:"#4ade80",fontWeight:700}}>{Number(c.budget).toLocaleString()} ﷼</span></div>}
+                  {c.ownerPropertyType&&<div style={{background:"#edf1fb",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#5a6a90"}}>🏠 نوع العقار: </span><span style={{color:"#2a4d9b",fontWeight:700}}>{c.ownerPropertyType}</span></div>}
+                  {c.investorType&&<div style={{background:"#edf1fb",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#5a6a90"}}>📈 الاستثمار: </span><span style={{color:"#e879f9",fontWeight:700}}>{c.investorType}</span></div>}
+                  {c.contactDate&&<div style={{background:"#edf1fb",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#5a6a90"}}>📞 تواصل: </span><span style={{color:"#2a4d9b",fontWeight:700}}>{c.contactDate}</span></div>}
+                  <div style={{background:"#edf1fb",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#5a6a90"}}>📅 تسجيل: </span><span style={{color:"#2a4d9b",fontWeight:700}}>{c.createdDate}</span></div>
                 </div>
-                {c.notes&&<div style={{marginTop:8,background:"#03102e",borderRadius:8,padding:"6px 10px",fontSize:11,color:"#4a6fa5",whiteSpace:"pre-line",lineHeight:1.7}}>💬 {c.notes}</div>}
+                {c.notes&&<div style={{marginTop:8,background:"#edf1fb",borderRadius:8,padding:"6px 10px",fontSize:11,color:"#5a6a90",whiteSpace:"pre-line",lineHeight:1.7}}>💬 {c.notes}</div>}
 
                 {/* Comments */}
                 {(c.comments||[]).length>0&&(
-                  <div style={{marginTop:8,background:"#03102e",borderRadius:8,padding:"8px 10px"}}>
+                  <div style={{marginTop:8,background:"#edf1fb",borderRadius:8,padding:"8px 10px"}}>
                     {(c.comments||[]).map((cm,i)=>(
                       <div key={i} style={{borderBottom:i<c.comments.length-1?"1px solid #1e3a7a":"none",paddingBottom:i<c.comments.length-1?6:0,marginBottom:i<c.comments.length-1?6:0}}>
-                        <div style={{fontSize:10,color:"#4a6fa5",marginBottom:2}}>{cm.date} {cm.time}</div>
-                        <div style={{fontSize:12,color:"#93c5fd"}}>{cm.text}</div>
+                        <div style={{fontSize:10,color:"#5a6a90",marginBottom:2}}>{cm.date} {cm.time}</div>
+                        <div style={{fontSize:12,color:"#2a4d9b"}}>{cm.text}</div>
                       </div>
                     ))}
                   </div>
@@ -1032,12 +1032,12 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
                 {/* Comment input */}
                 {commentId===c.id ? (
                   <div style={{marginTop:8,display:"flex",gap:6}}>
-                    <input value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addComment(c.id)} placeholder="اكتب تعليقك..." style={{flex:1,background:"#071840",border:"1px solid #1e3a7a",borderRadius:8,padding:"6px 10px",color:"#e8eef8",fontFamily:"'Cairo',sans-serif",fontSize:12}}/>
+                    <input value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addComment(c.id)} placeholder="اكتب تعليقك..." style={{flex:1,background:"#f0f4fc",border:"1px solid rgba(74,158,255,.2)",borderRadius:8,padding:"6px 10px",color:"#1e3a7a",fontFamily:"'Cairo',sans-serif",fontSize:12}}/>
                     <button onClick={()=>addComment(c.id)} style={{background:"#1a4faa",border:"none",color:"#fff",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontSize:12,fontFamily:"'Cairo',sans-serif",fontWeight:700}}>إرسال</button>
-                    <button onClick={()=>{setCommentId(null);setCommentText("");}} style={{background:"#071840",border:"1px solid #1e3a7a",color:"#6b8cc4",borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:12}}>إلغاء</button>
+                    <button onClick={()=>{setCommentId(null);setCommentText("");}} style={{background:"#f0f4fc",border:"1px solid rgba(74,158,255,.2)",color:"#5a6a90",borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:12}}>إلغاء</button>
                   </div>
                 ) : (
-                  <button onClick={()=>setCommentId(c.id)} style={{marginTop:8,background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)",color:"#6b8cc4",borderRadius:8,padding:"5px 12px",cursor:"pointer",fontSize:11,fontFamily:"'Cairo',sans-serif",width:"100%"}}>+ إضافة تعليق</button>
+                  <button onClick={()=>setCommentId(c.id)} style={{marginTop:8,background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)",color:"#5a6a90",borderRadius:8,padding:"5px 12px",cursor:"pointer",fontSize:11,fontFamily:"'Cairo',sans-serif",width:"100%"}}>+ إضافة تعليق</button>
                 )}
               </div>
             );})}
@@ -1048,9 +1048,9 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
       {/* Add Client Modal */}
       {showForm&&(
         <div style={{position:"fixed",inset:0,background:"#000b",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>{setShowForm(false);setEditClientId(null);}}>
-          <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:"1px solid #1a4faa",borderRadius:22,padding:24,maxWidth:540,width:"100%",maxHeight:"93vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+          <div style={{background:"linear-gradient(160deg,#ffffff,#f5f8ff)",border:"1px solid #1a4faa",borderRadius:22,padding:24,maxWidth:540,width:"100%",maxHeight:"93vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,paddingBottom:14,borderBottom:"1px solid #1e3a7a"}}>
-              <div style={{fontWeight:900,fontSize:16,color:"#e8eef8"}}>{editClientId?"✏️ تعديل العميل":"👤 إضافة عميل جديد"}</div>
+              <div style={{fontWeight:900,fontSize:16,color:"#1e3a7a"}}>{editClientId?"✏️ تعديل العميل":"👤 إضافة عميل جديد"}</div>
               <button onClick={()=>{setShowForm(false);setEditClientId(null);}} style={{background:"#1e3a7a",border:"none",color:"#aaa",width:30,height:30,borderRadius:"50%",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:14}}>
@@ -1112,8 +1112,8 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
               <div style={{gridColumn:"1/-1"}}><Lbl c="ملاحظات"/><textarea value={form.notes} onChange={f("notes")} rows={3} style={{...IST,resize:"none"}} placeholder="أي تفاصيل إضافية..."/></div>
             </div>
             <div style={{display:"flex",gap:10}}>
-              <button onClick={save} style={{flex:1,background:"linear-gradient(135deg,#1a4faa,#2563c7)",color:"#fff",border:"none",borderRadius:11,padding:"12px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer"}}>{editClientId?"💾 حفظ التعديلات":"✅ حفظ العميل"}</button>
-              <button onClick={()=>{setShowForm(false);setEditClientId(null);}} style={{background:"#071840",border:"1px solid #1e3a7a",color:"#6b8cc4",borderRadius:11,padding:"12px 18px",fontFamily:"'Cairo',sans-serif",cursor:"pointer"}}>إلغاء</button>
+              <button onClick={save} style={{flex:1,background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",color:"#fff",border:"none",borderRadius:11,padding:"12px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer"}}>{editClientId?"💾 حفظ التعديلات":"✅ حفظ العميل"}</button>
+              <button onClick={()=>{setShowForm(false);setEditClientId(null);}} style={{background:"#f0f4fc",border:"1px solid rgba(74,158,255,.2)",color:"#5a6a90",borderRadius:11,padding:"12px 18px",fontFamily:"'Cairo',sans-serif",cursor:"pointer"}}>إلغاء</button>
             </div>
           </div>
         </div>
@@ -1121,13 +1121,13 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
 
       {delId&&(
         <div style={{position:"fixed",inset:0,background:"#000c",zIndex:700,display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <div style={{background:"linear-gradient(160deg,#071840,#0a1f54)",border:"1px solid #ef444440",borderRadius:20,padding:28,maxWidth:300,textAlign:"center"}}>
+          <div style={{background:"linear-gradient(160deg,#ffffff,#f5f8ff)",border:"1px solid #ef444440",borderRadius:20,padding:28,maxWidth:300,textAlign:"center"}}>
             <div style={{fontSize:36,marginBottom:10}}>⚠️</div>
-            <div style={{fontWeight:900,fontSize:15,color:"#e8eef8",marginBottom:6}}>حذف العميل</div>
-            <div style={{color:"#4a6fa5",marginBottom:20,fontSize:13}}>سيتم الحذف نهائياً</div>
+            <div style={{fontWeight:900,fontSize:15,color:"#1e3a7a",marginBottom:6}}>حذف العميل</div>
+            <div style={{color:"#5a6a90",marginBottom:20,fontSize:13}}>سيتم الحذف نهائياً</div>
             <div style={{display:"flex",gap:10}}>
               <button onClick={()=>del(delId)} style={{flex:1,background:"#ef4444",color:"#fff",border:"none",borderRadius:11,padding:"10px",fontFamily:"'Cairo',sans-serif",fontWeight:700,cursor:"pointer"}}>احذف</button>
-              <button onClick={()=>setDelId(null)} style={{flex:1,background:"#071840",border:"1px solid #1e3a7a",color:"#6b8cc4",borderRadius:11,padding:"10px",fontFamily:"'Cairo',sans-serif",cursor:"pointer"}}>إلغاء</button>
+              <button onClick={()=>setDelId(null)} style={{flex:1,background:"#f0f4fc",border:"1px solid rgba(74,158,255,.2)",color:"#5a6a90",borderRadius:11,padding:"10px",fontFamily:"'Cairo',sans-serif",cursor:"pointer"}}>إلغاء</button>
             </div>
           </div>
         </div>
@@ -1140,16 +1140,16 @@ function AboutPage({ lang, darkMode, T }) {
   const isEn=lang==="en";
   return (
     <div style={{paddingTop:64,minHeight:"100vh",background:T.bg}}>
-      <div style={{background:"linear-gradient(135deg,#0e2563,#1a4faa)",padding:"28px 24px 24px"}}><div style={{maxWidth:900,margin:"0 auto"}}><div style={{fontWeight:900,fontSize:22,color:"#fff",marginBottom:3}}>ℹ️ {isEn?"About Us":"عن المؤسسة"}</div></div></div>
+      <div style={{background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",padding:"28px 24px 24px"}}><div style={{maxWidth:900,margin:"0 auto"}}><div style={{fontWeight:900,fontSize:22,color:"#fff",marginBottom:3}}>ℹ️ {isEn?"About Us":"عن المؤسسة"}</div></div></div>
       <div style={{maxWidth:900,margin:"0 auto",padding:"36px 24px"}}>
 
         {/* Main card */}
-        <div style={{background:"linear-gradient(140deg,#0e2050,#12286a)",border:"1px solid rgba(255,255,255,.07)",borderRadius:20,padding:"32px",marginBottom:16}}>
+        <div style={{background:"linear-gradient(140deg,#ffffff,#f0f5ff)",border:"1px solid rgba(255,255,255,.07)",borderRadius:20,padding:"32px",marginBottom:16}}>
           <div style={{display:"flex",alignItems:"center",gap:18,marginBottom:24,flexWrap:"wrap"}}>
-            <div style={{width:80,height:80,borderRadius:17,overflow:"hidden",flexShrink:0,boxShadow:"0 4px 20px #1a4faa55"}}><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777727982/WhatsApp_Image_2026-04-30_at_1.38.52_AM_bx1fuy.jpg" alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
+            <div style={{width:80,height:80,borderRadius:17,overflow:"hidden",flexShrink:0,boxShadow:"0 4px 20px #1a4faa55"}}><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1778958489/WhatsApp_Image_2026-05-16_at_9.59.47_PM_zhmw6y.jpg" alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
             <div>
               <div style={{fontWeight:900,fontSize:20,color:"#fff",marginBottom:4}}>مؤسسة خالد محمد عبدالغفور الشيخ</div>
-              <div style={{fontSize:13,color:"#6b8cc4"}}>Khalid M. A. Ghafour Al-Shaikh Est. | للخدمات العقارية</div>
+              <div style={{fontSize:13,color:"#5a6a90"}}>Khalid M. A. Ghafour Al-Shaikh Est. | للخدمات العقارية</div>
               <div style={{marginTop:8,display:"inline-flex",alignItems:"center",gap:6,background:"#4ade8015",border:"1px solid #4ade8030",borderRadius:20,padding:"3px 12px"}}>
                 <span style={{width:7,height:7,borderRadius:"50%",background:"#4ade80",display:"inline-block"}}/>
                 <span style={{fontSize:11,color:"#4ade80",fontWeight:700}}>مرخصة من الهيئة العامة للعقار</span>
@@ -1158,7 +1158,7 @@ function AboutPage({ lang, darkMode, T }) {
           </div>
 
           {/* About text */}
-          <div style={{fontSize:14,color:"#93c5fd",lineHeight:2,marginBottom:24}}>
+          <div style={{fontSize:14,color:"#2a4d9b",lineHeight:2,marginBottom:24}}>
             <p style={{marginBottom:14}}>
               {isEn
                 ? "Founded in 1997 by Khalid Mohamed Abdulghafour Al-Shaikh, our establishment is among the earliest specialized real estate firms in the Eastern Province of Saudi Arabia. Over more than 27 years, we have built enduring trust with our clients based on transparency, professionalism, and integrity."
@@ -1186,10 +1186,10 @@ function AboutPage({ lang, darkMode, T }) {
               {n:"27+",l:isEn?"Years Experience":"سنة خبرة",i:"⭐"},
               {n:"8+",l:isEn?"Services":"خدمة عقارية",i:"🏢"},
             ].map((s,i)=>(
-              <div key={i} style={{background:"#03102e",borderRadius:12,padding:"14px",textAlign:"center",border:"1px solid #1e3a7a"}}>
+              <div key={i} style={{background:"#edf1fb",borderRadius:12,padding:"14px",textAlign:"center",border:"1px solid rgba(74,158,255,.2)"}}>
                 <div style={{fontSize:22,marginBottom:4}}>{s.i}</div>
                 <div style={{fontWeight:900,fontSize:20,color:"#fff",marginBottom:2}}>{s.n}</div>
-                <div style={{fontSize:11,color:"#4a6fa5"}}>{s.l}</div>
+                <div style={{fontSize:11,color:"#5a6a90"}}>{s.l}</div>
               </div>
             ))}
           </div>
@@ -1197,7 +1197,7 @@ function AboutPage({ lang, darkMode, T }) {
           {/* Contact grid */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
             {[["📞 "+PHONE,PHONE],["💬 WhatsApp","0568300022"],["🏛️ "+(isEn?"License":"الترخيص"),isEn?"Real Estate Gen. Authority":"هيئة العقار"],["📍 "+(isEn?"Location":"الموقع"),isEn?"Eastern Province, KSA":"المنطقة الشرقية، المملكة العربية السعودية"]].map(([l,v])=>(
-              <div key={l} style={{background:"#03102e",borderRadius:11,padding:"13px 15px",border:"1px solid #1e3a7a"}}><div style={{fontSize:11,color:"#4a6fa5",marginBottom:4}}>{l}</div><div style={{fontSize:12,fontWeight:700,color:"#93c5fd"}}>{v}</div></div>
+              <div key={l} style={{background:"#edf1fb",borderRadius:11,padding:"13px 15px",border:"1px solid rgba(74,158,255,.2)"}}><div style={{fontSize:11,color:"#5a6a90",marginBottom:4}}>{l}</div><div style={{fontSize:12,fontWeight:700,color:"#2a4d9b"}}>{v}</div></div>
             ))}
           </div>
         </div>
@@ -1205,9 +1205,9 @@ function AboutPage({ lang, darkMode, T }) {
         {/* CTA */}
         <div style={{background:"#1a4faa18",border:"1px solid #2563c740",borderRadius:15,padding:"22px",textAlign:"center"}}>
           <div style={{fontWeight:900,fontSize:15,color:"#fff",marginBottom:6}}>{isEn?"Get in Touch":"تواصل معنا"}</div>
-          <div style={{fontSize:12,color:"#4a6fa5",marginBottom:16}}>{isEn?"We're here to help 24/7":"فريقنا جاهز لمساعدتك على مدار الساعة"}</div>
+          <div style={{fontSize:12,color:"#5a6a90",marginBottom:16}}>{isEn?"We're here to help 24/7":"فريقنا جاهز لمساعدتك على مدار الساعة"}</div>
           <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
-            <a href={`tel:${PHONE}`} style={{display:"inline-flex",alignItems:"center",gap:6,background:"linear-gradient(135deg,#1a4faa,#2563c7)",color:"#fff",borderRadius:11,padding:"10px 20px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14}}>📞 {PHONE}</a>
+            <a href={`tel:${PHONE}`} style={{display:"inline-flex",alignItems:"center",gap:6,background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",color:"#fff",borderRadius:11,padding:"10px 20px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14}}>📞 {PHONE}</a>
             <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:7,background:"#25d36620",border:"1px solid #25d36644",color:"#25d366",borderRadius:11,padding:"10px 18px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14}}><WaIcon size={15}/> WhatsApp</a>
           </div>
         </div>
@@ -1283,25 +1283,25 @@ export default function App() {
   };
 
   if(!loaded) return (
-    <div style={{direction:"rtl",fontFamily:"'Cairo',sans-serif",minHeight:"100vh",background:"#07103a",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:14}}>
+    <div style={{direction:"rtl",fontFamily:"'Cairo',sans-serif",minHeight:"100vh",background:"#1e3a7a",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:14}}>
       <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"/>
-      <div style={{width:56,height:56,borderRadius:16,overflow:"hidden"}}><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1777727982/WhatsApp_Image_2026-04-30_at_1.38.52_AM_bx1fuy.jpg" alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
-      <div style={{color:"#93c5fd",fontWeight:700,fontSize:14,fontFamily:"'Cairo',sans-serif"}}>جاري التحميل...</div>
+      <div style={{width:72,height:72,borderRadius:18,overflow:"hidden",border:"2px solid rgba(74,158,255,.3)",boxShadow:"0 8px 30px rgba(74,158,255,.2)"}}><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1778958489/WhatsApp_Image_2026-05-16_at_9.59.47_PM_zhmw6y.jpg" alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
+      <div style={{color:"#7ab8ff",fontWeight:700,fontSize:14,fontFamily:"'Cairo',sans-serif"}}>جاري التحميل...</div>
     </div>
   );
 
   const T = darkMode ? {
-    bg:"#07103a", bg2:"#071840", bg3:"#0a1f54", bg4:"#03102e",
-    text:"#e8eef8", text2:"#93c5fd", text3:"#4a6fa5",
-    border:"#1e3a7a", card:"linear-gradient(160deg,#071840,#0a1f54)",
-    navbar:"rgba(7,16,58,.98)", navbarBorder:"rgba(255,255,255,.08)",
-    navText:"rgba(255,255,255,.6)", navActive:"rgba(255,255,255,.1)",
+    bg:"#0f1f4a", bg2:"#1a2d6b", bg3:"#0a1538", bg4:"#071030",
+    text:"#e8eeff", text2:"#7ab8ff", text3:"#4a6aaa",
+    border:"#2a4080", card:"linear-gradient(160deg,#1a2d6b,#0f1f4a)",
+    navbar:"rgba(15,31,74,.98)", navbarBorder:"rgba(74,158,255,.25)",
+    navText:"rgba(255,255,255,.55)", navActive:"rgba(74,158,255,.15)",
   } : {
-    bg:"#f0f4ff", bg2:"#fff", bg3:"#e8eeff", bg4:"#f8faff",
-    text:"#1e3a6e", text2:"#1a4faa", text3:"#64748b",
-    border:"#dbeafe", card:"linear-gradient(160deg,#fff,#f0f4ff)",
-    navbar:"rgba(255,255,255,.98)", navbarBorder:"rgba(0,0,0,.08)",
-    navText:"rgba(30,58,110,.6)", navActive:"rgba(26,79,170,.1)",
+    bg:"#f5f8ff", bg2:"#ffffff", bg3:"#edf1fb", bg4:"#e8eeff",
+    text:"#1e3a7a", text2:"#2a4d9b", text3:"#5a6a90",
+    border:"rgba(74,158,255,.2)", card:"linear-gradient(160deg,#ffffff,#f5f8ff)",
+    navbar:"rgba(30,58,122,.98)", navbarBorder:"rgba(74,158,255,.3)",
+    navText:"rgba(255,255,255,.55)", navActive:"rgba(74,158,255,.15)",
   };
 
   return (
@@ -1314,7 +1314,7 @@ export default function App() {
       {shareP&&<ShareModal p={shareP} onClose={()=>setShareP(null)}/>}
 
       {toast&&(<div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",background:toast.type==="err"?"#ef4444":"#1a4faa",border:`1px solid ${toast.type==="err"?"#ef4444":"#2563c7"}`,color:"#fff",padding:"10px 24px",borderRadius:12,zIndex:9999,fontWeight:700,fontSize:13,boxShadow:"0 8px 32px #000a",whiteSpace:"nowrap"}}>{toast.msg}</div>)}
-      {saving&&(<div style={{position:"fixed",bottom:16,left:16,background:"#0e2563",border:"1px solid #2563c7",color:"#93c5fd",padding:"6px 13px",borderRadius:9,fontSize:11,fontWeight:600,zIndex:9998}}>💾 {isEn?"Saving...":"جاري الحفظ..."}</div>)}
+      {saving&&(<div style={{position:"fixed",bottom:16,left:16,background:"#ddeeff",border:"1px solid rgba(74,158,255,.35)",color:"#2a4d9b",padding:"6px 13px",borderRadius:9,fontSize:11,fontWeight:600,zIndex:9998}}>💾 {isEn?"Saving...":"جاري الحفظ..."}</div>)}
 
       {delId&&(
         <div style={{position:"fixed",inset:0,background:"#000c",zIndex:700,display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -1350,14 +1350,15 @@ export default function App() {
 
       <style>{`
         *{box-sizing:border-box;}
-        input:focus,select:focus,textarea:focus{outline:none;border-color:#2563c7!important;}
+        input:focus,select:focus,textarea:focus{outline:none;border-color:#4a9eff!important;box-shadow:0 0 0 2px rgba(74,158,255,.12)!important;}
         ::-webkit-scrollbar{width:5px;height:5px}
-        ::-webkit-scrollbar-track{background:${T.bg}}
-        ::-webkit-scrollbar-thumb{background:${darkMode?"#1e3a7a":"#bfdbfe"};border-radius:4px}
+        ::-webkit-scrollbar-track{background:${darkMode?"#0a1538":"#f5f8ff"}}
+        ::-webkit-scrollbar-thumb{background:${darkMode?"#2a4080":"rgba(74,158,255,.3)"};border-radius:4px}
         a{font-family:'Cairo',sans-serif;}
         @media(max-width:768px){
           .desktop-nav{display:none!important;}
           .desktop-actions{display:none!important;}
+          .brand-text{display:none!important;}
         }
       `}</style>
     </div>
