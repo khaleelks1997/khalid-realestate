@@ -523,14 +523,17 @@ function PropForm({ form, setForm, onSave, onClose, editId, T, userRole }) {
         </div>
 
         <Sec c="👤 المالك"/>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:16}}>
-          <div><Lbl c="اسم المالك"/><input value={form.ownerName} onChange={f("ownerName")} style={IST}/></div>
-          {userRole==="admin" ? (
+        {userRole==="admin" ? (
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:16}}>
+            <div><Lbl c="اسم المالك"/><input value={form.ownerName} onChange={f("ownerName")} style={IST}/></div>
             <div><Lbl c="رقم الجوال"/><input value={form.ownerPhone} onChange={f("ownerPhone")} style={IST}/></div>
-          ) : (
-            <div><Lbl c="رقم الجوال"/><div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"9px 12px",fontSize:12,color:"#ef4444",fontWeight:600}}>🔒 محجوب للموظف</div></div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:12,padding:"12px 14px",marginBottom:16,display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:20}}>🔒</span>
+            <div><div style={{fontSize:13,color:"#ef4444",fontWeight:700}}>بيانات المالك محجوبة</div><div style={{fontSize:11,color:"#f87171",marginTop:2}}>فقط المدير يستطيع مشاهدة وتعديل بيانات المالك</div></div>
+          </div>
+        )}
 
         <Sec c="🔐 رموز الدخول"/>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:16}}>
@@ -873,13 +876,18 @@ function PropertiesPage({ props, isAdmin, userRole, onEdit, onDelete, onChangeSt
   const [typeF,setTypeF]   = useState("all");
   const [statusF,setStatusF] = useState("all");
   const [search,setSearch] = useState("");
+  const [sortF,setSortF]   = useState("default");
 
   const filtered=props.filter(p=>
     (dealF==="all"||p.dealType===dealF)&&
     (typeF==="all"||p.type===typeF)&&
     (statusF==="all"||p.status===statusF)&&
     (p.name.includes(search)||p.address.includes(search)||(p.ownerName||"").includes(search))
-  );
+  ).sort((a,b)=>{
+    if(sortF==="price_asc")  { const pa=Number(a.rentPrice||a.salePrice||0); const pb=Number(b.rentPrice||b.salePrice||0); return pa-pb; }
+    if(sortF==="price_desc") { const pa=Number(a.rentPrice||a.salePrice||0); const pb=Number(b.rentPrice||b.salePrice||0); return pb-pa; }
+    return 0;
+  });
 
   const BtnStyle = (active, color="#1a4faa") => ({
     padding:"7px 13px",borderRadius:20,cursor:"pointer",
@@ -933,6 +941,16 @@ function PropertiesPage({ props, isAdmin, userRole, onEdit, onDelete, onChangeSt
             </button>
           ))}
         </div>}
+
+        {/* Sort row */}
+        <div style={{display:"flex",gap:7,marginBottom:12,flexWrap:"wrap",alignItems:"center"}}>
+          <span style={{fontSize:11,color:T.text3,fontWeight:700}}>{isEn?"Sort:":"ترتيب:"}</span>
+          {[["default",isEn?"Default":"الافتراضي"],["price_asc",isEn?"Price ↑":"السعر من الأقل"],["price_desc",isEn?"Price ↓":"السعر من الأعلى"]].map(([v,l])=>(
+            <button key={v} onClick={()=>setSortF(v)} style={BtnStyle(sortF===v,"#7c3aed")}>
+              {l}
+            </button>
+          ))}
+        </div>
 
         <div style={{fontSize:11,color:T.text3,marginBottom:12}}>{filtered.length} {isEn?"properties":"عقار"}</div>
         {filtered.length===0?(<div style={{textAlign:"center",padding:"60px 0",color:"#1e3a7a"}}><div style={{fontSize:46,marginBottom:10}}>🏚️</div><div style={{fontSize:13,fontWeight:600}}>{isEn?"No results":"لا توجد نتائج"}</div></div>):(
@@ -1035,7 +1053,7 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
   const filtered = clients.filter(c=>
     (typeFilter==="الكل"||c.clientType===typeFilter) &&
     (statusFilter==="الكل"||(c.clientStatus||"معلق")===statusFilter) &&
-    (c.name?.includes(search)||c.phone?.includes(search)||c.area?.includes(search)||search==="")
+    (c.name?.includes(search)||c.phone?.includes(search)||c.area?.includes(search)||String(c.clientNo||"").includes(search)||search==="")
   );
 
   return (
@@ -1074,7 +1092,7 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
 
         {/* Search + status filter */}
         <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap",alignItems:"center"}}>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 ابحث بالاسم أو الجوال أو الحي..." style={{flex:1,minWidth:200,background:"#f0f4fc",border:"1px solid rgba(74,158,255,.2)",borderRadius:10,padding:"9px 14px",color:"#1e3a7a",fontFamily:"'Cairo',sans-serif",fontSize:13}}/>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 ابحث بالاسم أو الجوال أو الحي أو رقم التسلسل..." style={{flex:1,minWidth:200,background:"#f0f4fc",border:"1px solid rgba(74,158,255,.2)",borderRadius:10,padding:"9px 14px",color:"#1e3a7a",fontFamily:"'Cairo',sans-serif",fontSize:13}}/>
           <div style={{display:"flex",gap:6}}>
             {["الكل","معلق","مغلق"].map(s=>(
               <button key={s} onClick={()=>setStatusFilter(s)} style={{padding:"8px 14px",borderRadius:20,cursor:"pointer",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,background:statusFilter===s?(s==="مغلق"?"#f8717133":"#fbbf2433"):"#071840",color:statusFilter===s?(s==="مغلق"?"#f87171":"#fbbf24"):"#4a6fa5",border:statusFilter===s?`1px solid ${s==="مغلق"?"#f8717144":"#fbbf2444"}`:"1px solid #1e3a7a"}}>{s==="الكل"?"🗂️ الكل":s==="معلق"?"⏳ معلق":"✅ مغلق"}</button>
@@ -1566,7 +1584,11 @@ export default function App() {
   const isEn=lang==="en";
 
   const openAdd=()=>{ setForm({...emptyForm,createdAt:today(),refNo:"REF-"+String(props.length+1).padStart(3,"0")}); setEditId(null); setShowForm(true); };
-  const openEdit=p=>{ setForm({...p,images:p.images||[],mapUrl:p.mapUrl||""}); setEditId(p.id); setShowForm(true); };
+  const openEdit=p=>{ 
+    const fd={...p,images:p.images||[],mapUrl:p.mapUrl||""};
+    if(userRole==="employee") fd.ownerPhone="";
+    setForm(fd); setEditId(p.id); setShowForm(true); 
+  };
 
   const save=async()=>{
     if(!form.name) return showToast(isEn?"Enter property name":"أدخل اسم العقار","err");
