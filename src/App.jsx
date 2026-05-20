@@ -989,7 +989,11 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
   },[]);
 
   const openAdd = () => { setForm(emptyClient); setEditClientId(null); setShowForm(true); };
-  const openEdit = (c) => { setForm({...emptyClient,...c}); setEditClientId(c.id); setShowForm(true); };
+  const openEdit = (c) => { 
+    const fd = {...emptyClient,...c};
+    if(isManager===false && c.clientType==="مالك") fd.phone="";
+    setForm(fd); setEditClientId(c.id); setShowForm(true); 
+  };
 
   const save = async () => {
     if(!form.name||!form.phone) return alert("الاسم ورقم الجوال مطلوبان");
@@ -1188,11 +1192,17 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
               <div style={{gridColumn:"1/-1"}}><Lbl c="الاسم *"/><input value={form.name} onChange={f("name")} style={IST} placeholder="اسم العميل"/></div>
               <div>
                 <Lbl c="رقم الجوال *"/>
-                <input value={form.phone} onChange={f("phone")} style={{...IST, borderColor: clients.find(c=>c.phone===form.phone&&c.id!==editClientId)?"#ef4444":"rgba(74,158,255,.2)"}} placeholder="05xxxxxxxx"/>
-                {form.phone&&clients.find(c=>c.phone===form.phone&&c.id!==editClientId)&&(
-                  <div style={{fontSize:11,color:"#ef4444",marginTop:4,fontWeight:700}}>
-                    ⚠️ مكرر! مسجل للعميل: "{clients.find(c=>c.phone===form.phone&&c.id!==editClientId)?.name}" — #{clients.find(c=>c.phone===form.phone&&c.id!==editClientId)?.clientNo}
-                  </div>
+                {(!isManager && form.clientType==="مالك") ? (
+                  <div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"9px 12px",fontSize:12,color:"#ef4444",fontWeight:600}}>🔒 جوال المالك محجوب للموظف</div>
+                ) : (
+                  <>
+                    <input value={form.phone} onChange={f("phone")} style={{...IST, borderColor: clients.find(c=>c.phone===form.phone&&c.id!==editClientId)?"#ef4444":"rgba(74,158,255,.2)"}} placeholder="05xxxxxxxx"/>
+                    {form.phone&&clients.find(c=>c.phone===form.phone&&c.id!==editClientId)&&(
+                      <div style={{fontSize:11,color:"#ef4444",marginTop:4,fontWeight:700}}>
+                        ⚠️ مكرر! مسجل للعميل: "{clients.find(c=>c.phone===form.phone&&c.id!==editClientId)?.name}" — #{clients.find(c=>c.phone===form.phone&&c.id!==editClientId)?.clientNo}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
               <div><Lbl c="تاريخ التواصل"/><input type="date" value={form.contactDate} onChange={f("contactDate")} style={IST}/></div>
