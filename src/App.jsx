@@ -591,8 +591,8 @@ function PropertyModal({ p, onClose, setLightbox, onShare, lang }) {
 
           {/* Price */}
           <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}>
-            {p.rentPrice&&<div style={{background:"#4ade8015",border:"1px solid #4ade8030",borderRadius:10,padding:"8px 14px",fontSize:14,color:"#4ade80",fontWeight:900}}>🏠 {Number(p.rentPrice).toLocaleString()} {isEn?"SAR/yr":"﷼/سنة"}</div>}
-            {p.salePrice&&<div style={{background:"#fbbf2415",border:"1px solid #fbbf2430",borderRadius:10,padding:"8px 14px",fontSize:14,color:"#fbbf24",fontWeight:900}}>💰 {Number(p.salePrice).toLocaleString()} {isEn?"SAR":"﷼"}</div>}
+            {p.rentPrice&&<div style={{background:"rgba(22,163,74,.1)",border:"1px solid rgba(22,163,74,.25)",borderRadius:10,padding:"8px 14px",fontSize:14,color:"#16a34a",fontWeight:900}}>🏠 {Number(p.rentPrice).toLocaleString()} {isEn?"SAR/yr":"﷼/سنة"}</div>}
+            {p.salePrice&&<div style={{background:"rgba(180,83,9,.08)",border:"1px solid rgba(180,83,9,.2)",borderRadius:10,padding:"8px 14px",fontSize:14,color:"#b45309",fontWeight:900}}>💰 {Number(p.salePrice).toLocaleString()} {isEn?"SAR":"﷼"}</div>}
           </div>
 
           {/* Details grid */}
@@ -619,13 +619,13 @@ function PropertyModal({ p, onClose, setLightbox, onShare, lang }) {
           {p.notes&&<div style={{background:"#edf1fb",border:"1px solid rgba(74,158,255,.2)",borderRadius:12,padding:"12px 14px",marginBottom:16,fontSize:13,color:"#2a4d9b",lineHeight:1.9,whiteSpace:"pre-line",direction:"auto"}}>{p.notes}</div>}
 
           {/* Map */}
-          {p.mapUrl&&<a href={p.mapUrl} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"#16a34a18",border:"1px solid #16a34a40",color:"#4ade80",borderRadius:11,padding:"10px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,width:"100%",boxSizing:"border-box",marginBottom:12}}>📍 {isEn?"View on Map":"عرض على الخريطة"}</a>}
+          {p.mapUrl&&<a href={p.mapUrl} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"rgba(22,163,74,.1)",border:"1px solid rgba(22,163,74,.3)",color:"#16a34a",borderRadius:11,padding:"10px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,width:"100%",boxSizing:"border-box",marginBottom:12}}>📍 {isEn?"View on Map":"عرض على الخريطة"}</a>}
 
           {/* Actions */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-            <a href={`tel:${PHONE}`} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",color:"#fff",borderRadius:11,padding:"11px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12}}>📞 {isEn?"Call":"اتصال"}</a>
-            <a href={`https://wa.me/${WA_NUMBER}?text=${waMsg}`} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"#25d36618",border:"1px solid #25d36640",color:"#25d366",borderRadius:11,padding:"11px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12}}><WaIcon size={13}/> {isEn?"WhatsApp":"واتساب"}</a>
-            <button onClick={()=>onShare(p)} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"#6366f118",border:"1px solid #6366f140",color:"#a5b4fc",borderRadius:11,padding:"11px 6px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer"}}>📤 {isEn?"Share":"شارك"}</button>
+            <a href={`tel:${PHONE}`} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"#1e3a7a",color:"#fff",borderRadius:11,padding:"11px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12}}>📞 {isEn?"Call":"اتصال"}</a>
+            <a href={`https://wa.me/${WA_NUMBER}?text=${waMsg}`} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"rgba(37,211,102,.1)",border:"1px solid rgba(37,211,102,.3)",color:"#16a34a",borderRadius:11,padding:"11px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12}}><WaIcon size={13}/> {isEn?"WhatsApp":"واتساب"}</a>
+            <button onClick={()=>onShare(p)} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"rgba(74,158,255,.1)",border:"1px solid rgba(74,158,255,.25)",color:"#2a4d9b",borderRadius:11,padding:"11px 6px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer"}}>📤 {isEn?"Share":"شارك"}</button>
           </div>
         </div>
       </div>
@@ -662,8 +662,8 @@ function PublicCard({ p, setLightbox, onShare, lang }) {
         <div style={{fontSize:11,color:"#5a6a90",marginBottom:8}}>📍 {p.address}</div>
         <div style={{marginBottom:9}}>{p.adLicenseNo?<span style={{display:"inline-flex",alignItems:"center",gap:5,background:"#1a4faa22",border:"1px solid #2563c744",color:"#2a4d9b",borderRadius:8,padding:"3px 10px",fontSize:10,fontWeight:700}}>🏛️ {isEn?"Ad License:":"رخصة إعلانية:"} {p.adLicenseNo}</span>:<span style={{display:"inline-flex",alignItems:"center",gap:5,background:"#ef444418",border:"1px solid #ef444430",color:"#f87171",borderRadius:8,padding:"3px 10px",fontSize:10,fontWeight:700}}>⚠️ {isEn?"Pending License":"قيد الترخيص"}</span>}</div>
         <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:9}}>
-          {p.rentPrice&&<div style={{background:"#4ade8015",border:"1px solid #4ade8028",borderRadius:9,padding:"5px 10px",fontSize:11,color:"#4ade80",fontWeight:700}}>🏠 {Number(p.rentPrice).toLocaleString()} {isEn?"SAR/yr":"﷼/سنة"}</div>}
-          {p.salePrice&&<div style={{background:"#fbbf2415",border:"1px solid #fbbf2428",borderRadius:9,padding:"5px 10px",fontSize:11,color:"#fbbf24",fontWeight:700}}>💰 {Number(p.salePrice).toLocaleString()} {isEn?"SAR":"﷼"}</div>}
+          {p.rentPrice&&<div style={{background:"rgba(22,163,74,.1)",border:"1px solid rgba(22,163,74,.25)",borderRadius:9,padding:"5px 10px",fontSize:11,color:"#16a34a",fontWeight:700}}>🏠 {Number(p.rentPrice).toLocaleString()} {isEn?"SAR/yr":"﷼/سنة"}</div>}
+          {p.salePrice&&<div style={{background:"rgba(180,83,9,.08)",border:"1px solid rgba(180,83,9,.2)",borderRadius:9,padding:"5px 10px",fontSize:11,color:"#b45309",fontWeight:700}}>💰 {Number(p.salePrice).toLocaleString()} {isEn?"SAR":"﷼"}</div>}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:10}}>
           {p.area&&<div style={{background:"#f0f4fc",borderRadius:8,padding:"5px 9px",fontSize:11,color:"#5a6a90"}}>📐 {p.area} م²</div>}
@@ -674,17 +674,17 @@ function PublicCard({ p, setLightbox, onShare, lang }) {
         {p.notes&&<div style={{fontSize:11,color:"#5a6a90",background:"#f0f4fc",borderRadius:8,padding:"6px 10px",marginBottom:10,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",lineHeight:1.7}}>💬 {p.notes}</div>}
 
         {/* View details button */}
-        <button onClick={()=>{setShowModal(true);trackView();}} style={{width:"100%",background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",color:"#2a4d9b",borderRadius:10,padding:"9px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:9,transition:"background .2s"}}
-          onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,.1)"}
-          onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,.06)"}
+        <button onClick={()=>{setShowModal(true);trackView();}} style={{width:"100%",background:"#edf1fb",border:"1px solid rgba(74,158,255,.2)",color:"#1e3a7a",borderRadius:10,padding:"9px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:9,transition:"background .2s"}}
+          onMouseEnter={e=>e.currentTarget.style.background="#dde8f8"}
+          onMouseLeave={e=>e.currentTarget.style.background="#edf1fb"}
         >🔍 {isEn?"View Full Details":"عرض التفاصيل كاملة"}</button>
 
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:7,marginBottom:p.mapUrl?8:0}}>
-          <a href={`tel:${PHONE}`} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",color:"#fff",borderRadius:10,padding:"9px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11}}>📞 {isEn?"Call":"اتصال"}</a>
-          <a href={`https://wa.me/${WA_NUMBER}?text=${waMsg}`} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"#25d36618",border:"1px solid #25d36640",color:"#25d366",borderRadius:10,padding:"9px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11}}><WaIcon size={12}/> {isEn?"WhatsApp":"واتساب"}</a>
-          <button onClick={()=>onShare(p)} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"#6366f118",border:"1px solid #6366f140",color:"#a5b4fc",borderRadius:10,padding:"9px 6px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11,cursor:"pointer"}}>📤 {isEn?"Share":"شارك"}</button>
+          <a href={`tel:${PHONE}`} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"#1e3a7a",color:"#fff",borderRadius:10,padding:"9px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11}}>📞 {isEn?"Call":"اتصال"}</a>
+          <a href={`https://wa.me/${WA_NUMBER}?text=${waMsg}`} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"rgba(37,211,102,.1)",border:"1px solid rgba(37,211,102,.35)",color:"#16a34a",borderRadius:10,padding:"9px 6px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11}}><WaIcon size={12}/> {isEn?"WhatsApp":"واتساب"}</a>
+          <button onClick={()=>onShare(p)} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,background:"rgba(74,158,255,.1)",border:"1px solid rgba(74,158,255,.25)",color:"#2a4d9b",borderRadius:10,padding:"9px 6px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:11,cursor:"pointer"}}>📤 {isEn?"Share":"شارك"}</button>
         </div>
-        {p.mapUrl&&<a href={p.mapUrl} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"#16a34a18",border:"1px solid #16a34a40",color:"#4ade80",borderRadius:10,padding:"8px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,width:"100%",boxSizing:"border-box"}}>📍 {isEn?"View on Map":"عرض على الخريطة"}</a>}
+        {p.mapUrl&&<a href={p.mapUrl} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"rgba(22,163,74,.1)",border:"1px solid rgba(22,163,74,.3)",color:"#16a34a",borderRadius:10,padding:"8px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:12,width:"100%",boxSizing:"border-box"}}>📍 {isEn?"View on Map":"عرض على الخريطة"}</a>}
       </div>
     </div>
     </>
@@ -1085,7 +1085,7 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
             {l:"ملاك",v:clients.filter(c=>c.clientType==="مالك").length,i:"🔑",c:"#93c5fd",key:"مالك"},
             {l:"مستثمرين",v:clients.filter(c=>c.clientType==="مستثمر").length,i:"📈",c:"#e879f9",key:"مستثمر"},
           ].map((s,i)=>(
-            <div key={i} onClick={()=>setTypeFilter(s.key)} style={{background:typeFilter===s.key?`linear-gradient(135deg,${s.c}33,${s.c}11)`:"linear-gradient(135deg,#071840,#0e2563)",border:`1px solid ${typeFilter===s.key?s.c+"66":s.c+"22"}`,borderRadius:12,padding:"12px 10px",cursor:"pointer",transition:"all .2s",position:"relative",overflow:"hidden"}}>
+            <div key={i} onClick={()=>setTypeFilter(s.key)} style={{background:typeFilter===s.key?`linear-gradient(135deg,${s.c}15,${s.c}08)`:T.bg2,border:`1px solid ${typeFilter===s.key?s.c+"44":s.c+"18"}`,borderRadius:12,padding:"12px 10px",cursor:"pointer",transition:"all .2s",position:"relative",overflow:"hidden",boxShadow:"0 2px 8px rgba(30,58,122,.06)"}}>
               <div style={{fontSize:20,marginBottom:4}}>{s.i}</div>
               <div style={{fontWeight:900,fontSize:18,color:s.c}}>{s.v}</div>
               <div style={{fontSize:10,color:typeFilter===s.key?s.c:"#4a6fa5"}}>{s.l}</div>
@@ -1486,21 +1486,21 @@ function AboutPage({ lang, darkMode, T }) {
       <div style={{maxWidth:900,margin:"0 auto",padding:"36px 24px"}}>
 
         {/* Main card */}
-        <div style={{background:"linear-gradient(140deg,#ffffff,#f0f5ff)",border:"1px solid rgba(255,255,255,.07)",borderRadius:20,padding:"32px",marginBottom:16}}>
+        <div style={{background:T.bg2,border:"1px solid rgba(74,158,255,.12)",borderRadius:20,padding:"32px",marginBottom:16,boxShadow:"0 4px 18px rgba(30,58,122,.07)"}}>
           <div style={{display:"flex",alignItems:"center",gap:18,marginBottom:24,flexWrap:"wrap"}}>
-            <div style={{width:80,height:80,borderRadius:17,overflow:"hidden",flexShrink:0,boxShadow:"0 4px 20px #1a4faa55"}}><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1778958489/WhatsApp_Image_2026-05-16_at_9.59.47_PM_zhmw6y.jpg" alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
+            <div style={{width:80,height:80,borderRadius:17,overflow:"hidden",flexShrink:0,boxShadow:"0 4px 20px rgba(74,158,255,.25)",border:"2px solid rgba(74,158,255,.2)"}}><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1778958489/WhatsApp_Image_2026-05-16_at_9.59.47_PM_zhmw6y.jpg" alt="Logo" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
             <div>
-              <div style={{fontWeight:900,fontSize:20,color:"#fff",marginBottom:4}}>مؤسسة خالد محمد عبدالغفور الشيخ</div>
-              <div style={{fontSize:13,color:"#5a6a90"}}>Khalid M. A. Ghafour Al-Shaikh Est. | للخدمات العقارية</div>
-              <div style={{marginTop:8,display:"inline-flex",alignItems:"center",gap:6,background:"#4ade8015",border:"1px solid #4ade8030",borderRadius:20,padding:"3px 12px"}}>
-                <span style={{width:7,height:7,borderRadius:"50%",background:"#4ade80",display:"inline-block"}}/>
-                <span style={{fontSize:11,color:"#4ade80",fontWeight:700}}>مرخصة من الهيئة العامة للعقار</span>
+              <div style={{fontWeight:900,fontSize:20,color:T.text,marginBottom:4}}>مؤسسة خالد محمد عبدالغفور الشيخ</div>
+              <div style={{fontSize:13,color:T.text3}}>Khalid M. A. Ghafour Al-Shaikh Est. | للخدمات العقارية</div>
+              <div style={{marginTop:8,display:"inline-flex",alignItems:"center",gap:6,background:"rgba(22,163,74,.1)",border:"1px solid rgba(22,163,74,.25)",borderRadius:20,padding:"3px 12px"}}>
+                <span style={{width:7,height:7,borderRadius:"50%",background:"#16a34a",display:"inline-block"}}/>
+                <span style={{fontSize:11,color:"#16a34a",fontWeight:700}}>مرخصة من الهيئة العامة للعقار</span>
               </div>
             </div>
           </div>
 
           {/* About text */}
-          <div style={{fontSize:14,color:"#2a4d9b",lineHeight:2,marginBottom:24}}>
+          <div style={{fontSize:14,color:T.text2,lineHeight:2,marginBottom:24}}>
             <p style={{marginBottom:14}}>
               {isEn
                 ? "Founded in 1997 by Khalid Mohamed Abdulghafour Al-Shaikh, our establishment is among the earliest specialized real estate firms in the Eastern Province of Saudi Arabia. Over more than 27 years, we have built enduring trust with our clients based on transparency, professionalism, and integrity."
@@ -1528,10 +1528,10 @@ function AboutPage({ lang, darkMode, T }) {
               {n:"27+",l:isEn?"Years Experience":"سنة خبرة",i:"⭐"},
               {n:"8+",l:isEn?"Services":"خدمة عقارية",i:"🏢"},
             ].map((s,i)=>(
-              <div key={i} style={{background:"#edf1fb",borderRadius:12,padding:"14px",textAlign:"center",border:"1px solid rgba(74,158,255,.2)"}}>
+              <div key={i} style={{background:T.bg3,borderRadius:12,padding:"14px",textAlign:"center",border:"1px solid rgba(74,158,255,.12)"}}>
                 <div style={{fontSize:22,marginBottom:4}}>{s.i}</div>
-                <div style={{fontWeight:900,fontSize:20,color:"#fff",marginBottom:2}}>{s.n}</div>
-                <div style={{fontSize:11,color:"#5a6a90"}}>{s.l}</div>
+                <div style={{fontWeight:900,fontSize:20,color:T.text,marginBottom:2}}>{s.n}</div>
+                <div style={{fontSize:11,color:T.text3}}>{s.l}</div>
               </div>
             ))}
           </div>
@@ -1539,18 +1539,18 @@ function AboutPage({ lang, darkMode, T }) {
           {/* Contact grid */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
             {[["📞 "+PHONE,PHONE],["💬 WhatsApp","0568300022"],["🏛️ "+(isEn?"License":"الترخيص"),isEn?"Real Estate Gen. Authority":"هيئة العقار"],["📍 "+(isEn?"Location":"الموقع"),isEn?"Eastern Province, KSA":"المنطقة الشرقية، المملكة العربية السعودية"]].map(([l,v])=>(
-              <div key={l} style={{background:"#edf1fb",borderRadius:11,padding:"13px 15px",border:"1px solid rgba(74,158,255,.2)"}}><div style={{fontSize:11,color:"#5a6a90",marginBottom:4}}>{l}</div><div style={{fontSize:12,fontWeight:700,color:"#2a4d9b"}}>{v}</div></div>
+              <div key={l} style={{background:T.bg3,borderRadius:11,padding:"13px 15px",border:"1px solid rgba(74,158,255,.12)"}}><div style={{fontSize:11,color:T.text3,marginBottom:4}}>{l}</div><div style={{fontSize:12,fontWeight:700,color:T.text2}}>{v}</div></div>
             ))}
           </div>
         </div>
 
         {/* CTA */}
-        <div style={{background:"#1a4faa18",border:"1px solid #2563c740",borderRadius:15,padding:"22px",textAlign:"center"}}>
+        <div style={{background:"#1e3a7a",borderRadius:15,padding:"22px",textAlign:"center"}}>
           <div style={{fontWeight:900,fontSize:15,color:"#fff",marginBottom:6}}>{isEn?"Get in Touch":"تواصل معنا"}</div>
-          <div style={{fontSize:12,color:"#5a6a90",marginBottom:16}}>{isEn?"We're here to help 24/7":"فريقنا جاهز لمساعدتك على مدار الساعة"}</div>
+          <div style={{fontSize:12,color:"rgba(255,255,255,.5)",marginBottom:16}}>{isEn?"We're here to help 24/7":"فريقنا جاهز لمساعدتك على مدار الساعة"}</div>
           <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
-            <a href={`tel:${PHONE}`} style={{display:"inline-flex",alignItems:"center",gap:6,background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",color:"#fff",borderRadius:11,padding:"10px 20px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14}}>📞 {PHONE}</a>
-            <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:7,background:"#25d36620",border:"1px solid #25d36644",color:"#25d366",borderRadius:11,padding:"10px 18px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14}}><WaIcon size={15}/> WhatsApp</a>
+            <a href={`tel:${PHONE}`} style={{display:"inline-flex",alignItems:"center",gap:6,background:"#4a9eff",color:"#fff",borderRadius:11,padding:"10px 20px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14}}>📞 {PHONE}</a>
+            <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:7,background:"rgba(37,211,102,.15)",border:"1px solid rgba(37,211,102,.3)",color:"#25d366",borderRadius:11,padding:"10px 18px",textDecoration:"none",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14}}><WaIcon size={15}/> WhatsApp</a>
           </div>
         </div>
       </div>
