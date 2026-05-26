@@ -1117,7 +1117,77 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
     setForm(emptyClient); setShowForm(false); setEditClientId(null);
   };
 
-  const del = async (id) => { await deleteDoc(doc(db,"clients",id)); setDelId(null); };
+  const printClientCard = (c) => {
+    const ratingColor = {"مستأجر":"#16a34a","مشتري":"#b45309","مالك":"#2a4d9b","مستثمر":"#7c3aed"};
+    const win = window.open('','_blank','width=420,height=600');
+    win.document.write(`
+      <!DOCTYPE html><html dir="rtl" lang="ar">
+      <head><meta charset="UTF-8">
+      <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+      <style>
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:'Cairo',sans-serif;background:#f5f8ff;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px;}
+        .card{background:white;border-radius:16px;padding:28px;width:360px;box-shadow:0 4px 24px rgba(30,58,122,.12);border:1px solid rgba(74,158,255,.15);}
+        .header{background:linear-gradient(135deg,#1e3a7a,#2a4d9b);border-radius:12px;padding:18px;margin-bottom:18px;display:flex;align-items:center;gap:14px;}
+        .logo{width:50px;height:50px;border-radius:10px;background:white;overflow:hidden;flex-shrink:0;}
+        .logo img{width:100%;height:100%;object-fit:contain;}
+        .brand{color:white;}
+        .brand-n{font-size:11px;font-weight:900;line-height:1.3;}
+        .brand-s{font-size:9px;color:rgba(255,255,255,.55);}
+        .client-num{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+        .num-badge{width:44px;height:44px;border-radius:12px;background:rgba(74,158,255,.1);border:1px solid rgba(74,158,255,.2);display:flex;align-items:center;justify-content:center;font-weight:900;color:#1e3a7a;font-size:14px;}
+        .client-name{font-size:20px;font-weight:900;color:#1e3a7a;}
+        .client-phone{font-size:13px;color:#5a6a90;margin-top:3px;}
+        .type-badge{display:inline-flex;align-items:center;gap:6px;border-radius:20px;padding:4px 14px;font-size:11px;font-weight:700;margin-top:8px;}
+        .divider{height:1px;background:rgba(74,158,255,.1);margin:14px 0;}
+        .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+        .info-box{background:#f5f8ff;border-radius:8px;padding:10px 12px;}
+        .info-lbl{font-size:9px;color:#8899bb;margin-bottom:3px;font-weight:600;}
+        .info-val{font-size:12px;font-weight:700;color:#1e3a7a;}
+        .footer-bar{background:#f0f4fc;border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;}
+        .footer-txt{font-size:10px;color:#8899bb;}
+        .footer-phone{font-size:12px;font-weight:700;color:#1e3a7a;}
+        @media print{body{background:white;padding:0;}.card{box-shadow:none;border:1px solid #ddd;}}
+      </style>
+      </head><body>
+      <div class="card">
+        <div class="header">
+          <div class="logo"><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1778958489/WhatsApp_Image_2026-05-16_at_9.59.47_PM_zhmw6y.jpg"/></div>
+          <div class="brand">
+            <div class="brand-n">مؤسسة خالد محمد عبدالغفور الشيخ</div>
+            <div class="brand-s">Khalid M. A. Ghafour Al-Shaikh Est.</div>
+          </div>
+        </div>
+        <div class="client-num">
+          <div>
+            <div class="client-name">${c.name||""}</div>
+            <div class="client-phone">📞 ${c.phone||""}</div>
+            <div class="type-badge" style="background:${(ratingColor[c.clientType]||"#2a4d9b")}18;color:${ratingColor[c.clientType]||"#2a4d9b"};border:1px solid ${ratingColor[c.clientType]||"#2a4d9b"}33">${c.clientType||""}</div>
+          </div>
+          <div class="num-badge">#${c.clientNo||"—"}</div>
+        </div>
+        <div class="divider"></div>
+        <div class="info-grid">
+          <div class="info-box"><div class="info-lbl">📍 الحي / الموقع</div><div class="info-val">${c.area||"—"}</div></div>
+          <div class="info-box"><div class="info-lbl">💰 الميزانية</div><div class="info-val">${c.budget?Number(c.budget).toLocaleString()+" ﷼":"—"}</div></div>
+          <div class="info-box"><div class="info-lbl">📋 الحالة</div><div class="info-val">${c.clientStatus||"معلق"}</div></div>
+          <div class="info-box"><div class="info-lbl">📅 تاريخ التسجيل</div><div class="info-val">${c.createdDate||"—"}</div></div>
+          ${c.ownerPropertyType?`<div class="info-box"><div class="info-lbl">🏠 نوع العقار</div><div class="info-val">${c.ownerPropertyType}</div></div>`:""}
+          ${c.investorType?`<div class="info-box"><div class="info-lbl">📈 الاستثمار</div><div class="info-val">${c.investorType}</div></div>`:""}
+          ${c.paymentType?`<div class="info-box"><div class="info-lbl">💳 طريقة الدفع</div><div class="info-val">${c.paymentType}</div></div>`:""}
+          ${c.contactDate?`<div class="info-box"><div class="info-lbl">📞 تاريخ التواصل</div><div class="info-val">${c.contactDate}</div></div>`:""}
+        </div>
+        ${c.notes?`<div class="info-box" style="margin-bottom:14px;background:#f5f8ff;border-radius:8px;padding:10px 12px;"><div class="info-lbl">💬 ملاحظات</div><div style="font-size:11px;color:#1e3a7a;line-height:1.7;margin-top:3px">${c.notes}</div></div>`:""}
+        <div class="footer-bar">
+          <div class="footer-txt">khalid-realestate.com | 🏛️ مرخصون من الهيئة العامة للعقار</div>
+          <div class="footer-phone">📞 0568300022</div>
+        </div>
+      </div>
+      <script>window.onload=()=>{window.print();window.close();}<\/script>
+      </body></html>
+    `);
+    win.document.close();
+  };
 
   const changeStatus = async (id, status) => {
     await updateDoc(doc(db,"clients",id),{clientStatus:status});
@@ -1236,6 +1306,7 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
                     <span style={{background:requestColor[c.requestType]+"20",color:requestColor[c.requestType],border:`1px solid ${requestColor[c.requestType]}40`,borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{c.requestType}</span>
                     {c.paymentType&&c.requestType==="شراء"&&<span style={{background:"#1a4faa22",color:"#2a4d9b",border:"1px solid #2563c740",borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{c.paymentType}</span>}
                     {isManager&&<button onClick={()=>setDelId(c.id)} style={{background:"#ef444414",border:"1px solid #ef444428",color:"#f87171",borderRadius:8,padding:"4px 10px",cursor:"pointer",fontSize:11}}>🗑️</button>}
+                    <button onClick={()=>printClientCard(c)} style={{background:"rgba(74,158,255,.1)",border:"1px solid rgba(74,158,255,.25)",color:"#2a4d9b",borderRadius:8,padding:"4px 10px",cursor:"pointer",fontSize:11}}>🖨️</button>
                     <button onClick={()=>openEdit(c)} style={{background:"#1a4faa22",border:"1px solid #2563c740",color:"#2a4d9b",borderRadius:8,padding:"4px 10px",cursor:"pointer",fontSize:11}}>✏️ تعديل</button>
                   </div>
                 </div>
@@ -1426,6 +1497,77 @@ function ProvidersPage({ lang, T, darkMode }) {
 
   const del = async (id) => { await deleteDoc(doc(db,"providers",id)); setDelId(null); };
 
+  const printProviderCard = (p) => {
+    const ratingColor = {"ممتاز":"#16a34a","وسط":"#b45309","مقبول":"#ef4444"};
+    const win = window.open('','_blank','width=420,height=580');
+    win.document.write(`
+      <!DOCTYPE html><html dir="rtl" lang="ar">
+      <head><meta charset="UTF-8">
+      <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+      <style>
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:'Cairo',sans-serif;background:#f5f8ff;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px;}
+        .card{background:white;border-radius:16px;padding:28px;width:360px;box-shadow:0 4px 24px rgba(30,58,122,.12);border:1px solid rgba(74,158,255,.15);}
+        .header{background:linear-gradient(135deg,#1e3a7a,#2a4d9b);border-radius:12px;padding:18px;margin-bottom:18px;display:flex;align-items:center;gap:14px;}
+        .logo{width:50px;height:50px;border-radius:10px;background:white;overflow:hidden;flex-shrink:0;}
+        .logo img{width:100%;height:100%;object-fit:contain;}
+        .brand-n{font-size:11px;font-weight:900;color:white;line-height:1.3;}
+        .brand-s{font-size:9px;color:rgba(255,255,255,.55);}
+        .provider-info{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+        .prov-icon{width:52px;height:52px;border-radius:14px;background:rgba(74,158,255,.08);border:1px solid rgba(74,158,255,.15);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;}
+        .prov-name{font-size:20px;font-weight:900;color:#1e3a7a;}
+        .prov-phone{font-size:13px;color:#5a6a90;margin-top:3px;}
+        .badges{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}
+        .badge{border-radius:20px;padding:4px 14px;font-size:11px;font-weight:700;}
+        .divider{height:1px;background:rgba(74,158,255,.1);margin:14px 0;}
+        .info-row{display:flex;justify-content:space-between;background:#f5f8ff;border-radius:8px;padding:10px 12px;margin-bottom:10px;}
+        .info-lbl{font-size:10px;color:#8899bb;}
+        .info-val{font-size:12px;font-weight:700;color:#1e3a7a;}
+        .works-title{font-size:11px;font-weight:700;color:#1e3a7a;margin-bottom:8px;}
+        .work-item{font-size:11px;color:#5a6a90;padding:5px 0;border-bottom:1px solid #f0f4fc;display:flex;justify-content:space-between;}
+        .footer-bar{background:#f0f4fc;border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:14px;}
+        .footer-txt{font-size:10px;color:#8899bb;}
+        .footer-phone{font-size:12px;font-weight:700;color:#1e3a7a;}
+        @media print{body{background:white;padding:0;}.card{box-shadow:none;}}
+      </style>
+      </head><body>
+      <div class="card">
+        <div class="header">
+          <div class="logo"><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1778958489/WhatsApp_Image_2026-05-16_at_9.59.47_PM_zhmw6y.jpg"/></div>
+          <div>
+            <div class="brand-n">مؤسسة خالد محمد عبدالغفور الشيخ</div>
+            <div class="brand-s">Khalid M. A. Ghafour Al-Shaikh Est.</div>
+          </div>
+        </div>
+        <div class="provider-info">
+          <div class="prov-icon">🔧</div>
+          <div>
+            <div class="prov-name">${p.name||""}</div>
+            <div class="prov-phone">📞 ${p.phone||""}</div>
+            <div class="badges">
+              <span class="badge" style="background:rgba(74,158,255,.1);color:#2a4d9b;border:1px solid rgba(74,158,255,.25)">${p.specialty||""}</span>
+              <span class="badge" style="background:${ratingColor[p.rating]||"#2a4d9b"}18;color:${ratingColor[p.rating]||"#2a4d9b"};border:1px solid ${ratingColor[p.rating]||"#2a4d9b"}33">${p.rating||""}</span>
+            </div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        ${p.notes?`<div class="info-row"><div><div class="info-lbl">📝 ملاحظات</div><div class="info-val">${p.notes}</div></div></div>`:""}
+        ${p.works&&p.works.length>0?`
+          <div class="works-title">🛠️ الأعمال المنجزة (${p.works.length})</div>
+          ${p.works.slice(0,5).map(w=>`<div class="work-item"><span>${w.text}</span><span style="color:#8899bb;font-size:10px">${w.date}</span></div>`).join("")}
+          ${p.works.length>5?`<div style="font-size:10px;color:#8899bb;text-align:center;margin-top:6px">و ${p.works.length-5} أعمال أخرى...</div>`:""}
+        `:""}
+        <div class="footer-bar">
+          <div class="footer-txt">khalid-realestate.com | 🏛️ مرخصون</div>
+          <div class="footer-phone">📞 0568300022</div>
+        </div>
+      </div>
+      <script>window.onload=()=>{window.print();window.close();}<\/script>
+      </body></html>
+    `);
+    win.document.close();
+  };
+
   const addWork = async (id) => {
     if(!workText.trim()) return;
     const p = providers.find(p=>p.id===id);
@@ -1488,6 +1630,7 @@ function ProvidersPage({ lang, T, darkMode }) {
                     <span style={{background:"rgba(74,158,255,.1)",color:"#4a9eff",border:"1px solid rgba(74,158,255,.25)",borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{p.specialty}</span>
                     <span style={{background:ratingColor[p.rating]+"20",color:ratingColor[p.rating],border:`1px solid ${ratingColor[p.rating]}40`,borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{p.rating}</span>
                     <button onClick={()=>{setForm({name:p.name,phone:p.phone,specialty:p.specialty,rating:p.rating,notes:p.notes||""});setEditId(p.id);setShowForm(true);}} style={{background:"rgba(74,158,255,.1)",border:"1px solid rgba(74,158,255,.25)",color:"#4a9eff",borderRadius:8,padding:"4px 10px",cursor:"pointer",fontSize:11}}>✏️</button>
+                    <button onClick={()=>printProviderCard(p)} style={{background:"rgba(74,158,255,.1)",border:"1px solid rgba(74,158,255,.25)",color:"#2a4d9b",borderRadius:8,padding:"4px 10px",cursor:"pointer",fontSize:11}}>🖨️</button>
                     <button onClick={()=>setDelId(p.id)} style={{background:"#ef444414",border:"1px solid #ef444428",color:"#f87171",borderRadius:8,padding:"4px 10px",cursor:"pointer",fontSize:11}}>🗑️</button>
                   </div>
                 </div>
