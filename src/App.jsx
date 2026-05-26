@@ -411,6 +411,19 @@ function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang,
         </div>
       </div>
 
+      {/* Topbar */}
+      <div style={{background:"#0a1538",padding:"7px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:11,color:"rgba(255,255,255,.4)"}}>
+        <div style={{display:"flex",gap:20}}>
+          <span>مرخصون من الهيئة العامة للعقار 🏛️</span>
+          <span style={{color:"rgba(255,255,255,.2)"}}>|</span>
+          <span>📍 المنطقة الشرقية، المملكة العربية السعودية</span>
+        </div>
+        <div style={{display:"flex",gap:16}}>
+          <a href={`tel:${PHONE}`} style={{color:"rgba(255,255,255,.4)",textDecoration:"none",transition:"color .2s"}}>📞 {PHONE}</a>
+          <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer" style={{color:"rgba(37,211,102,.6)",textDecoration:"none"}}>💬 WhatsApp</a>
+        </div>
+      </div>
+
       {/* Navbar bar */}
       <div style={{position:"fixed",top:0,left:0,right:0,zIndex:200,background:"#1e3a7a",backdropFilter:"blur(18px)",borderBottom:"2px solid rgba(74,158,255,.3)",transition:"background .3s"}}>
         <div style={{maxWidth:1200,margin:"0 auto",padding:"0 16px",display:"flex",alignItems:"center",justifyContent:"space-between",height:64}}>
@@ -756,7 +769,7 @@ function HomePage({ setPage, lang, darkMode, T }) {
   ];
 
   return (
-    <div style={{paddingTop:64,background:T.bg}}>
+    <div style={{paddingTop:96,background:T.bg}}>
 
       {/* ── HERO ── */}
       <div style={{minHeight:"calc(100vh - 64px)",background:"linear-gradient(150deg,#0a1538 0%,#1e3a7a 55%,#2a4d9b 100%)",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",padding:"60px 24px"}}>
@@ -796,6 +809,29 @@ function HomePage({ setPage, lang, darkMode, T }) {
         </div>
       </div>
 
+      {/* ── SERVICES BAND ── */}
+      <div style={{background:"#162f63",borderTop:"1px solid rgba(74,158,255,.15)",borderBottom:"1px solid rgba(74,158,255,.15)"}}>
+        <div style={{maxWidth:1100,margin:"0 auto",display:"flex",overflowX:"auto",scrollbarWidth:"none"}}>
+          {[
+            ["🏢",isEn?"Buy & Rent":"بيع وإيجار"],
+            ["🗝️",isEn?"Management":"إدارة العقارات"],
+            ["📊",isEn?"Valuation":"التقييم العقاري"],
+            ["💡",isEn?"Consulting":"الاستشارات"],
+            ["🔧",isEn?"Maintenance":"الصيانة"],
+            ["🛋️",isEn?"Furnished":"تأجير المفروش"],
+            ["📋",isEn?"Registry":"خدمات السجل"],
+            ["🏛️",isEn?"Ejar Platform":"منصة إيجار"],
+          ].map(([icon,label],i)=>(
+            <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"14px 24px",borderLeft:i>0?"1px solid rgba(255,255,255,.07)":"none",flexShrink:0,cursor:"pointer",transition:"background .2s"}}
+              onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,.05)"}
+              onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+              <div style={{width:32,height:32,borderRadius:7,background:"rgba(74,158,255,.12)",border:"1px solid rgba(74,158,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>{icon}</div>
+              <span style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,.65)",whiteSpace:"nowrap"}}>{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* ── SERVICES ── */}
       <div style={{height:2,background:"linear-gradient(90deg,transparent,#4a9eff,transparent)",opacity:.3}}/>
       <div style={{background:T.bg,padding:"74px 24px"}}>
@@ -831,6 +867,25 @@ function HomePage({ setPage, lang, darkMode, T }) {
         </div>
       </div>
 
+      {/* ── NUMBERS ── */}
+      <div style={{height:2,background:"linear-gradient(90deg,transparent,#4a9eff,transparent)",opacity:.3}}/>
+      <div style={{background:"#1e3a7a",padding:"64px 24px"}}>
+        <div style={{maxWidth:1100,margin:"0 auto",textAlign:"center"}}>
+          <div style={{fontSize:11,fontWeight:700,color:"rgba(122,184,255,.6)",letterSpacing:1.5,marginBottom:10,textTransform:"uppercase"}}>{isEn?"Our Numbers":"أرقامنا"}</div>
+          <h2 style={{fontSize:"clamp(20px,3vw,30px)",fontWeight:900,color:"white",marginBottom:44,fontFamily:"'Cairo',sans-serif"}}>{isEn?"Trust Built Over Years":"ثقة مبنية على سنوات من الإنجاز"}</h2>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:0,border:"1px solid rgba(255,255,255,.08)",borderRadius:16,overflow:"hidden"}}>
+            {[[isEn?"1997":"١٩٩٧",isEn?"Est. Year":"سنة التأسيس"],[isEn?"27+":"٢٧+",isEn?"Years Experience":"سنة خبرة"],[isEn?"500+":"٥٠٠+",isEn?"Properties":"عقار تم تسويقه"],[isEn?"100%":"١٠٠٪",isEn?"Authority Compliant":"امتثال للهيئة"]].map(([n,l],i)=>(
+              <div key={i} style={{padding:"36px 20px",textAlign:"center",borderLeft:i>0?"1px solid rgba(255,255,255,.08)":"none",transition:"background .2s"}}
+                onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,.04)"}
+                onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                <div style={{fontSize:"clamp(28px,3.5vw,44px)",fontWeight:900,color:"#7ab8ff",marginBottom:8,fontFamily:"'Cairo',sans-serif"}}>{n}</div>
+                <div style={{fontSize:12,color:"rgba(255,255,255,.4)",fontWeight:300}}>{l}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* ── CTA ── */}
       <div style={{height:2,background:"linear-gradient(90deg,transparent,#4a9eff,transparent)",opacity:.3}}/>
       <div style={{background:T.bg,padding:"70px 24px",textAlign:"center"}}>
@@ -844,13 +899,55 @@ function HomePage({ setPage, lang, darkMode, T }) {
       </div>
 
       {/* ── FOOTER ── */}
-      <div style={{background:"#1e3a7a",borderTop:"2px solid rgba(74,158,255,.18)",padding:"26px 24px"}}>
-        <div style={{maxWidth:1100,margin:"0 auto",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:14}}>
-          <div style={{display:"flex",alignItems:"center",gap:11}}>
-            <div style={{width:38,height:38,borderRadius:9,background:"white",padding:4,overflow:"hidden"}}><img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1778958489/WhatsApp_Image_2026-05-16_at_9.59.47_PM_zhmw6y.jpg" alt="" style={{width:"100%",height:"100%",objectFit:"contain"}}/></div>
-            <div><div style={{fontWeight:800,fontSize:12,color:"white"}}>مؤسسة خالد محمد عبدالغفور الشيخ</div><div style={{fontSize:9,color:"#7ab8ff"}}>للخدمات العقارية</div></div>
+      <div style={{background:"#0a1538",borderTop:"2px solid rgba(74,158,255,.15)",padding:"60px 24px 0"}}>
+        <div style={{maxWidth:1100,margin:"0 auto"}}>
+          {/* Footer grid */}
+          <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr",gap:48,marginBottom:48,flexWrap:"wrap"}}>
+            {/* Brand col */}
+            <div>
+              <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:18}}>
+                <div style={{width:46,height:46,borderRadius:10,background:"white",padding:4,overflow:"hidden",flexShrink:0}}>
+                  <img src="https://res.cloudinary.com/dumtp0krl/image/upload/v1778958489/WhatsApp_Image_2026-05-16_at_9.59.47_PM_zhmw6y.jpg" alt="" style={{width:"100%",height:"100%",objectFit:"contain"}}/>
+                </div>
+                <div>
+                  <div style={{fontSize:12,fontWeight:900,color:"white",fontFamily:"'Cairo',sans-serif",lineHeight:1.3}}>مؤسسة خالد محمد عبدالغفور الشيخ</div>
+                  <div style={{fontSize:9,color:"#7ab8ff",letterSpacing:.5}}>KHALID M. A. GHAFOUR AL-SHAIKH EST.</div>
+                </div>
+              </div>
+              <p style={{fontSize:12,color:"rgba(255,255,255,.38)",lineHeight:1.9,fontWeight:300,marginBottom:22}}>
+                {isEn?"A specialized real estate establishment founded in 1997 in the Eastern Province of Saudi Arabia. We provide comprehensive real estate services with transparency and professionalism.":"مؤسسة عقارية متخصصة تأسست عام 1997م في المنطقة الشرقية، نقدم خدمات عقارية شاملة للأفراد والشركات والمستثمرين بالشفافية والمهنية."}
+              </p>
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                {[["📞",PHONE],["💬","WhatsApp: "+WA_NUMBER],["📍",isEn?"Eastern Province, KSA":"المنطقة الشرقية، المملكة العربية السعودية"]].map(([i,v])=>(
+                  <div key={v} style={{fontSize:11,color:"rgba(255,255,255,.4)",display:"flex",alignItems:"center",gap:8}}><span style={{color:"#4a9eff"}}>{i}</span>{v}</div>
+                ))}
+              </div>
+            </div>
+            {/* Links cols */}
+            {[
+              {title:isEn?"Quick Links":"روابط سريعة",links:[[isEn?"Home":"الرئيسية","home"],[isEn?"Properties":"العقارات","properties"],[isEn?"Services":"خدماتنا","services"],[isEn?"About":"عن المؤسسة","about"]]},
+              {title:isEn?"Services":"خدماتنا",links:[[isEn?"Buy & Rent":"بيع وإيجار",""],[isEn?"Management":"إدارة العقارات",""],[isEn?"Valuation":"التقييم العقاري",""],[isEn?"Consulting":"الاستشارات",""],[isEn?"Maintenance":"الصيانة",""]]}  ,
+              {title:isEn?"Property Types":"أنواع العقارات",links:[[isEn?"Apartments":"شقق سكنية",""],[isEn?"Villas":"فلل وقصور",""],[isEn?"Commercial":"محلات تجارية",""],[isEn?"Offices":"مكاتب",""],[isEn?"Land":"أراضي",""]]}
+            ].map((col,i)=>(
+              <div key={i}>
+                <div style={{fontSize:11,fontWeight:700,color:"white",marginBottom:18,letterSpacing:.5}}>{col.title}</div>
+                <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                  {col.links.map(([label,p])=>(
+                    <span key={label} onClick={()=>p&&setPage(p)} style={{fontSize:12,color:"rgba(255,255,255,.38)",cursor:p?"pointer":"default",transition:"color .2s"}}
+                      onMouseEnter={e=>{if(p)e.target.style.color="#4a9eff";}}
+                      onMouseLeave={e=>{e.target.style.color="rgba(255,255,255,.38)";}}>
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
-          <div style={{fontSize:11,color:"rgba(255,255,255,.2)"}}>© 2025 | {isEn?"Licensed by Real Estate General Authority":"مرخصة من الهيئة العامة للعقار"}</div>
+          {/* Bottom bar */}
+          <div style={{borderTop:"1px solid rgba(255,255,255,.07)",padding:"22px 0",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}}>
+            <div style={{fontSize:11,color:"rgba(255,255,255,.2)"}}>© 2025 {isEn?"Khalid M. A. Ghafour Al-Shaikh Est. All rights reserved.":"مؤسسة خالد محمد عبدالغفور الشيخ — جميع الحقوق محفوظة"}</div>
+            <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(74,158,255,.08)",border:"1px solid rgba(74,158,255,.15)",borderRadius:4,padding:"4px 14px",fontSize:11,color:"#7ab8ff"}}>🏛️ {isEn?"Licensed by Real Estate General Authority":"مرخصة من الهيئة العامة للعقار"}</div>
+          </div>
         </div>
       </div>
     </div>
@@ -1061,7 +1158,7 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
   );
 
   return (
-    <div style={{paddingTop:64,minHeight:"100vh",background:T.bg}}>
+    <div style={{paddingTop:96,minHeight:"100vh",background:T.bg}}>
       <div style={{background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",padding:"28px 24px 24px"}}>
         <div style={{maxWidth:1100,margin:"0 auto",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
           <div>
@@ -1342,7 +1439,7 @@ function ProvidersPage({ lang, T, darkMode }) {
   const Lbl = ({c}) => <div style={{fontSize:11,color:T.text3,marginBottom:5,fontWeight:600}}>{c}</div>;
 
   return (
-    <div style={{paddingTop:64,minHeight:"100vh",background:T.bg}}>
+    <div style={{paddingTop:96,minHeight:"100vh",background:T.bg}}>
       <div style={{background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",padding:"28px 24px 24px"}}>
         <div style={{maxWidth:1100,margin:"0 auto",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
           <div>
@@ -1481,7 +1578,7 @@ function ProvidersPage({ lang, T, darkMode }) {
 function AboutPage({ lang, darkMode, T }) {
   const isEn=lang==="en";
   return (
-    <div style={{paddingTop:64,minHeight:"100vh",background:T.bg}}>
+    <div style={{paddingTop:96,minHeight:"100vh",background:T.bg}}>
       <div style={{background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",padding:"28px 24px 24px"}}><div style={{maxWidth:900,margin:"0 auto"}}><div style={{fontWeight:900,fontSize:22,color:"#fff",marginBottom:3}}>ℹ️ {isEn?"About Us":"عن المؤسسة"}</div></div></div>
       <div style={{maxWidth:900,margin:"0 auto",padding:"36px 24px"}}>
 
