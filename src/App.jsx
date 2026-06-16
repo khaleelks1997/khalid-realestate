@@ -1280,67 +1280,74 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
               const cStatus = c.clientStatus||"معلق";
               const sc = statusColor[cStatus]||"#fbbf24";
               return (
-              <div key={c.id} style={{background:"linear-gradient(160deg,#ffffff,#f5f8ff)",border:`1px solid ${sc}30`,borderRadius:16,padding:"14px 16px"}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8}}>
+              <div key={c.id} style={{background:darkMode?"linear-gradient(160deg,#0f1f4a,#1a2d6b)":"white",border:`1px solid ${darkMode?"rgba(74,158,255,.15)":sc+"22"}`,borderRadius:16,padding:"14px 16px",boxShadow:"0 2px 10px rgba(30,58,122,.06)"}}>
+                {/* Top row: name + badges */}
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8,marginBottom:10}}>
                   <div style={{display:"flex",alignItems:"center",gap:12}}>
                     <div style={{position:"relative"}}>
                       <div style={{width:40,height:40,borderRadius:12,background:c.isDuplicate?"#fef2f2":"rgba(74,158,255,.1)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,color:c.isDuplicate?"#ef4444":"#2a4d9b",fontSize:13,flexShrink:0,border:c.isDuplicate?"2px solid #ef444440":"none"}}>#{c.clientNo||"—"}</div>
                       {c.isDuplicate&&<div style={{position:"absolute",top:-6,right:-6,background:"#ef4444",color:"#fff",fontSize:8,fontWeight:900,borderRadius:10,padding:"1px 5px",whiteSpace:"nowrap"}}>مكرر</div>}
                     </div>
                     <div>
-                      <div style={{fontWeight:900,fontSize:15,color:"#1e3a7a"}}>{c.name}</div>
+                      <div style={{fontWeight:900,fontSize:15,color:darkMode?"#e8eeff":"#1e3a7a"}}>{c.name}</div>
                       {(isManager||c.clientType!=="مالك") ? (
-                        <div style={{fontSize:12,color:"#5a6a90"}}>📞 {c.phone}</div>
+                        <div style={{fontSize:12,color:darkMode?"#7ab8ff":"#5a6a90"}}>📞 {c.phone}</div>
                       ) : (
-                        <div style={{fontSize:11,color:"#f87171"}}>🔒 جوال المالك محجوب</div>
+                        <div style={{fontSize:11,color:"#ef4444"}}>🔒 جوال المالك محجوب</div>
                       )}
                     </div>
                   </div>
-                  <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-                    {/* Client type badge */}
-                    {c.clientType&&<span style={{background:clientTypeColor[c.clientType]+"20",color:clientTypeColor[c.clientType],border:`1px solid ${clientTypeColor[c.clientType]}40`,borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{c.clientType}</span>}
-                    <span style={{background:statusColor[c.clientStatus||"معلق"]+"20",color:statusColor[c.clientStatus||"معلق"],border:`1px solid ${statusColor[c.clientStatus||"معلق"]}40`,borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{c.clientStatus||"معلق"}</span>
-                    <select value={cStatus} onChange={e=>changeStatus(c.id,e.target.value)} style={{background:"#f0f4fc",border:"1px solid rgba(74,158,255,.2)",color:"#2a4d9b",borderRadius:8,padding:"3px 8px",fontSize:11,cursor:"pointer",fontFamily:"'Cairo',sans-serif"}}>
+                  <div style={{display:"flex",gap:5,alignItems:"center",flexWrap:"wrap"}}>
+                    {c.clientType&&<span style={{background:clientTypeColor[c.clientType]+"20",color:clientTypeColor[c.clientType],border:`1px solid ${clientTypeColor[c.clientType]}40`,borderRadius:20,padding:"3px 11px",fontSize:11,fontWeight:700}}>{c.clientType}</span>}
+                    <span style={{background:statusColor[c.clientStatus||"معلق"]+"20",color:statusColor[c.clientStatus||"معلق"],border:`1px solid ${statusColor[c.clientStatus||"معلق"]}40`,borderRadius:20,padding:"3px 11px",fontSize:11,fontWeight:700}}>{c.clientStatus||"معلق"}</span>
+                    <select value={cStatus} onChange={e=>changeStatus(c.id,e.target.value)} style={{background:darkMode?"#0a1538":"#f0f4fc",border:"1px solid rgba(74,158,255,.2)",color:darkMode?"#7ab8ff":"#2a4d9b",borderRadius:8,padding:"3px 8px",fontSize:11,cursor:"pointer",fontFamily:"'Cairo',sans-serif"}}>
                       <option>معلق</option><option>مغلق</option>
                     </select>
-                    <span style={{background:requestColor[c.requestType]+"20",color:requestColor[c.requestType],border:`1px solid ${requestColor[c.requestType]}40`,borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{c.requestType}</span>
-                    {c.paymentType&&c.requestType==="شراء"&&<span style={{background:"#1a4faa22",color:"#2a4d9b",border:"1px solid #2563c740",borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{c.paymentType}</span>}
-                    {isManager&&<button onClick={()=>setDelId(c.id)} style={{background:"#ef444414",border:"1px solid #ef444428",color:"#f87171",borderRadius:8,padding:"4px 10px",cursor:"pointer",fontSize:11}}>🗑️</button>}
-                    <button onClick={()=>printClientCard(c)} style={{background:"rgba(74,158,255,.1)",border:"1px solid rgba(74,158,255,.25)",color:"#2a4d9b",borderRadius:8,padding:"4px 10px",cursor:"pointer",fontSize:11}}>🖨️</button>
-                    <button onClick={()=>openEdit(c)} style={{background:"#1a4faa22",border:"1px solid #2563c740",color:"#2a4d9b",borderRadius:8,padding:"4px 10px",cursor:"pointer",fontSize:11}}>✏️ تعديل</button>
+                    {c.requestType&&<span style={{background:requestColor[c.requestType]+"20",color:requestColor[c.requestType],border:`1px solid ${requestColor[c.requestType]}40`,borderRadius:20,padding:"3px 11px",fontSize:11,fontWeight:700}}>{c.requestType}</span>}
+                    {c.paymentType&&<span style={{background:"rgba(74,158,255,.1)",color:"#2a4d9b",border:"1px solid rgba(74,158,255,.25)",borderRadius:20,padding:"3px 11px",fontSize:11,fontWeight:700}}>{c.paymentType}</span>}
                   </div>
                 </div>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:8,marginTop:12}}>
-                  {c.area&&<div style={{background:"#edf1fb",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#5a6a90"}}>📍 الحي: </span><span style={{color:"#2a4d9b",fontWeight:700}}>{c.area}</span></div>}
-                  {c.budget&&<div style={{background:"#edf1fb",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#5a6a90"}}>💰 الميزانية: </span><span style={{color:"#4ade80",fontWeight:700}}>{Number(c.budget).toLocaleString()} ﷼</span></div>}
-                  {c.ownerPropertyType&&<div style={{background:"#edf1fb",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#5a6a90"}}>🏠 نوع العقار: </span><span style={{color:"#2a4d9b",fontWeight:700}}>{c.ownerPropertyType}</span></div>}
-                  {c.investorType&&<div style={{background:"#edf1fb",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#5a6a90"}}>📈 الاستثمار: </span><span style={{color:"#e879f9",fontWeight:700}}>{c.investorType}</span></div>}
-                  {c.contactDate&&<div style={{background:"#edf1fb",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#5a6a90"}}>📞 تواصل: </span><span style={{color:"#2a4d9b",fontWeight:700}}>{c.contactDate}</span></div>}
-                  <div style={{background:"#edf1fb",borderRadius:8,padding:"6px 10px",fontSize:11}}><span style={{color:"#5a6a90"}}>📅 تسجيل: </span><span style={{color:"#2a4d9b",fontWeight:700}}>{c.createdDate}</span></div>
+
+                {/* Info grid */}
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:8,marginBottom:10}}>
+                  {c.area&&<div style={{background:darkMode?"#0a1538":"#f5f8ff",borderRadius:8,padding:"6px 10px",fontSize:11,border:`1px solid ${darkMode?"rgba(74,158,255,.1)":"rgba(74,158,255,.08)"}`}}><span style={{color:darkMode?"#7ab8ff":"#5a6a90"}}>📍 الحي: </span><span style={{color:darkMode?"#e8eeff":"#2a4d9b",fontWeight:700}}>{c.area}</span></div>}
+                  {c.budget&&<div style={{background:darkMode?"#0a1538":"#f5f8ff",borderRadius:8,padding:"6px 10px",fontSize:11,border:`1px solid ${darkMode?"rgba(74,158,255,.1)":"rgba(74,158,255,.08)"}`}}><span style={{color:darkMode?"#7ab8ff":"#5a6a90"}}>💰 الميزانية: </span><span style={{color:"#16a34a",fontWeight:700}}>{Number(c.budget).toLocaleString()} ﷼</span></div>}
+                  {c.ownerPropertyType&&<div style={{background:darkMode?"#0a1538":"#f5f8ff",borderRadius:8,padding:"6px 10px",fontSize:11,border:`1px solid ${darkMode?"rgba(74,158,255,.1)":"rgba(74,158,255,.08)"}`}}><span style={{color:darkMode?"#7ab8ff":"#5a6a90"}}>🏠 العقار: </span><span style={{color:darkMode?"#e8eeff":"#2a4d9b",fontWeight:700}}>{c.ownerPropertyType}</span></div>}
+                  {c.investorType&&<div style={{background:darkMode?"#0a1538":"#f5f8ff",borderRadius:8,padding:"6px 10px",fontSize:11,border:`1px solid ${darkMode?"rgba(74,158,255,.1)":"rgba(74,158,255,.08)"}`}}><span style={{color:darkMode?"#7ab8ff":"#5a6a90"}}>📈 الاستثمار: </span><span style={{color:"#7c3aed",fontWeight:700}}>{c.investorType}</span></div>}
+                  {c.contactDate&&<div style={{background:darkMode?"#0a1538":"#f5f8ff",borderRadius:8,padding:"6px 10px",fontSize:11,border:`1px solid ${darkMode?"rgba(74,158,255,.1)":"rgba(74,158,255,.08)"}`}}><span style={{color:darkMode?"#7ab8ff":"#5a6a90"}}>📞 تواصل: </span><span style={{color:darkMode?"#e8eeff":"#2a4d9b",fontWeight:700}}>{c.contactDate}</span></div>}
+                  <div style={{background:darkMode?"#0a1538":"#f5f8ff",borderRadius:8,padding:"6px 10px",fontSize:11,border:`1px solid ${darkMode?"rgba(74,158,255,.1)":"rgba(74,158,255,.08)"}`}}><span style={{color:darkMode?"#7ab8ff":"#5a6a90"}}>📅 تسجيل: </span><span style={{color:darkMode?"#e8eeff":"#2a4d9b",fontWeight:700}}>{c.createdDate}</span></div>
                 </div>
-                {c.notes&&<div style={{marginTop:8,background:"#edf1fb",borderRadius:8,padding:"6px 10px",fontSize:11,color:"#5a6a90",whiteSpace:"pre-line",lineHeight:1.7}}>💬 {c.notes}</div>}
+
+                {c.notes&&<div style={{marginTop:0,marginBottom:10,background:darkMode?"#0a1538":"#f5f8ff",borderRadius:8,padding:"6px 10px",fontSize:11,color:darkMode?"#7ab8ff":"#5a6a90",whiteSpace:"pre-line",lineHeight:1.7,border:`1px solid ${darkMode?"rgba(74,158,255,.1)":"rgba(74,158,255,.08)"}`}}>💬 {c.notes}</div>}
 
                 {/* Comments */}
                 {(c.comments||[]).length>0&&(
-                  <div style={{marginTop:8,background:"#edf1fb",borderRadius:8,padding:"8px 10px"}}>
+                  <div style={{marginBottom:10,background:darkMode?"#0a1538":"#f5f8ff",borderRadius:8,padding:"8px 10px",border:`1px solid ${darkMode?"rgba(74,158,255,.1)":"rgba(74,158,255,.08)"}`}}>
                     {(c.comments||[]).map((cm,i)=>(
-                      <div key={i} style={{borderBottom:i<c.comments.length-1?"1px solid #1e3a7a":"none",paddingBottom:i<c.comments.length-1?6:0,marginBottom:i<c.comments.length-1?6:0}}>
-                        <div style={{fontSize:10,color:"#5a6a90",marginBottom:2}}>{cm.date} {cm.time}</div>
-                        <div style={{fontSize:12,color:"#2a4d9b"}}>{cm.text}</div>
+                      <div key={i} style={{borderBottom:i<c.comments.length-1?`1px solid ${darkMode?"rgba(74,158,255,.1)":"rgba(74,158,255,.08)"}`:  "none",paddingBottom:i<c.comments.length-1?6:0,marginBottom:i<c.comments.length-1?6:0}}>
+                        <div style={{fontSize:10,color:darkMode?"#7ab8ff":"#5a6a90",marginBottom:2}}>{cm.date} {cm.time}</div>
+                        <div style={{fontSize:12,color:darkMode?"#e8eeff":"#2a4d9b"}}>{cm.text}</div>
                       </div>
                     ))}
                   </div>
                 )}
 
+                {/* Action buttons row */}
+                <div style={{display:"flex",gap:6,paddingTop:10,borderTop:`1px solid ${darkMode?"rgba(74,158,255,.1)":"rgba(74,158,255,.08)"}`}}>
+                  <button onClick={()=>openEdit(c)} style={{background:"rgba(74,158,255,.1)",border:"1px solid rgba(74,158,255,.2)",color:darkMode?"#7ab8ff":"#2a4d9b",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontSize:11,fontFamily:"'Cairo',sans-serif",fontWeight:600}}>✏️ تعديل</button>
+                  <button onClick={()=>printClientCard(c)} style={{background:"rgba(74,158,255,.08)",border:"1px solid rgba(74,158,255,.15)",color:darkMode?"#7ab8ff":"#2a4d9b",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontSize:11,fontFamily:"'Cairo',sans-serif",fontWeight:600}}>🖨️ طباعة</button>
+                  {isManager&&<button onClick={()=>setDelId(c.id)} style={{background:"#ef444410",border:"1px solid #ef444425",color:"#ef4444",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontSize:11,fontFamily:"'Cairo',sans-serif",fontWeight:600}}>🗑️ حذف</button>}
+                </div>
+
                 {/* Comment input */}
                 {commentId===c.id ? (
                   <div style={{marginTop:8,display:"flex",gap:6}}>
-                    <input value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addComment(c.id)} placeholder="اكتب تعليقك..." style={{flex:1,background:"#f0f4fc",border:"1px solid rgba(74,158,255,.2)",borderRadius:8,padding:"6px 10px",color:"#1e3a7a",fontFamily:"'Cairo',sans-serif",fontSize:12}}/>
-                    <button onClick={()=>addComment(c.id)} style={{background:"#1a4faa",border:"none",color:"#fff",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontSize:12,fontFamily:"'Cairo',sans-serif",fontWeight:700}}>إرسال</button>
-                    <button onClick={()=>{setCommentId(null);setCommentText("");}} style={{background:"#f0f4fc",border:"1px solid rgba(74,158,255,.2)",color:"#5a6a90",borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:12}}>إلغاء</button>
+                    <input value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addComment(c.id)} placeholder="اكتب تعليقك..." style={{flex:1,background:darkMode?"#0a1538":"#f0f4fc",border:"1px solid rgba(74,158,255,.2)",borderRadius:8,padding:"6px 10px",color:darkMode?"#e8eeff":"#1e3a7a",fontFamily:"'Cairo',sans-serif",fontSize:12}}/>
+                    <button onClick={()=>addComment(c.id)} style={{background:"#1e3a7a",border:"none",color:"#fff",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontSize:12,fontFamily:"'Cairo',sans-serif",fontWeight:700}}>إرسال</button>
+                    <button onClick={()=>{setCommentId(null);setCommentText("");}} style={{background:darkMode?"#0a1538":"#f0f4fc",border:"1px solid rgba(74,158,255,.2)",color:darkMode?"#7ab8ff":"#5a6a90",borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:12}}>إلغاء</button>
                   </div>
                 ) : (
-                  <button onClick={()=>setCommentId(c.id)} style={{marginTop:8,background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)",color:"#5a6a90",borderRadius:8,padding:"5px 12px",cursor:"pointer",fontSize:11,fontFamily:"'Cairo',sans-serif",width:"100%"}}>+ إضافة تعليق</button>
+                  <button onClick={()=>setCommentId(c.id)} style={{marginTop:8,background:darkMode?"rgba(74,158,255,.05)":"rgba(74,158,255,.04)",border:`1px solid rgba(74,158,255,.12)`,color:darkMode?"#7ab8ff":"#5a6a90",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontSize:11,fontFamily:"'Cairo',sans-serif",width:"100%"}}>+ إضافة تعليق</button>
                 )}
               </div>
             );})}
@@ -1373,14 +1380,17 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
                   </>
                 )}
               </div>
-              <div><Lbl c="تاريخ التواصل"/><input type="date" value={form.contactDate} onChange={f("contactDate")} style={IST}/></div>
+              <div>
+                <Lbl c="تاريخ التواصل"/>
+                <input type="date" value={form.contactDate} onChange={f("contactDate")} style={{...IST, colorScheme: darkMode?"dark":"light"}}/>
+              </div>
 
               {/* Client Type */}
               <div style={{gridColumn:"1/-1"}}>
                 <Lbl c="تصنيف العميل"/>
                 <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
                   {["مستأجر","مشتري","مالك","مستثمر"].map(t=>(
-                    <button key={t} type="button" onClick={()=>setForm(p=>({...p,clientType:t}))} style={{flex:1,minWidth:80,padding:"8px",borderRadius:9,border:`1px solid ${form.clientType===t?clientTypeColor[t]:"#1e3a7a"}`,background:form.clientType===t?clientTypeColor[t]+"33":"#071840",color:form.clientType===t?clientTypeColor[t]:"#4a6fa5",cursor:"pointer",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13}}>{t}</button>
+                    <button key={t} type="button" onClick={()=>setForm(p=>({...p,clientType:t}))} style={{flex:1,minWidth:80,padding:"9px",borderRadius:9,border:`2px solid ${form.clientType===t?clientTypeColor[t]:"rgba(74,158,255,.2)"}`,background:form.clientType===t?clientTypeColor[t]+"22":"transparent",color:form.clientType===t?clientTypeColor[t]:"#5a6a90",cursor:"pointer",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,transition:"all .15s"}}>{t}</button>
                   ))}
                 </div>
               </div>
