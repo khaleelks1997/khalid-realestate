@@ -30,7 +30,7 @@ const emptyForm = {
   marketingContractNo:"", adLicenseNo:"", refNo:"",
 };
 
-const today = () => new Date().toLocaleDateString("ar-SA");
+const today = () => new Date().toLocaleDateString("en-GB");
 
 // ── Export to Excel ───────────────────────────────────────────────────────────
 function exportToExcel(props) {
@@ -46,7 +46,7 @@ function exportToExcel(props) {
   const blob = new Blob([BOM+csv],{type:"text/csv;charset=utf-8;"});
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href=url; a.download=`عقارات-${new Date().toLocaleDateString("ar-SA").replace(/\//g,"-")}.csv`;
+  a.href=url; a.download=`عقارات-${new Date().toLocaleDateString("en-GB").replace(/\//g,"-")}.csv`;
   a.click(); URL.revokeObjectURL(url);
 }
 
@@ -1112,7 +1112,7 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
     } else {
       const maxNum = clients.reduce((max,c)=>Math.max(max, c.clientNo||0), 0);
       const num = maxNum + 1;
-      await addDoc(collection(db,"clients"),{...form, clientNo:num, createdAt:new Date().toISOString(), createdDate:new Date().toLocaleDateString("ar-SA"), comments:[], isDuplicate:!!duplicate});
+      await addDoc(collection(db,"clients"),{...form, clientNo:num, createdAt:new Date().toISOString(), createdDate:new Date().toLocaleDateString("en-GB"), comments:[], isDuplicate:!!duplicate});
     }
     setForm(emptyClient); setShowForm(false); setEditClientId(null);
   };
@@ -1196,7 +1196,7 @@ function ClientsPage({ lang, T, darkMode, userRole }) {
   const addComment = async (id) => {
     if(!commentText.trim()) return;
     const client = clients.find(c=>c.id===id);
-    const comments = [...(client?.comments||[]), { text:commentText, date:new Date().toLocaleDateString("ar-SA"), time:new Date().toLocaleTimeString("ar-SA",{hour:"2-digit",minute:"2-digit"}) }];
+    const comments = [...(client?.comments||[]), { text:commentText, date:new Date().toLocaleDateString("en-GB"), time:new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}) }];
     await updateDoc(doc(db,"clients",id),{comments});
     setCommentText(""); setCommentId(null);
   };
@@ -1581,7 +1581,7 @@ function ProvidersPage({ lang, T, darkMode }) {
   const addWork = async (id) => {
     if(!workText.trim()) return;
     const p = providers.find(p=>p.id===id);
-    const works = [...(p?.works||[]), { text:workText, date:new Date().toLocaleDateString("ar-SA") }];
+    const works = [...(p?.works||[]), { text:workText, date:new Date().toLocaleDateString("en-GB") }];
     await updateDoc(doc(db,"providers",id),{works});
     setWorkText(""); setShowWork(null);
   };
