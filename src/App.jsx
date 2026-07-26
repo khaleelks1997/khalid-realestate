@@ -1926,7 +1926,7 @@ function EmployeesPage({ lang, T, darkMode }) {
   );
 }
 
-
+function AboutPage({ lang, darkMode, T }) {
   const isEn=lang==="en";
   return (
     <div style={{paddingTop:96,minHeight:"100vh",background:T.bg}}>
