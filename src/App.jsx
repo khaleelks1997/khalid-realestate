@@ -4,8 +4,6 @@ import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot } fr
 
 const USERS = [
   { username: "Khalil", password: "Khalilks1997", role: "admin", displayName: "خليل" },
-  { username: "emp", password: "emp1234", role: "employee", displayName: "موظف 1" },
-  { username: "emp2", password: "emp2234", role: "employee", displayName: "موظف 2" },
 ];
 const WA_NUMBER = "966568300022";
 const PHONE = "0568300022";
@@ -381,6 +379,10 @@ function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang,
                 <div style={{width:36,height:36,borderRadius:10,background:darkMode?"rgba(255,255,255,.06)":"#edf1fb",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0}}>🔧</div>
                 <span>{isEn?"Providers":"مزودو الخدمات"}</span>
               </button>}
+              {userRole==="admin"&&<button onClick={()=>go("employees")} style={{display:"flex",alignItems:"center",gap:12,padding:"11px 12px",borderRadius:12,border:"none",background:page==="employees"?(darkMode?"rgba(74,158,255,.15)":"rgba(74,158,255,.08)"):"none",color:page==="employees"?(darkMode?"#7ab8ff":"#1e3a7a"):(darkMode?"rgba(255,255,255,.6)":"#5a6a90"),fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",width:"100%",textAlign:"right",marginBottom:2}}>
+                <div style={{width:36,height:36,borderRadius:10,background:darkMode?"rgba(255,255,255,.06)":"#edf1fb",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0}}>👨‍💼</div>
+                <span>{isEn?"Employees":"إدارة الموظفين"}</span>
+              </button>}
             </>
           )}
 
@@ -472,7 +474,18 @@ function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang,
 function LoginModal({ onSuccess, onClose, lang }) {
   const isEn=lang==="en";
   const [un,setUn]=useState(""); const [pw,setPw]=useState(""); const [show,setShow]=useState(false); const [err,setErr]=useState(""); const [loading,setLoading]=useState(false);
-  const login=()=>{ setLoading(true); setTimeout(()=>{ const ok=USERS.find(u=>u.username===un&&u.password===pw); if(ok) onSuccess(ok); else { setErr(isEn?"Incorrect credentials":"بيانات الدخول غير صحيحة"); setLoading(false); } },600); };
+  const login=()=>{ 
+    setLoading(true); 
+    // Check hardcoded admin first
+    const hardcoded = USERS.find(u=>u.username===un&&u.password===pw);
+    if(hardcoded) { onSuccess(hardcoded); return; }
+    // Check Firebase employees
+    getDocs(collection(db,"employees")).then(snap=>{
+      const emp = snap.docs.map(d=>({id:d.id,...d.data()})).find(e=>e.username===un&&e.password===pw);
+      if(emp) { onSuccess({username:emp.username, displayName:emp.displayName, role:"employee"}); }
+      else { setErr(isEn?"Incorrect credentials":"بيانات الدخول غير صحيحة"); setLoading(false); }
+    }).catch(()=>{ setErr("خطأ في الاتصال"); setLoading(false); });
+  };
   const IST={width:"100%",boxSizing:"border-box",background:"#f0f4fc",border:"1px solid rgba(74,158,255,.2)",borderRadius:10,padding:"10px 13px",color:"#1e3a7a",fontFamily:"'Cairo',sans-serif",fontSize:14};
   return (
     <div style={{position:"fixed",inset:0,background:"#000c",zIndex:1500,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
@@ -1231,7 +1244,10 @@ function ClientsPage({ lang, T, darkMode, userRole, currentUser }) {
   const [typeFilter, setTypeFilter] = useState("الكل");
   const [statusFilter, setStatusFilter] = useState("الكل");
 
-  const myClients = isManager ? clients : clients.filter(c=>c.assignedTo===currentUser?.username);
+  // الموظف يشوف فقط العملاء المحوّلين له صراحةً — المدير يشوف الكل
+  const myClients = isManager 
+    ? clients 
+    : (currentUser ? clients.filter(c => c.assignedTo === currentUser.username) : []);
 
   const filtered = myClients.filter(c=>
     (typeFilter==="الكل"||c.clientType===typeFilter) &&
@@ -1776,7 +1792,141 @@ function ProvidersPage({ lang, T, darkMode }) {
   );
 }
 
-function AboutPage({ lang, darkMode, T }) {
+// ── Employees Page ────────────────────────────────────────────────────────────
+function EmployeesPage({ lang, T, darkMode }) {
+  const [employees, setEmployees] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [delId, setDelId] = useState(null);
+  const [showPwd, setShowPwd] = useState({});
+  const emptyForm = { displayName:"", username:"", password:"" };
+  const [form, setForm] = useState(emptyForm);
+  const [err, setErr] = useState("");
+
+  useEffect(()=>{
+    const unsub = onSnapshot(collection(db,"employees"), snap=>{
+      setEmployees(snap.docs.map(d=>({id:d.id,...d.data()})));
+      setLoaded(true);
+    }, ()=>setLoaded(true));
+    return ()=>unsub();
+  },[]);
+
+  const save = async () => {
+    setErr("");
+    if(!form.displayName||!form.username||!form.password) return setErr("جميع الحقول مطلوبة");
+    if(form.username==="Khalil") return setErr("هذا اليوزر محجوز");
+    if(form.password.length<6) return setErr("الباسورد لازم 6 أحرف على الأقل");
+    // Check duplicate username
+    const dup = employees.find(e=>e.username===form.username&&e.id!==editId);
+    if(dup) return setErr("اليوزر مستخدم مسبقاً");
+    if(editId) {
+      await updateDoc(doc(db,"employees",editId),{...form});
+    } else {
+      await addDoc(collection(db,"employees"),{...form, role:"employee", createdAt:new Date().toISOString()});
+    }
+    setForm(emptyForm); setShowForm(false); setEditId(null); setErr("");
+  };
+
+  const del = async (id) => { await deleteDoc(doc(db,"employees",id)); setDelId(null); };
+  const f = key => e => setForm(p=>({...p,[key]:e.target.value}));
+  const IST = {width:"100%",boxSizing:"border-box",background:darkMode?"#0a1538":"#f5f8ff",border:"1px solid rgba(74,158,255,.2)",borderRadius:10,padding:"9px 12px",color:darkMode?"#e8eeff":"#1e3a7a",fontFamily:"'Cairo',sans-serif",fontSize:13};
+  const Lbl = ({c})=><div style={{fontSize:11,color:darkMode?"#7ab8ff":"#5a6a90",marginBottom:5,fontWeight:600}}>{c}</div>;
+
+  return (
+    <div style={{paddingTop:96,minHeight:"100vh",background:T.bg}}>
+      <div style={{background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",padding:"28px 24px 24px"}}>
+        <div style={{maxWidth:900,margin:"0 auto",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
+          <div>
+            <div style={{fontWeight:900,fontSize:22,color:"#fff",marginBottom:3}}>👨‍💼 إدارة الموظفين</div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,.5)"}}>للمدير فقط — إضافة وتعديل حسابات الموظفين</div>
+          </div>
+          <button onClick={()=>{setForm(emptyForm);setEditId(null);setErr("");setShowForm(true);}} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:11,padding:"10px 22px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ إضافة موظف</button>
+        </div>
+      </div>
+
+      <div style={{maxWidth:900,margin:"0 auto",padding:"24px 22px"}}>
+        {/* Admin account info */}
+        <div style={{background:darkMode?"rgba(74,158,255,.08)":"rgba(74,158,255,.06)",border:"1px solid rgba(74,158,255,.2)",borderRadius:14,padding:"16px 18px",marginBottom:20,display:"flex",alignItems:"center",gap:14}}>
+          <div style={{width:44,height:44,borderRadius:12,background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>👑</div>
+          <div>
+            <div style={{fontWeight:900,fontSize:14,color:darkMode?"#e8eeff":"#1e3a7a"}}>خليل — المدير</div>
+            <div style={{fontSize:11,color:darkMode?"#7ab8ff":"#5a6a90"}}>يوزر: Khalil | حساب ثابت لا يمكن تعديله من هنا</div>
+          </div>
+        </div>
+
+        {!loaded ? <div style={{textAlign:"center",padding:40,color:T.text3}}>جاري التحميل...</div> : employees.length===0 ? (
+          <div style={{textAlign:"center",padding:60,color:T.text3}}>
+            <div style={{fontSize:46,marginBottom:10}}>👤</div>
+            <div style={{fontSize:13}}>لا يوجد موظفين بعد</div>
+          </div>
+        ) : (
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            {employees.map(emp=>(
+              <div key={emp.id} style={{background:darkMode?"linear-gradient(160deg,#0f1f4a,#1a2d6b)":"white",border:"1px solid rgba(74,158,255,.12)",borderRadius:14,padding:"16px 18px",boxShadow:"0 2px 8px rgba(30,58,122,.06)",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
+                <div style={{display:"flex",alignItems:"center",gap:14}}>
+                  <div style={{width:46,height:46,borderRadius:12,background:"rgba(74,158,255,.1)",border:"1px solid rgba(74,158,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>👤</div>
+                  <div>
+                    <div style={{fontWeight:900,fontSize:15,color:darkMode?"#e8eeff":"#1e3a7a",marginBottom:2}}>{emp.displayName}</div>
+                    <div style={{fontSize:11,color:darkMode?"#7ab8ff":"#5a6a90",marginBottom:3}}>👤 يوزر: <strong>{emp.username}</strong></div>
+                    <div style={{fontSize:11,color:darkMode?"#7ab8ff":"#5a6a90",display:"flex",alignItems:"center",gap:6}}>
+                      🔑 باسورد: 
+                      <span style={{fontFamily:"monospace",letterSpacing:showPwd[emp.id]?"normal":"2px"}}>
+                        {showPwd[emp.id] ? emp.password : "••••••••"}
+                      </span>
+                      <button onClick={()=>setShowPwd(p=>({...p,[emp.id]:!p[emp.id]}))} style={{background:"none",border:"none",cursor:"pointer",fontSize:12,color:darkMode?"#7ab8ff":"#5a6a90",padding:0}}>
+                        {showPwd[emp.id]?"🙈":"👁️"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div style={{display:"flex",gap:8}}>
+                  <button onClick={()=>{setForm({displayName:emp.displayName,username:emp.username,password:emp.password});setEditId(emp.id);setErr("");setShowForm(true);}} style={{background:"rgba(74,158,255,.1)",border:"1px solid rgba(74,158,255,.2)",color:darkMode?"#7ab8ff":"#2a4d9b",borderRadius:9,padding:"7px 14px",cursor:"pointer",fontSize:12,fontFamily:"'Cairo',sans-serif",fontWeight:600}}>✏️ تعديل</button>
+                  <button onClick={()=>setDelId(emp.id)} style={{background:"#ef444410",border:"1px solid #ef444425",color:"#ef4444",borderRadius:9,padding:"7px 14px",cursor:"pointer",fontSize:12,fontFamily:"'Cairo',sans-serif",fontWeight:600}}>🗑️ حذف</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Add/Edit Modal */}
+      {showForm&&(
+        <div style={{position:"fixed",inset:0,background:"#000b",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>{setShowForm(false);setEditId(null);}}>
+          <div style={{background:darkMode?"linear-gradient(160deg,#0f1f4a,#1a2d6b)":"white",border:"1px solid rgba(74,158,255,.25)",borderRadius:22,padding:24,maxWidth:420,width:"100%"}} onClick={e=>e.stopPropagation()}>
+            <div style={{fontWeight:900,fontSize:16,color:darkMode?"#e8eeff":"#1e3a7a",marginBottom:20,paddingBottom:14,borderBottom:"1px solid rgba(74,158,255,.1)"}}>{editId?"✏️ تعديل الموظف":"👤 إضافة موظف جديد"}</div>
+            <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:16}}>
+              <div><Lbl c="الاسم الظاهر (مثال: محمد)"/><input value={form.displayName} onChange={f("displayName")} style={IST} placeholder="اسم الموظف"/></div>
+              <div><Lbl c="اسم المستخدم (يوزر)"/><input value={form.username} onChange={f("username")} style={IST} placeholder="مثال: emp2" dir="ltr"/></div>
+              <div><Lbl c="كلمة المرور (6 أحرف على الأقل)"/><input value={form.password} onChange={f("password")} style={IST} placeholder="كلمة المرور" dir="ltr"/></div>
+            </div>
+            {err&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#ef4444",marginBottom:12}}>⚠️ {err}</div>}
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={save} style={{flex:1,background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",color:"#fff",border:"none",borderRadius:11,padding:"12px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer"}}>{editId?"💾 حفظ التعديلات":"✅ إضافة الموظف"}</button>
+              <button onClick={()=>{setShowForm(false);setEditId(null);}} style={{background:darkMode?"#0a1538":"#f5f8ff",border:"1px solid rgba(74,158,255,.2)",color:darkMode?"#7ab8ff":"#5a6a90",borderRadius:11,padding:"12px 18px",fontFamily:"'Cairo',sans-serif",cursor:"pointer"}}>إلغاء</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {delId&&(
+        <div style={{position:"fixed",inset:0,background:"#000c",zIndex:700,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <div style={{background:darkMode?"linear-gradient(160deg,#0f1f4a,#1a2d6b)":"white",border:"1px solid #ef444440",borderRadius:20,padding:28,maxWidth:300,textAlign:"center"}}>
+            <div style={{fontSize:36,marginBottom:10}}>⚠️</div>
+            <div style={{fontWeight:900,fontSize:15,color:darkMode?"#e8eeff":"#1e3a7a",marginBottom:6}}>حذف الموظف</div>
+            <div style={{color:darkMode?"#7ab8ff":"#5a6a90",marginBottom:20,fontSize:13}}>سيتم حذف الحساب نهائياً</div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>del(delId)} style={{flex:1,background:"#ef4444",color:"#fff",border:"none",borderRadius:11,padding:"10px",fontFamily:"'Cairo',sans-serif",fontWeight:700,cursor:"pointer"}}>احذف</button>
+              <button onClick={()=>setDelId(null)} style={{flex:1,background:darkMode?"#0a1538":"#f5f8ff",border:"1px solid rgba(74,158,255,.2)",color:darkMode?"#7ab8ff":"#5a6a90",borderRadius:11,padding:"10px",fontFamily:"'Cairo',sans-serif",cursor:"pointer"}}>إلغاء</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
   const isEn=lang==="en";
   return (
     <div style={{paddingTop:96,minHeight:"100vh",background:T.bg}}>
@@ -1983,6 +2133,7 @@ export default function App() {
       {page==="about"      && <AboutPage lang={lang} darkMode={darkMode} T={T}/>}
       {page==="clients"    && <ClientsPage lang={lang} darkMode={darkMode} T={T} userRole={userRole} currentUser={currentUser}/>}
       {page==="providers"  && <ProvidersPage lang={lang} darkMode={darkMode} T={T}/>}
+      {page==="employees"  && <EmployeesPage lang={lang} darkMode={darkMode} T={T}/>}
 
       {/* ── Floating WhatsApp Button ── */}
       <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer"
