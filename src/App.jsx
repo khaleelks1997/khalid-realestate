@@ -1081,7 +1081,7 @@ function PropertiesPage({ props, isAdmin, userRole, onEdit, onDelete, onChangeSt
 function ClientsPage({ lang, T, darkMode, userRole, currentUser }) {
   const isEn = lang==="en";
   const isManager = userRole==="admin";
-  const employees = USERS.filter(u=>u.role==="employee");
+  const [dbEmployees, setDbEmployees] = useState([]);
   const [clients, setClients] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -1101,6 +1101,12 @@ function ClientsPage({ lang, T, darkMode, userRole, currentUser }) {
       setClients(data); setLoaded(true);
     }, ()=>setLoaded(true));
     return ()=>unsub();
+  },[]);
+
+  useEffect(()=>{
+    getDocs(collection(db,"employees")).then(snap=>{
+      setDbEmployees(snap.docs.map(d=>({id:d.id,...d.data()})));
+    });
   },[]);
 
   const openAdd = () => { setForm(emptyClient); setEditClientId(null); setShowForm(true); };
@@ -1132,13 +1138,15 @@ function ClientsPage({ lang, T, darkMode, userRole, currentUser }) {
 
   const assignClient = async () => {
     if(!assignTo||!assignModal) return;
-    const emp = USERS.find(u=>u.username===assignTo);
+    const emp = dbEmployees.find(u=>u.username===assignTo);
     const comment = { text:`📋 تم تحويل العميل إلى ${emp?.displayName||assignTo}${assignMsg?` — رسالة: ${assignMsg}`:""}`, date:new Date().toLocaleDateString("en-GB"), time:new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}), system:true };
     const existing = clients.find(c=>c.id===assignModal);
     const comments = [...(existing?.comments||[]), comment];
     await updateDoc(doc(db,"clients",assignModal),{ assignedTo:assignTo, assignedToName:emp?.displayName||assignTo, comments });
     setAssignModal(null); setAssignTo(""); setAssignMsg("");
   };
+
+  const del = async (id) => { await deleteDoc(doc(db,"clients",id)); setDelId(null); };
 
   const printClientCard = (c) => {
     const ratingColor = {"مستأجر":"#16a34a","مشتري":"#b45309","مالك":"#2a4d9b","مستثمر":"#7c3aed"};
@@ -1486,7 +1494,9 @@ function ClientsPage({ lang, T, darkMode, userRole, currentUser }) {
             <div style={{marginBottom:14}}>
               <div style={{fontSize:11,color:darkMode?"#7ab8ff":"#5a6a90",marginBottom:8,fontWeight:600}}>اختر الموظف</div>
               <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                {employees.map(emp=>(
+                {dbEmployees.length===0 ? (
+                  <div style={{textAlign:"center",padding:"20px",color:darkMode?"#7ab8ff":"#5a6a90",fontSize:13}}>لا يوجد موظفين — أضف موظفين أولاً من صفحة إدارة الموظفين</div>
+                ) : dbEmployees.map(emp=>(
                   <button key={emp.username} onClick={()=>setAssignTo(emp.username)} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,border:`2px solid ${assignTo===emp.username?"#4a9eff":"rgba(74,158,255,.2)"}`,background:assignTo===emp.username?"rgba(74,158,255,.1)":"transparent",color:darkMode?"#e8eeff":"#1e3a7a",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer",textAlign:"right",width:"100%"}}>
                     <div style={{width:34,height:34,borderRadius:9,background:"rgba(74,158,255,.12)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0}}>👤</div>
                     <div style={{flex:1}}>
