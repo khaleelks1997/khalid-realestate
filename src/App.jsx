@@ -1406,8 +1406,8 @@ function ClientsPage({ lang, T, darkMode, userRole, currentUser }) {
               <div style={{gridColumn:"1/-1"}}><Lbl c="الاسم *"/><input value={form.name} onChange={f("name")} style={IST} placeholder="اسم العميل"/></div>
               <div>
                 <Lbl c="رقم الجوال *"/>
-                {(!isManager && form.clientType==="مالك") ? (
-                  <div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"9px 12px",fontSize:12,color:"#ef4444",fontWeight:600}}>🔒 جوال المالك محجوب للموظف</div>
+                {(!isManager && editClientId && form.clientType==="مالك") ? (
+                  <div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"9px 12px",fontSize:12,color:"#ef4444",fontWeight:600}}>🔒 جوال المالك محجوب — لا يمكن تعديله</div>
                 ) : (
                   <>
                     <input value={form.phone} onChange={f("phone")} style={{...IST, borderColor: clients.find(c=>c.phone===form.phone&&c.id!==editClientId)?"#ef4444":"rgba(74,158,255,.2)"}} placeholder="05xxxxxxxx"/>
