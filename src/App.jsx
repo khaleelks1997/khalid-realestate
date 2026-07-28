@@ -1121,7 +1121,13 @@ function ClientsPage({ lang, T, darkMode, userRole, currentUser }) {
     const duplicate = clients.find(c=>c.phone===form.phone&&c.id!==editClientId);
     if(duplicate) { const ok=window.confirm(`⚠️ رقم الجوال مكرر!\nمسجل للعميل: "${duplicate.name}" — #${duplicate.clientNo}\nهل تريد الحفظ رغم التكرار؟`); if(!ok) return; }
     if(editClientId) {
-      await updateDoc(doc(db,"clients",editClientId),{...form, updatedAt:new Date().toISOString(), isDuplicate:!!duplicate});
+      const existing = clients.find(c=>c.id===editClientId);
+      const saveData = {...form};
+      // الموظف لا يعدل جوال المالك — يُحفظ الرقم الأصلي
+      if(!isManager && form.clientType==="مالك" && existing?.phone) {
+        saveData.phone = existing.phone;
+      }
+      await updateDoc(doc(db,"clients",editClientId),{...saveData, updatedAt:new Date().toISOString(), isDuplicate:!!duplicate});
     } else {
       const maxNum = clients.reduce((max,c)=>Math.max(max,c.clientNo||0),0);
       await addDoc(collection(db,"clients"),{
@@ -1326,7 +1332,7 @@ function ClientsPage({ lang, T, darkMode, userRole, currentUser }) {
                     </div>
                     <div>
                       <div style={{fontWeight:900,fontSize:15,color:darkMode?"#e8eeff":"#1e3a7a"}}>{c.name}</div>
-                      {(isManager||c.clientType!=="مالك") ? (
+                      {(isManager || c.clientType!=="مالك" || c.assignedTo===currentUser?.username) ? (
                         <div style={{fontSize:12,color:darkMode?"#7ab8ff":"#5a6a90"}}>📞 {c.phone}</div>
                       ) : (
                         <div style={{fontSize:11,color:"#ef4444"}}>🔒 جوال المالك محجوب</div>
@@ -1407,7 +1413,21 @@ function ClientsPage({ lang, T, darkMode, userRole, currentUser }) {
               <div>
                 <Lbl c="رقم الجوال *"/>
                 {(!isManager && editClientId && form.clientType==="مالك") ? (
-                  <div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"9px 12px",fontSize:12,color:"#ef4444",fontWeight:600}}>🔒 جوال المالك محجوب — لا يمكن تعديله</div>
+                  // موظف يعدل مالك موجود
+                  (() => {
+                    const existingClient = clients.find(c=>c.id===editClientId);
+                    const addedByMe = existingClient?.assignedTo === currentUser?.username;
+                    return addedByMe ? (
+                      // هو اللي أضافه — يشوف الرقم بس ما يعدله
+                      <div style={{background:darkMode?"#0a1538":"#f0f4fc",border:"1px solid rgba(74,158,255,.2)",borderRadius:10,padding:"9px 12px",fontSize:13,color:darkMode?"#e8eeff":"#1e3a7a",fontWeight:700,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                        <span>{existingClient?.phone||"—"}</span>
+                        <span style={{fontSize:10,color:"#5a6a90",fontWeight:400}}>🔒 لا يمكن التعديل</span>
+                      </div>
+                    ) : (
+                      // محوّل له من شخص آخر — محجوب
+                      <div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"9px 12px",fontSize:12,color:"#ef4444",fontWeight:600}}>🔒 جوال المالك محجوب</div>
+                    );
+                  })()
                 ) : (
                   <>
                     <input value={form.phone} onChange={f("phone")} style={{...IST, borderColor: clients.find(c=>c.phone===form.phone&&c.id!==editClientId)?"#ef4444":"rgba(74,158,255,.2)"}} placeholder="05xxxxxxxx"/>
