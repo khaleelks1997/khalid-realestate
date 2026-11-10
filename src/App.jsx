@@ -2,10 +2,17 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { db } from "./firebase";
 import { initializeApp, deleteApp } from "firebase/app";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, createUserWithEmailAndPassword, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
-import { collection, getDocs, getDoc, setDoc, addDoc, updateDoc, deleteDoc, deleteField, doc, onSnapshot, runTransaction, query, where } from "firebase/firestore";
+import { collection, getDocs, getDoc, setDoc, addDoc, updateDoc, deleteDoc, deleteField, doc, onSnapshot, runTransaction, query, where, orderBy, limit } from "firebase/firestore";
 
 // Firebase Authentication — يستخدم نفس تطبيق Firebase الذي أنشأه ./firebase
 const auth = getAuth(db.app);
+// سجل التدقيق: يُكتب للمدير فقط ولا يُعدَّل ولا يُحذف (القواعد تمنع ذلك)
+const logAudit = (action, target, detail="") => {
+  try{
+    const u = auth.currentUser; if(!u) return;
+    addDoc(collection(db,"audit_logs"),{ ts:new Date().toISOString(), uid:u.uid, email:u.email||"", action, target:String(target||""), detail:String(detail||"").slice(0,300) }).catch(()=>{});
+  }catch(e){}
+};
 const hesc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 const WA_NUMBER = "966568300022";
@@ -1205,6 +1212,7 @@ function ClientsPage({ lang, T, darkMode, userRole, currentUser }) {
   const del = async (id) => {
     const c = clients.find(x=>x.id===id);
     await deleteDoc(doc(db,"clients",id));
+    logAudit("حذف عميل",id,`${c?.name||""} ${c?.phone||""}`);
     try{ const k=normPhone(c?.phone); if(k){ const p=await getDoc(doc(db,"client_phones",k)); if(p.exists()&&p.data().clientId===id) await deleteDoc(doc(db,"client_phones",k)); } }catch(e){}
     setDelId(null);
   };
@@ -1654,7 +1662,7 @@ function ProvidersPage({ lang, T, darkMode }) {
     setForm(emptyForm); setShowForm(false); setEditId(null);
   };
 
-  const del = async (id) => { await deleteDoc(doc(db,"providers",id)); setDelId(null); };
+  const del = async (id) => { const pv=providers.find(x=>x.id===id); await deleteDoc(doc(db,"providers",id)); logAudit("حذف مزود خدمة",id,pv?.name||""); setDelId(null); };
 
   const printProviderCard = (p) => {
     const ratingColor = {"ممتاز":"#16a34a","وسط":"#b45309","مقبول":"#ef4444"};
@@ -1919,6 +1927,7 @@ function EmployeesPage({ lang, T, darkMode, currentUser }) {
       const uid = cred.user.uid;
       await signOut(sa);
       await setDoc(doc(db,"users",uid),{role:"employee",active:true,displayName,email,username:form.username.trim(),createdAt:new Date().toISOString()});
+      logAudit("إنشاء حساب موظف",uid,email);
       setForm(emptyForm); setShowForm(false);
       flash("✔ تم إنشاء حساب الموظف — سلّمه البريد وكلمة السر المؤقتة، ويقدر يغيّرها بعد الدخول");
     }catch(e){
@@ -1928,7 +1937,7 @@ function EmployeesPage({ lang, T, darkMode, currentUser }) {
     try{ if(sec) await deleteApp(sec); }catch(e){}
     setBusy(false);
   };
-  const toggle = async u => { try{ await updateDoc(doc(db,"users",u.id),{active:u.active===false}); }catch(e){ flash("تعذّر التحديث"); } };
+  const toggle = async u => { try{ await updateDoc(doc(db,"users",u.id),{active:u.active===false}); logAudit(u.active===false?"تفعيل موظف":"تعطيل موظف",u.id,u.email||""); }catch(e){ flash("تعذّر التحديث"); } };
   const reset = async u => { try{ await sendPasswordResetEmail(auth,u.email); flash("✔ أُرسل رابط إعادة تعيين كلمة السر إلى "+u.email); }catch(e){ flash("تعذّر الإرسال"); } };
   const delLegacy = async l => {
     if(!window.confirm(`حذف الحساب القديم «${l.displayName}»؟ (هذا الحساب القديم كلمة سره محفوظة نصاً)`)) return;
@@ -2040,6 +2049,7 @@ async function downloadBackup(){
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(a.href),5000);
   await setDoc(doc(db,"meta","backup"),{lastAt:new Date().toISOString()},{merge:true});
+  logAudit("تنزيل نسخة احتياطية","backup","");
   return Object.values(out.collections).reduce((n,c)=>n+Object.keys(c).length,0);
 }
 function SecurityPage({ lang, T, darkMode, currentUser, rawProps }) {
@@ -2047,6 +2057,8 @@ function SecurityPage({ lang, T, darkMode, currentUser, rawProps }) {
   const [stat,setStat]=useState(null); const [log,setLog]=useState([]); const [busy,setBusy]=useState(false);
   const [lastBk,setLastBk]=useState(null); const [bkMsg,setBkMsg]=useState("");
   useEffect(()=>{ getDoc(doc(db,"meta","backup")).then(d=>setLastBk(d.exists()?d.data().lastAt:null)).catch(()=>{}); },[]);
+  const [audit,setAudit]=useState(null);
+  const loadAudit = async()=>{ try{ const s=await getDocs(query(collection(db,"audit_logs"),orderBy("ts","desc"),limit(50))); setAudit(s.docs.map(d=>({id:d.id,...d.data()}))); }catch(e){ setAudit([]); } };
   const doBackup = async()=>{ setBusy(true); setBkMsg(""); try{ const n=await downloadBackup(); setLastBk(new Date().toISOString()); setBkMsg(`✔ تم تنزيل النسخة (${n} سجل). احفظ الملف في مكان آمن خارج الجهاز.`); }catch(e){ setBkMsg("تعذّر إنشاء النسخة"); } setBusy(false); };
   const txt=darkMode?"#e8eeff":"#1e3a7a", sub=darkMode?"#7ab8ff":"#5a6a90";
   const IST = {width:"100%",boxSizing:"border-box",background:darkMode?"#0a1538":"#f5f8ff",border:"1px solid rgba(74,158,255,.2)",borderRadius:10,padding:"9px 12px",color:txt,fontFamily:"'Cairo',sans-serif",fontSize:13};
@@ -2180,6 +2192,12 @@ function SecurityPage({ lang, T, darkMode, currentUser, rawProps }) {
           <div style={{fontSize:12,color:sub,marginBottom:12}}>{lastBk?`آخر نسخة: ${new Date(lastBk).toLocaleDateString("en-GB")}`:"لم تؤخذ نسخة بعد"} — يُنصح بنسخة كل شهر</div>
           <button onClick={doBackup} disabled={busy} style={{...btn,opacity:busy?.7:1}}>⬇️ تنزيل نسخة احتياطية الآن</button>
           {bkMsg&&<div style={{marginTop:10,fontSize:12,color:txt}}>{bkMsg}</div>}
+        </div>
+        <div style={{marginTop:16,padding:18,borderRadius:16,border:"1px solid rgba(74,158,255,.2)",background:darkMode?"#0f1d4a":"#fff"}}>
+          <div style={{fontWeight:800,fontSize:15,color:txt,marginBottom:10,textAlign:"center"}}>📜 سجل التدقيق (آخر 50 عملية)</div>
+          {audit===null?<div style={{textAlign:"center"}}><button onClick={loadAudit} style={btn}>عرض السجل</button></div>
+            :audit.length===0?<div style={{textAlign:"center",fontSize:12,color:sub}}>لا توجد عمليات مسجلة بعد</div>
+            :<div style={{fontSize:12,color:txt,lineHeight:1.9}}>{audit.map(a=>(<div key={a.id} style={{padding:"6px 0",borderBottom:"1px dashed rgba(74,158,255,.15)"}}><strong>{a.action}</strong> — {a.detail||a.target}<div style={{fontSize:10,color:sub}}>{new Date(a.ts).toLocaleString("en-GB")} · {a.email}</div></div>))}</div>}
         </div>
       </div>
     </div>
@@ -3085,7 +3103,7 @@ function PMPropModal({M,id,onClose,toast}){
   const del=async()=>{
     if(!p||M.propHasData(id)) return alert("لا يمكن حذف عقار عليه عقود أو حركات");
     if(!confirm("حذف هذا العقار؟")) return;
-    try{ await deleteDoc(doc(db,"pm_props",id)); toast("✔ تم حذف العقار"); onClose(); }catch(e){ PMDbErr(e); }
+    try{ await deleteDoc(doc(db,"pm_props",id)); logAudit("حذف عقار (إدارة أملاك)",id,p?.name||""); toast("✔ تم حذف العقار"); onClose(); }catch(e){ PMDbErr(e); }
   };
   return (
     <PMModal onClose={onClose}>
@@ -3203,7 +3221,7 @@ function PropertyMgmtPage({ lang, T, darkMode }) {
     if(!confirm(`إلغاء السند ${no||""}؟\nسيُستبعد من الحسابات ويبقى رقمه ظاهراً كسند ملغي.`)) return;
     const reason = prompt("سبب الإلغاء (اختياري)");
     if(reason===null) return;
-    try{ await updateDoc(doc(db,coll,id),{void:true,voidAt:pmNow(),voidReason:reason.trim()}); toast("✔ تم إلغاء السند"); }
+    try{ await updateDoc(doc(db,coll,id),{void:true,voidAt:pmNow(),voidReason:reason.trim()}); logAudit("إلغاء سند",coll+"/"+id,`${no||""} — ${reason.trim()}`); toast("✔ تم إلغاء السند"); }
     catch(e){ PMDbErr(e); }
   };
   const setMaintStatus = async (id,status)=>{ try{ await updateDoc(doc(db,"pm_maint",id),{status}); }catch(e){ PMDbErr(e); } };
@@ -3680,7 +3698,7 @@ export default function App() {
   };
 
   const del=async(id)=>{
-    try { await deleteDoc(doc(db,"properties",id)); showToast(isEn?"Deleted":"تم الحذف"); }
+    try { const pr=props.find(x=>x.id===id); await deleteDoc(doc(db,"properties",id)); try{ await deleteDoc(doc(db,"properties_private",id)); }catch(e){} logAudit("حذف عقار",id,pr?.name||""); showToast(isEn?"Deleted":"تم الحذف"); }
     catch { showToast(isEn?"Error":"خطأ","err"); }
     setDelId(null);
   };
