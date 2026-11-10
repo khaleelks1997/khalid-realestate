@@ -2024,9 +2024,30 @@ function EmployeesPage({ lang, T, darkMode, currentUser }) {
 
 // ── Security Page (admin) ─────────────────────────────────────────────────────
 const normPhone = p => String(p||"").replace(/\D/g,"");
+const BACKUP_COLS = ["properties","properties_private","clients","client_phones","providers","users","pm_props","pm_tenants","pm_contracts","pm_payments","pm_maint","pm_transfers","pm_vouchers","pm_meta","meta"];
+async function downloadBackup(){
+  const out = { exportedAt:new Date().toISOString(), collections:{} };
+  for(const name of BACKUP_COLS){
+    try{
+      const snap = await getDocs(collection(db,name));
+      out.collections[name] = Object.fromEntries(snap.docs.map(d=>[d.id,d.data()]));
+    }catch(e){ out.collections[name] = { __error: e?.code||"failed" }; }
+  }
+  const blob = new Blob([JSON.stringify(out)],{type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "backup-"+new Date().toISOString().slice(0,10)+".json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  await setDoc(doc(db,"meta","backup"),{lastAt:new Date().toISOString()},{merge:true});
+  return Object.values(out.collections).reduce((n,c)=>n+Object.keys(c).length,0);
+}
 function SecurityPage({ lang, T, darkMode, currentUser, rawProps }) {
   const [cur,setCur]=useState(""); const [np,setNp]=useState(""); const [np2,setNp2]=useState(""); const [pwMsg,setPwMsg]=useState(null);
   const [stat,setStat]=useState(null); const [log,setLog]=useState([]); const [busy,setBusy]=useState(false);
+  const [lastBk,setLastBk]=useState(null); const [bkMsg,setBkMsg]=useState("");
+  useEffect(()=>{ getDoc(doc(db,"meta","backup")).then(d=>setLastBk(d.exists()?d.data().lastAt:null)).catch(()=>{}); },[]);
+  const doBackup = async()=>{ setBusy(true); setBkMsg(""); try{ const n=await downloadBackup(); setLastBk(new Date().toISOString()); setBkMsg(`✔ تم تنزيل النسخة (${n} سجل). احفظ الملف في مكان آمن خارج الجهاز.`); }catch(e){ setBkMsg("تعذّر إنشاء النسخة"); } setBusy(false); };
   const txt=darkMode?"#e8eeff":"#1e3a7a", sub=darkMode?"#7ab8ff":"#5a6a90";
   const IST = {width:"100%",boxSizing:"border-box",background:darkMode?"#0a1538":"#f5f8ff",border:"1px solid rgba(74,158,255,.2)",borderRadius:10,padding:"9px 12px",color:txt,fontFamily:"'Cairo',sans-serif",fontSize:13};
   const card = {background:darkMode?"linear-gradient(160deg,#0f1f4a,#1a2d6b)":"white",border:"1px solid rgba(74,158,255,.15)",borderRadius:16,padding:"18px 20px",marginBottom:16};
@@ -2153,6 +2174,12 @@ function SecurityPage({ lang, T, darkMode, currentUser, rawProps }) {
             <button onClick={scan} disabled={busy} style={{...btn,background:darkMode?"#0a1538":"#f5f8ff",color:sub,border:"1px solid rgba(74,158,255,.2)"}}>🔄 إعادة الفحص</button>
           </div>
           {log.length>0&&<div style={{marginTop:12,fontSize:12,color:txt,lineHeight:2}}>{log.map((l,i)=><div key={i}>{l}</div>)}</div>}
+        </div>
+        <div style={{marginTop:16,padding:18,borderRadius:16,border:"1px solid rgba(74,158,255,.2)",background:darkMode?"#0f1d4a":"#fff",textAlign:"center"}}>
+          <div style={{fontWeight:800,fontSize:15,color:txt,marginBottom:6}}>💾 النسخ الاحتياطي</div>
+          <div style={{fontSize:12,color:sub,marginBottom:12}}>{lastBk?`آخر نسخة: ${new Date(lastBk).toLocaleDateString("en-GB")}`:"لم تؤخذ نسخة بعد"} — يُنصح بنسخة كل شهر</div>
+          <button onClick={doBackup} disabled={busy} style={{...btn,opacity:busy?.7:1}}>⬇️ تنزيل نسخة احتياطية الآن</button>
+          {bkMsg&&<div style={{marginTop:10,fontSize:12,color:txt}}>{bkMsg}</div>}
         </div>
       </div>
     </div>
@@ -3614,6 +3641,14 @@ export default function App() {
     const unsub = onSnapshot(collection(db,"properties_private"), snap=>{ const m={}; snap.docs.forEach(d=>{ m[d.id]=d.data(); }); setPrivMap(m); }, ()=>{});
     return ()=>unsub();
   },[userRole]);
+  const [backupDue,setBackupDue]=useState(false);
+  useEffect(()=>{
+    if(userRole!=="admin"){ setBackupDue(false); return; }
+    getDoc(doc(db,"meta","backup")).then(d=>{
+      const t = d.exists()&&d.data().lastAt ? new Date(d.data().lastAt).getTime() : 0;
+      setBackupDue(Date.now()-t > 30*24*3600*1000);
+    }).catch(()=>{});
+  },[userRole,page]);
   const propsView = useMemo(()=>props.map(p=>privMap[p.id]?{...p,...privMap[p.id]}:p),[props,privMap]);
 
   const openAdd=()=>{ setForm({...emptyForm,createdAt:today(),refNo:"REF-"+String(props.length+1).padStart(3,"0")}); setEditId(null); setShowForm(true); };
@@ -3686,6 +3721,7 @@ export default function App() {
       {showForm&&<PropForm form={form} setForm={setForm} onSave={save} onClose={()=>setShowForm(false)} editId={editId} T={T} userRole={userRole}/>}
       {shareP&&<ShareModal p={shareP} onClose={()=>setShareP(null)}/>}
 
+      {backupDue&&page!=="security"&&userRole==="admin"&&(<div onClick={()=>setPage("security")} style={{position:"fixed",bottom:20,right:20,background:"#b45309",color:"#fff",padding:"10px 18px",borderRadius:12,zIndex:9998,fontWeight:700,fontSize:13,cursor:"pointer",boxShadow:"0 8px 32px #000a"}}>⚠️ حان وقت النسخة الاحتياطية الشهرية — اضغط هنا</div>)}
       {toast&&(<div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",background:toast.type==="err"?"#ef4444":"#1a4faa",border:`1px solid ${toast.type==="err"?"#ef4444":"#2563c7"}`,color:"#fff",padding:"10px 24px",borderRadius:12,zIndex:9999,fontWeight:700,fontSize:13,boxShadow:"0 8px 32px #000a",whiteSpace:"nowrap"}}>{toast.msg}</div>)}
       {saving&&(<div style={{position:"fixed",bottom:16,left:16,background:"#ddeeff",border:"1px solid rgba(74,158,255,.35)",color:"#2a4d9b",padding:"6px 13px",borderRadius:9,fontSize:11,fontWeight:600,zIndex:9998}}>💾 {isEn?"Saving...":"جاري الحفظ..."}</div>)}
 
