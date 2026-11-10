@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { db } from "./firebase";
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "firebase/firestore";
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, runTransaction } from "firebase/firestore";
 
 const USERS = [
   { username: "Khalil", password: "Khalilks1997", role: "admin", displayName: "خليل" },
@@ -382,6 +382,10 @@ function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang,
               {userRole==="admin"&&<button onClick={()=>go("employees")} style={{display:"flex",alignItems:"center",gap:12,padding:"11px 12px",borderRadius:12,border:"none",background:page==="employees"?(darkMode?"rgba(74,158,255,.15)":"rgba(74,158,255,.08)"):"none",color:page==="employees"?(darkMode?"#7ab8ff":"#1e3a7a"):(darkMode?"rgba(255,255,255,.6)":"#5a6a90"),fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",width:"100%",textAlign:"right",marginBottom:2}}>
                 <div style={{width:36,height:36,borderRadius:10,background:darkMode?"rgba(255,255,255,.06)":"#edf1fb",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0}}>👨‍💼</div>
                 <span>{isEn?"Employees":"إدارة الموظفين"}</span>
+              </button>}
+              {userRole==="admin"&&<button onClick={()=>go("pm")} style={{display:"flex",alignItems:"center",gap:12,padding:"11px 12px",borderRadius:12,border:"none",background:page==="pm"?(darkMode?"rgba(74,158,255,.15)":"rgba(74,158,255,.08)"):"none",color:page==="pm"?(darkMode?"#7ab8ff":"#1e3a7a"):(darkMode?"rgba(255,255,255,.6)":"#5a6a90"),fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",width:"100%",textAlign:"right",marginBottom:2}}>
+                <div style={{width:36,height:36,borderRadius:10,background:darkMode?"rgba(255,255,255,.06)":"#edf1fb",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0}}>🏛️</div>
+                <span>{isEn?"Property Mgmt":"إدارة الأملاك"}</span>
               </button>}
             </>
           )}
@@ -2037,6 +2041,1311 @@ function AboutPage({ lang, darkMode, T }) {
 }
 
 // ── ROOT ──────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// 🏛️ إدارة الأملاك — Property Management (للمدير فقط)
+// Firestore: pm_props, pm_tenants, pm_contracts, pm_payments, pm_maint,
+//            pm_transfers, pm_vouchers, pm_meta/counters (ترقيم السندات والعقود)
+// ═══════════════════════════════════════════════════════════════════════════════
+const PM_FIRM = "مؤسسة خالد محمد عبدالغفور الشيخ";
+const PM_LOGO = "https://res.cloudinary.com/dumtp0krl/image/upload/v1778958489/WhatsApp_Image_2026-05-16_at_9.59.47_PM_zhmw6y.jpg";
+
+const PM_CSS = `
+.pm{--navy:#1e3a7a; --navy2:#2a4d9b; --navy3:#0f1f4a; --blue:#4a9eff; --blue2:#7ab8ff; --bg:#f5f8ff; --card:#ffffff; --soft:#edf1fb; --text:#1e3a7a; --muted:#5a6a90; --line:rgba(74,158,255,.18); --green:#16a34a; --red:#ef4444; --amber:#b45309; --shadow:0 2px 12px rgba(30,58,122,.07);}
+.pm.dark{--bg:#0f1f4a; --card:#1a2d6b; --soft:#0a1538; --text:#e8eeff; --muted:#7ab8ff; --line:rgba(74,158,255,.2); --green:#4ade80; --red:#f87171; --amber:#fbbf24; --shadow:none;}
+.pm *{box-sizing:border-box;margin:0;padding:0;font-family:'Cairo',sans-serif;}
+.pm{background:var(--bg);color:var(--text);transition:background .25s,color .25s;}
+.pm .wrap{max-width:1150px;margin:0 auto;padding:22px 18px 60px;}
+.pm h2.title{font-size:20px;font-weight:900;margin-bottom:4px;}
+.pm p.sub{font-size:12px;color:var(--muted);margin-bottom:18px;}
+.pm .row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:6px;}
+.pm .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px;box-shadow:var(--shadow);}
+.pm .gridS{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;margin-bottom:16px;}
+.pm .stat .ic{font-size:22px;margin-bottom:6px;}
+.pm .stat .v{font-size:20px;font-weight:900;}
+.pm .stat .l{font-size:11px;color:var(--muted);margin-top:2px;}
+.pm .stat.red .v{color:var(--red);}
+.pm .stat.green .v{color:var(--green);}
+.pm .stat.amber .v{color:var(--amber);}
+.pm .cols{display:grid;grid-template-columns:1.25fr 1fr;gap:14px;}
+.pm .ch{font-weight:900;font-size:14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.pm .alerts{max-height:430px;overflow-y:auto;}
+.pm .alert{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:12px;margin-bottom:8px;border:1px solid var(--line);background:var(--soft);}
+.pm .alert .d{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.pm .alert.late .d{background:rgba(239,68,68,.12);}
+.pm .alert.end .d{background:rgba(180,83,9,.12);}
+.pm .alert.soon .d{background:rgba(74,158,255,.14);}
+.pm .alert.mnt .d{background:rgba(122,184,255,.18);}
+.pm .alert .t{flex:1;font-size:12px;font-weight:700;line-height:1.5;}
+.pm .alert .t small{display:block;color:var(--muted);font-weight:400;font-size:11px;}
+.pm .alert button{background:var(--navy);color:#fff;border:none;border-radius:8px;padding:5px 11px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.pm .empty{text-align:center;color:var(--muted);font-size:12px;padding:20px;}
+.pm .bars{display:flex;align-items:flex-end;gap:6px;height:130px;margin-top:6px;}
+.pm .bar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px;height:100%;}
+.pm .bar i{display:block;width:100%;background:linear-gradient(180deg,var(--blue),var(--navy2));border-radius:6px 6px 0 0;min-height:3px;}
+.pm .bar span{font-size:9px;color:var(--muted);}
+.pm .bar em{font-size:9px;font-style:normal;color:var(--muted);font-weight:700;height:12px;}
+.pm .occ{margin-top:16px;}
+.pmprog{height:9px;background:var(--soft);border-radius:6px;overflow:hidden;margin-top:6px;}
+.pmprog.sm{height:6px;margin:4px 0;}
+.pmprog i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--navy2));border-radius:6px;}
+.pm .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px;}
+.pm .pc .head{display:flex;gap:12px;align-items:center;margin-bottom:12px;}
+.pm .pc .pi{width:50px;height:50px;border-radius:14px;background:var(--soft);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:24px;}
+.pm .pc .pn{font-weight:900;font-size:15px;}
+.pm .pc .pa{font-size:11px;color:var(--muted);}
+.pm .units{display:flex;gap:5px;flex-wrap:wrap;margin:10px 0 4px;}
+.pm .uc{font-size:10px;font-weight:700;border-radius:8px;padding:3px 9px;border:1px solid;}
+.pm .uc.occ{color:var(--green);background:rgba(22,163,74,.1);border-color:rgba(22,163,74,.3);}
+.pm .uc.vac{color:var(--muted);background:var(--soft);border-color:var(--line);}
+.pm .kv{display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px dashed var(--line);gap:10px;}
+.pm .kv span{color:var(--muted);}
+.pm .kv b{font-weight:700;text-align:left;}
+.pm .btn{background:var(--navy);color:#fff;border:none;border-radius:10px;padding:9px 16px;font-weight:700;font-size:12px;cursor:pointer;}
+.pm .btn.blue{background:var(--blue);}
+.pm .btn.ghost{background:var(--soft);color:var(--text);border:1px solid var(--line);}
+.pm .btn.sm{padding:6px 11px;font-size:11px;border-radius:8px;}
+.pm .btn.wa{background:rgba(37,211,102,.12);color:#16a34a;border:1px solid rgba(37,211,102,.35);}
+.pm body.dark .btn.wa{color:#4ade80;}
+.pm .pc .btns{display:flex;gap:8px;margin-top:12px;}
+.pm .pc .btns .btn{flex:1;}
+.pm .tw{overflow-x:auto;}
+.pm table{width:100%;border-collapse:collapse;font-size:12px;min-width:820px;}
+.pm th{text-align:right;color:var(--muted);font-weight:700;font-size:11px;padding:10px 10px;border-bottom:2px solid var(--line);}
+.pm td{padding:11px 10px;border-bottom:1px solid var(--line);}
+.pm tr:hover td{background:var(--soft);}
+.pm .badge{display:inline-block;border-radius:20px;padding:3px 11px;font-size:11px;font-weight:700;border:1px solid;white-space:nowrap;}
+.pm .b-green{color:var(--green);background:rgba(22,163,74,.1);border-color:rgba(22,163,74,.3);}
+.pm .b-red{color:var(--red);background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);}
+.pm .b-amber{color:var(--amber);background:rgba(180,83,9,.1);border-color:rgba(180,83,9,.3);}
+.pm .b-blue{color:var(--navy2);background:rgba(74,158,255,.12);border-color:rgba(74,158,255,.3);}
+.pm .b-gray{color:var(--muted);background:var(--soft);border-color:var(--line);}
+.pm body.dark .b-blue{color:var(--blue2);}
+.pm .chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;}
+.pm .chip{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;}
+.pm .chip.on{background:var(--navy);border-color:var(--navy);color:#fff;}
+.pm .crow{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;margin-bottom:8px;background:var(--card);border:1px solid var(--line);flex-wrap:wrap;}
+.pm .crow .who{flex:1;min-width:170px;}
+.pm .crow .who b{font-size:13px;display:block;}
+.pm .crow .who small{font-size:11px;color:var(--muted);}
+.pm .crow .due{font-size:11px;color:var(--muted);min-width:100px;}
+.pm .crow .amtbox{min-width:190px;}
+.pm .crow .amt{font-weight:900;font-size:14px;}
+.pm .crow .amtbox small{font-size:10px;color:var(--muted);}
+.pm .crow .acts{display:flex;gap:6px;flex-wrap:wrap;}
+.pm .tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;}
+.pm .tc .tn{font-weight:900;font-size:15px;margin-bottom:2px;}
+.pm .tc .tp{font-size:11px;color:var(--muted);margin-bottom:10px;}
+.pm .tc .btns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+.pm .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;display:none;align-items:center;justify-content:center;padding:16px;}
+.pm .modal.on{display:flex;}
+.pm .mbox{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px;width:100%;max-width:480px;max-height:92vh;overflow-y:auto;}
+.pm .mbox h3{font-size:16px;font-weight:900;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--line);}
+.pm .fg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.pm .fg .full{grid-column:1/-1;}
+.pm label{display:block;font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px;}
+.pm input,.pm select,.pm textarea{width:100%;background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:9px 11px;color:var(--text);font-size:13px;}
+.pm input:focus,.pm select:focus,.pm textarea:focus{outline:none;border-color:var(--blue);}
+.pm .info{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:12px;line-height:1.9;}
+.pm .pnote{font-size:12px;font-weight:700;color:var(--muted);background:var(--soft);border-radius:10px;padding:8px 12px;margin-bottom:14px;}
+.pm .hrow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px dashed var(--line);font-size:12px;}
+.pm .hrow .hm{flex:1;}
+.pm .hrow small{display:block;color:var(--muted);font-size:10px;}
+.pm .mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px;}
+.pm .mc .mt{font-weight:900;font-size:14px;margin-bottom:4px;}
+.pm .mc .ms{font-size:11px;color:var(--muted);margin-bottom:10px;}
+.pm .mc .btns{display:flex;gap:8px;margin-top:10px;}
+.pmpr{background:#fff;color:#1e3a7a;direction:rtl;padding:22px;border:1px solid #d5def0;border-radius:12px;max-width:780px;font-family:'Cairo',sans-serif;}
+.pmpr *{font-family:'Cairo',sans-serif;}
+.pmpr .ph{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#1e3a7a,#2a4d9b);color:#fff;border-radius:12px;padding:14px;margin-bottom:16px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+.pmpr .ph img{width:48px;height:48px;border-radius:9px;background:#fff;object-fit:contain;}
+.pmpr .ph b{font-size:14px;display:block;}
+.pmpr .ph small{font-size:11px;opacity:.8;}
+.pmpr .ph .rt{margin-right:auto;text-align:left;}
+.pmpr h4{font-size:12px;color:#5a6a90;margin:14px 0 6px;}
+.pmpr .kv{border-bottom:1px dashed #d5def0;}
+.pmpr .kv span{color:#5a6a90;}
+.pmpr .kv b{color:#1e3a7a;}
+.pmpr table{min-width:0;font-size:11px;margin-bottom:6px;}
+.pmpr th{background:#edf1fb;color:#5a6a90;padding:6px 8px;border-bottom:1px solid #d5def0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+.pmpr td{padding:6px 8px;border-bottom:1px solid #e6ecf8;color:#1e3a7a;}
+.pmpr tr:hover td{background:none;}
+.pmpr .sum{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0;}
+.pmpr .sum div{background:#edf1fb;border:1px solid #d5def0;border-radius:10px;padding:9px;text-align:center;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+.pmpr .sum small{display:block;font-size:10px;color:#5a6a90;}
+.pmpr .sum b{font-size:14px;font-weight:900;}
+.pmpr .sum .hl{background:#1e3a7a;}
+.pmpr .sum .hl small{color:#7ab8ff;}
+.pmpr .sum .hl b{color:#fff;}
+.pmpr .big{text-align:center;margin:16px 0;font-size:22px;font-weight:900;border:2px dashed #4a9eff;border-radius:12px;padding:12px;}
+.pmpr .foot{margin-top:18px;font-size:10px;color:#8899bb;text-align:center;border-top:1px solid #e6ecf8;padding-top:10px;}
+.pmpr .sign{display:flex;justify-content:space-between;margin-top:26px;font-size:11px;color:#5a6a90;}
+.pmpr .red{color:#ef4444;}
+.pmpr .grn{color:#16a34a;}
+.pm .stmtWrap{overflow-x:auto;}
+.pm .pmtabs{background:#0a1538;display:flex;gap:4px;padding:8px 14px;overflow-x:auto;border-bottom:1px solid rgba(74,158,255,.2);}
+.pm .pmtab{white-space:nowrap;border:1px solid transparent;background:none;color:rgba(255,255,255,.55);font-weight:700;font-size:12px;border-radius:18px;padding:7px 15px;cursor:pointer;transition:.2s;}
+.pm .pmtab:hover{color:#fff;}
+.pm .pmtab.on{background:rgba(74,158,255,.18);border-color:rgba(74,158,255,.4);color:#7ab8ff;}
+.pm .modal{z-index:650;}
+.pm .pmtoast{position:fixed;top:104px;left:50%;transform:translateX(-50%);background:#16a34a;color:#fff;font-weight:700;font-size:13px;padding:10px 22px;border-radius:30px;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,.25);max-width:92vw;text-align:center;}
+.pm .void-row td{opacity:.55;text-decoration:line-through;}
+.pm .void-row td:last-child,.pm .void-row td:nth-child(2){text-decoration:none;opacity:1;}
+@media(max-width:900px){.pm .cols{grid-template-columns:1fr;}}
+@media(max-width:700px){.pm .wrap{padding:16px 12px 60px;}}
+#pm-print-area{display:none;}
+@media print{
+  @page{size:A4;margin:12mm;}
+  body.pm-printing{background:#fff!important;}
+  body.pm-printing > *:not(#pm-print-area){display:none!important;}
+  body.pm-printing > #pm-print-area{display:block!important;background:#fff!important;}
+  body.pm-printing #pm-print-area .pmpr{border:none;max-width:none;padding:0;}
+}
+`;
+
+// ── أدوات ───────────────────────────────────────────────────────────────────
+const pmEsc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pmD = s => new Date(s+"T00:00:00");
+const pmFmt = d => new Date(d).toLocaleDateString("en-GB");
+const pmIso = d => { const x=new Date(d); return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0"); };
+const pmMoney = n => Math.round(n).toLocaleString("en-US")+" ﷼";
+const pmDays = (a,b) => Math.round((b-a)/86400000);
+const pmAddMonths = (d,m) => {
+  const x=new Date(d), day=x.getDate(); x.setDate(1); x.setMonth(x.getMonth()+m);
+  const last=new Date(x.getFullYear(),x.getMonth()+1,0).getDate(); x.setDate(Math.min(day,last)); return x;
+};
+const pmSum = (a,f) => a.reduce((s,x)=>s+f(x),0);
+const pmToday = () => { const d=new Date(); d.setHours(0,0,0,0); return d; };
+
+// الهوية: 10 أرقام تبدأ بـ 1 (مواطن) أو 2 (مقيم) + فحص التحقق (تنبيه فقط)
+const pmIdCheck = v => {
+  if(!v) return "";
+  if(!/^[12]\d{9}$/.test(v)) return "format";
+  let s=0; for(let i=0;i<10;i++){ const d=+v[i]; if(i%2===0){ const z=d*2; s+=z>9?z-9:z; } else s+=d; }
+  return s%10===0?"":"checksum";
+};
+const pmOkId = (label,v) => {
+  const r=pmIdCheck(v);
+  if(r==="format"){ alert(label+": يجب أن يكون 10 أرقام ويبدأ بـ 1 (مواطن) أو 2 (مقيم)"); return false; }
+  if(r==="checksum") return confirm(label+": الرقم لا يجتاز فحص التحقق — تأكد منه. هل تريد الحفظ؟");
+  return true;
+};
+
+const PM_ST_META = { paid:["b-green","✔ مدفوع"], part:["b-blue","◐ جزئي"], late:["b-red","⚠ متأخر"], soon:["b-amber","مستحق قريباً"], up:["b-gray","قادم"] };
+const PM_GCATS = {
+  in:["عمولة وساطة","أتعاب تسويق","رسوم إدارة أملاك","تقييم عقاري","استشارات","خدمات إيجار وتوثيق","عربون","تأمين","أخرى"],
+  out:["إيجار المكتب","رواتب","كهرباء وإنترنت","قرطاسية ومطبوعات","تسويق وإعلان","صيانة المكتب","رسوم حكومية","رد أمانة","أخرى"],
+};
+const PM_GNAT = {
+  in:[["office","دخل للمكتب"],["trust","أمانة (عربون / تأمين) — لا تدخل في الدخل"]],
+  out:[["office","مصروف على المكتب"],["trust","رد أمانة — لا يدخل في المصروفات"]],
+};
+const pmNatureText = v => v.nature==="trust"
+  ? (v.kind==="in"?"أمانة (عربون / تأمين) — لا تُحتسب دخلاً للمكتب":"رد أمانة — لا يُحتسب مصروفاً على المكتب")
+  : (v.kind==="in"?"دخل للمكتب":"مصروف على المكتب");
+
+// ترقيم متسلسل آمن (معاملة Firestore): seq → سندات القبض، vseq → سندات الصرف، cno → العقود
+async function pmTx(field, build){
+  return runTransaction(db, async tx=>{
+    const ref=doc(db,"pm_meta","counters");
+    const snap=await tx.get(ref);
+    const n=((snap.exists()?snap.data()[field]:0)||0)+1;
+    tx.set(ref,{[field]:n},{merge:true});
+    build(n,tx);
+    return n;
+  });
+}
+
+function pmPrint(html){
+  let el=document.getElementById("pm-print-area");
+  if(!el){ el=document.createElement("div"); el.id="pm-print-area"; el.className="pm"; document.body.appendChild(el); }
+  el.innerHTML=html;
+  document.body.classList.add("pm-printing");
+  const done=()=>{ document.body.classList.remove("pm-printing"); window.removeEventListener("afterprint",done); };
+  window.addEventListener("afterprint",done);
+  setTimeout(()=>window.print(),60);
+}
+
+// ── النموذج الحسابي (نفس منطق الديمو المعتمد) ─────────────────────────────────
+function pmModel(data, today){
+  const { props, tenants, maint } = data;
+  const payments  = data.payments.filter(p=>!p.void);
+  const transfers = data.transfers.filter(t=>!t.void);
+  const vouchers  = data.vouchers.filter(v=>!v.void);
+  const contracts = data.contracts.map(c=>({...c,payments:payments.filter(p=>p.cid===c.id)}));
+
+  const pname = id => props.find(p=>p.id===id)?.name||"";
+  const tenantOf = c => tenants.find(t=>t.id===c.tid)||{name:"—",phone:""};
+  const left = c => pmDays(today,pmD(c.end));
+  const ageOf = s => s ? Math.floor(pmDays(pmD(s),today)/365.2425) : null;
+  const dobTxt = s => s ? `${pmFmt(pmD(s))} (${ageOf(s)} سنة)` : "—";
+
+  const instOf = c => {
+    const step=12/c.freq, amt=c.rent/c.freq, s=pmD(c.start);
+    return Array.from({length:c.freq},(_,idx)=>{
+      const paidAmt=pmSum(c.payments.filter(p=>p.idx===idx),p=>p.amount);
+      return {c,cid:c.id,t:tenantOf(c),idx,due:pmAddMonths(s,idx*step),amt,paidAmt,rem:Math.max(0,amt-paidAmt)};
+    });
+  };
+  const allInst = () => contracts.flatMap(instOf);
+  const st = i => {
+    if(i.rem<=0.5) return "paid";
+    if(pmDays(today,i.due)<0) return "late";
+    if(i.paidAmt>0) return "part";
+    return pmDays(today,i.due)<=30?"soon":"up";
+  };
+  const mChg = m => m.payer==="owner" ? (m.charge ?? m.cost) : 0;
+  const mProfit = m => mChg(m)-m.cost;
+
+  const ownerFin = pid => {
+    const p=props.find(x=>x.id===pid);
+    const pays=[]; contracts.filter(c=>c.pid===pid).forEach(c=>c.payments.forEach(x=>pays.push({c,x})));
+    pays.sort((a,b)=>a.x.date.localeCompare(b.x.date)||a.x.seq-b.x.seq);
+    const collected=pmSum(pays,o=>o.x.amount);
+    const exps=maint.filter(m=>m.pid===pid&&m.status==="مكتمل"&&m.payer==="owner");
+    const expenses=pmSum(exps,m=>mChg(m));
+    const fee=collected*(p?.fee||0)/100;
+    const net=collected-expenses-fee;
+    const trs=transfers.filter(t=>t.pid===pid).sort((a,b)=>a.date.localeCompare(b.date)||a.vseq-b.vseq);
+    const transferred=pmSum(trs,t=>t.amount);
+    const balance=net-transferred;
+    const arrears=pmSum(allInst().filter(i=>i.c.pid===pid&&st(i)==="late"),i=>i.rem);
+    return {p,pays,collected,exps,expenses,fee,net,trs,transferred,balance,arrears};
+  };
+  const occupiedUnits = p => p.units.filter(u=>contracts.some(c=>c.pid===p.id&&c.unit===u&&left(c)>=0));
+  const tenantFin = t => {
+    const cs=contracts.filter(c=>c.tid===t.id), ins=cs.flatMap(instOf);
+    const dueTo=pmSum(ins.filter(i=>pmDays(today,i.due)<=0),i=>i.amt);
+    const paid=pmSum(cs.flatMap(c=>c.payments),p=>p.amount);
+    const arrears=pmSum(ins.filter(i=>st(i)==="late"),i=>i.rem);
+    return {cs,ins,dueTo,paid,arrears};
+  };
+
+  // دخل المكتب: رسوم الإدارة (تلقائي) + سندات القبض العامة − سندات الصرف العامة − صيانة على المؤسسة ± ربح الصيانة
+  const officeData = (from,to) => {
+    const inR = d => (!from||d>=from)&&(!to||d<=to);
+    const inc=[], exp=[];
+    props.forEach(p=>{
+      const col=pmSum(contracts.filter(c=>c.pid===p.id).flatMap(c=>c.payments).filter(x=>inR(x.date)),x=>x.amount);
+      if(col>0) inc.push({no:"تلقائي",auto:true,date:"",cat:"رسوم إدارة",desc:`${p.fee}% من تحصيل ${pmMoney(col)} — ${p.name}`,amount:col*p.fee/100});
+    });
+    vouchers.filter(v=>v.kind==="in"&&v.nature==="office"&&inR(v.date)).forEach(v=>inc.push({no:v.no,date:v.date,cat:v.cat,desc:`${v.desc} (${v.party})`,amount:v.amount}));
+    vouchers.filter(v=>v.kind==="out"&&v.nature==="office"&&inR(v.date)).forEach(v=>exp.push({no:v.vno||v.no,date:v.date,cat:v.cat,desc:`${v.desc} (${v.party})`,amount:v.amount}));
+    maint.filter(m=>m.status==="مكتمل"&&m.cost>0&&m.payer==="firm"&&inR(m.paidDate||m.date)).forEach(m=>exp.push({no:m.vno,date:m.paidDate||m.date,cat:"صيانة على المؤسسة",desc:`${m.title} — ${pname(m.pid)} • ${m.unit}`,amount:m.cost}));
+    const mj=maint.filter(m=>m.status==="مكتمل"&&m.cost>0&&inR(m.paidDate||m.date)).sort((a,b)=>(b.paidDate||b.date).localeCompare(a.paidDate||a.date));
+    mj.filter(m=>m.payer==="owner").forEach(m=>{
+      const pf=mProfit(m), dt=m.paidDate||m.date;
+      if(pf>0) inc.push({no:m.vno,date:dt,cat:"ربح صيانة",desc:`${m.title} — ${pname(m.pid)} • ${m.unit} (تكلفة ${pmMoney(m.cost)} / محمّل ${pmMoney(mChg(m))})`,amount:pf});
+      else if(pf<0) exp.push({no:m.vno,date:dt,cat:"خسارة صيانة",desc:`${m.title} — ${pname(m.pid)} • محمّل أقل من التكلفة`,amount:-pf});
+    });
+    inc.sort((a,b)=>(a.auto?0:1)-(b.auto?0:1)||b.date.localeCompare(a.date));
+    exp.sort((a,b)=>b.date.localeCompare(a.date));
+    const tin=pmSum(inc,l=>l.amount), tout=pmSum(exp,l=>l.amount);
+    const tr=vouchers.filter(v=>v.nature==="trust"&&inR(v.date));
+    const trust=pmSum(tr.filter(v=>v.kind==="in"),v=>v.amount)-pmSum(tr.filter(v=>v.kind==="out"),v=>v.amount);
+    const mCost=pmSum(mj,m=>m.cost), mChgT=pmSum(mj,mChg);
+    const mOwnerProfit=pmSum(mj.filter(m=>m.payer==="owner"),mProfit), mFirm=pmSum(mj.filter(m=>m.payer==="firm"),m=>m.cost);
+    return {inc,exp,tin,tout,net:tin-tout,trust,mj,mCost,mChgT,mProfit:mOwnerProfit,mFirm,mNet:mChgT-mCost};
+  };
+
+  // قائمة السندات الموحّدة (تشمل الملغاة بعلامة void)
+  const voucherList = () => {
+    const v=[];
+    data.payments.forEach(p=>{
+      const c=data.contracts.find(x=>x.id===p.cid); if(!c) return;
+      v.push({kind:"in",no:p.no,seq:p.seq,date:p.date,void:!!p.void,party:tenantOf(c).name,
+        desc:`قسط ${p.idx+1}/${c.freq} — ${c.unit} • ${pname(c.pid)}`,amount:p.amount,view:{k:"r",cid:c.id,id:p.id},voidRef:["pm_payments",p.id]});
+    });
+    data.transfers.forEach(t=>{
+      const p=props.find(x=>x.id===t.pid);
+      v.push({kind:"out",no:t.vno,seq:t.vseq,date:t.date,void:!!t.void,party:p?.owner||"—",
+        desc:`تحويل للمالك — ${pname(t.pid)}${t.note?" • "+t.note:""}`,amount:t.amount,view:{k:"t",id:t.id},voidRef:["pm_transfers",t.id]});
+    });
+    maint.forEach(m=>{ if(m.status==="مكتمل"&&m.cost>0) v.push({kind:"out",no:m.vno,seq:m.vseq,date:m.paidDate||m.date,party:m.provider,
+      desc:`${m.title} — ${pname(m.pid)} • ${m.unit}`,amount:m.cost,view:{k:"m",id:m.id}}); });
+    data.vouchers.forEach(g=>v.push({kind:g.kind,gen:1,trust:g.nature==="trust",no:g.no||g.vno,seq:g.seq||g.vseq,date:g.date,void:!!g.void,party:g.party,
+      desc:`${g.cat} — ${g.desc}`,amount:g.amount,view:{k:"g",id:g.id},voidRef:["pm_vouchers",g.id]}));
+    return v.sort((a,b)=>b.date.localeCompare(a.date)||(b.seq||0)-(a.seq||0));
+  };
+
+  const propHasData = id => data.contracts.some(c=>c.pid===id)||maint.some(m=>m.pid===id)||data.transfers.some(t=>t.pid===id);
+
+  return {raw:data,today,props,tenants,maint,transfers,vouchers,contracts,payments,
+    pname,tenantOf,left,ageOf,dobTxt,instOf,allInst,st,mChg,mProfit,ownerFin,occupiedUnits,tenantFin,officeData,voucherList,propHasData};
+}
+
+// ── الأوراق القابلة للطباعة (HTML نصي — كل المدخلات تمر عبر pmEsc) ─────────────
+const pmHead = (M,title,right) => `<div class="ph"><img src="${PM_LOGO}" alt=""><div><b>${PM_FIRM}</b><small>${PHONE}</small></div><div class="rt"><b>${title}</b><small>${right||pmFmt(M.today)}</small></div></div>`;
+const pmFoot = () => `<div class="foot">${PM_FIRM} • ${PHONE} • مرخصة من الهيئة العامة للعقار</div>`;
+const pmVoidBanner = x => x&&x.void ? `<div class="big" style="color:#ef4444;border-color:#ef4444">سند ملغي${x.voidReason?` — ${pmEsc(x.voidReason)}`:""}</div>` : "";
+const pmRows = (arr,cols) => arr.length?arr.join(""):`<tr><td colspan="${cols}" style="text-align:center;color:#8899bb">لا يوجد</td></tr>`;
+
+function pmStmtHTML(M,pid){
+  const f=M.ownerFin(pid), p=f.p; if(!p) return "";
+  return `<div class="pmpr">${pmHead(M,"كشف حساب المالك")}
+    <div class="kv"><span>العقار</span><b>${pmEsc(p.name)} — ${pmEsc(p.area)}</b></div>
+    <div class="kv"><span>المالك</span><b>${pmEsc(p.owner)}</b></div>
+    <div class="kv"><span>رقم الهوية</span><b>${pmEsc(p.ownerId||"—")}</b></div>
+    <div class="kv"><span>تاريخ الميلاد</span><b>${M.dobTxt(p.ownerDob)}</b></div>
+    <div class="sum">
+      <div><small>الإيرادات المحصّلة</small><b>${pmMoney(f.collected)}</b></div>
+      <div><small>المصروفات</small><b>${pmMoney(f.expenses)}</b></div>
+      <div><small>رسوم الإدارة (${p.fee}%)</small><b>${pmMoney(f.fee)}</b></div>
+      <div class="hl"><small>صافي المالك</small><b>${pmMoney(f.net)}</b></div>
+    </div>
+    <div class="sum" style="grid-template-columns:repeat(3,1fr)">
+      <div><small>المحوَّل للمالك</small><b>${pmMoney(f.transferred)}</b></div>
+      <div class="hl"><small>المتبقي للمالك</small><b>${pmMoney(f.balance)}</b></div>
+      <div><small>متأخرات لم تُحصّل</small><b class="${f.arrears?"red":""}">${pmMoney(f.arrears)}</b></div>
+    </div>
+    <h4>الدفعات المحصّلة</h4>
+    <table><thead><tr><th>التاريخ</th><th>المستأجر / الوحدة</th><th>السند</th><th>المبلغ</th></tr></thead><tbody>
+    ${pmRows(f.pays.map(o=>`<tr><td>${pmFmt(pmD(o.x.date))}</td><td>${pmEsc(M.tenantOf(o.c).name)} — ${pmEsc(o.c.unit)}</td><td>${pmEsc(o.x.no)}</td><td>${pmMoney(o.x.amount)}</td></tr>`),4)}</tbody></table>
+    <h4>المصروفات على المالك</h4>
+    <table><thead><tr><th>التاريخ</th><th>البيان</th><th>الوحدة</th><th>المبلغ</th></tr></thead><tbody>
+    ${pmRows(f.exps.map(m=>`<tr><td>${pmFmt(pmD(m.date))}</td><td>${pmEsc(m.title)}</td><td>${pmEsc(m.unit)}</td><td>${pmMoney(M.mChg(m))}</td></tr>`),4)}</tbody></table>
+    <h4>التحويلات للمالك</h4>
+    <table><thead><tr><th>التاريخ</th><th colspan="2">البيان</th><th>المبلغ</th></tr></thead><tbody>
+    ${pmRows(f.trs.map(t=>`<tr><td>${pmFmt(pmD(t.date))}</td><td colspan="2">${t.vno?pmEsc(t.vno)+" — ":""}${pmEsc(t.note||"تحويل")}</td><td>${pmMoney(t.amount)}</td></tr>`),4)}</tbody></table>
+    ${pmFoot()}</div>`;
+}
+
+function pmTenantStmtHTML(M,tid){
+  const t=M.tenants.find(x=>x.id===tid); if(!t) return "";
+  const f=M.tenantFin(t);
+  return `<div class="pmpr">${pmHead(M,"كشف حساب مستأجر")}
+    <div class="kv"><span>المستأجر</span><b>${pmEsc(t.name)}</b></div>
+    <div class="kv"><span>الجوال</span><b>${pmEsc(t.phone)}</b></div>
+    <div class="kv"><span>رقم الهوية</span><b>${pmEsc(t.idNo||"—")}</b></div>
+    <div class="kv"><span>تاريخ الميلاد</span><b>${M.dobTxt(t.dob)}</b></div>
+    <div class="sum" style="grid-template-columns:repeat(3,1fr)">
+      <div><small>المستحق حتى اليوم</small><b>${pmMoney(f.dueTo)}</b></div>
+      <div><small>إجمالي المدفوع</small><b class="grn">${pmMoney(f.paid)}</b></div>
+      <div class="hl"><small>المتأخر</small><b>${pmMoney(f.arrears)}</b></div>
+    </div>
+    ${f.cs.map(c=>`<h4>العقد ${pmEsc(c.cno)} — ${pmEsc(c.unit)} • ${pmEsc(M.pname(c.pid))} (${pmFmt(pmD(c.start))} ← ${pmFmt(pmD(c.end))})</h4>
+    <table><thead><tr><th>القسط</th><th>الاستحقاق</th><th>القيمة</th><th>المدفوع</th><th>المتبقي</th><th>الحالة</th></tr></thead><tbody>
+    ${M.instOf(c).map(i=>`<tr><td>${i.idx+1}/${c.freq}</td><td>${pmFmt(i.due)}</td><td>${pmMoney(i.amt)}</td><td>${pmMoney(i.paidAmt)}</td><td>${pmMoney(i.rem)}</td><td>${PM_ST_META[M.st(i)][1]}</td></tr>`).join("")}</tbody></table>
+    <table><thead><tr><th>السند</th><th>التاريخ</th><th>القسط</th><th>الطريقة</th><th colspan="2">المبلغ</th></tr></thead><tbody>
+    ${c.payments.length?c.payments.slice().sort((a,b)=>a.seq-b.seq).map(p=>`<tr><td>${pmEsc(p.no)}</td><td>${pmFmt(pmD(p.date))}</td><td>${p.idx+1}</td><td>${pmEsc(p.method)}</td><td colspan="2">${pmMoney(p.amount)}</td></tr>`).join(""):'<tr><td colspan="6" style="text-align:center;color:#8899bb">لا توجد دفعات</td></tr>'}</tbody></table>`).join("")}
+    ${pmFoot()}</div>`;
+}
+
+function pmReceiptHTML(M,cid,id){
+  const p=M.raw.payments.find(x=>x.id===id), c=M.contracts.find(x=>x.id===cid)||M.raw.contracts.find(x=>x.id===cid);
+  if(!p||!c) return null;
+  const cc={...c,payments:M.raw.payments.filter(x=>x.cid===cid&&!x.void)};
+  const i=M.instOf(cc)[p.idx], t=M.tenantOf(c);
+  const before=pmSum(M.raw.payments.filter(x=>x.cid===cid&&!x.void&&x.idx===p.idx&&x.seq<=p.seq),x=>x.amount);
+  const remAfter=Math.max(0,i.amt-before);
+  return `<div class="pmpr">${pmHead(M,"سند قبض",pmEsc(p.no))}
+    ${pmVoidBanner(p)}
+    <div class="kv"><span>التاريخ</span><b>${pmFmt(pmD(p.date))}</b></div>
+    <div class="kv"><span>استلمنا من</span><b>${pmEsc(t.name)}</b></div>
+    <div class="big">${pmMoney(p.amount)}</div>
+    <div class="kv"><span>وذلك عن</span><b>القسط ${p.idx+1} من ${c.freq} — عقد ${pmEsc(c.cno)}</b></div>
+    <div class="kv"><span>العقار / الوحدة</span><b>${pmEsc(M.pname(c.pid))} — ${pmEsc(c.unit)}</b></div>
+    <div class="kv"><span>طريقة الدفع</span><b>${pmEsc(p.method)}</b></div>
+    <div class="kv"><span>قيمة القسط</span><b>${pmMoney(i.amt)}</b></div>
+    <div class="kv"><span>المسدد حتى هذا السند</span><b>${pmMoney(before)}</b></div>
+    <div class="kv"><span>المتبقي من القسط</span><b class="${remAfter>0.5?"red":"grn"}">${remAfter>0.5?pmMoney(remAfter):"لا يوجد — تم السداد"}</b></div>
+    ${p.note?`<div class="kv"><span>ملاحظة</span><b>${pmEsc(p.note)}</b></div>`:""}
+    <div class="sign"><span>المستلم: ____________</span><span>المستأجر: ____________</span></div>
+    ${pmFoot()}</div>`;
+}
+
+function pmDisbHTML(M,kind,id){
+  let no,date,to,amount,rows,x;
+  if(kind==="t"){
+    const t=M.raw.transfers.find(y=>y.id===id); if(!t) return null; x=t;
+    const p=M.props.find(y=>y.id===t.pid), f=M.ownerFin(t.pid);
+    const upTo=pmSum(M.transfers.filter(y=>y.pid===t.pid&&y.vseq<=t.vseq),y=>y.amount);
+    const after=f.net-upTo;
+    no=t.vno; date=t.date; to=p?.owner||"—"; amount=t.amount;
+    rows=`<div class="kv"><span>وذلك عن</span><b>تحويل مستحقات المالك — ${pmEsc(p?.name||"")}</b></div>
+      <div class="kv"><span>صافي المالك حتى تاريخه</span><b>${pmMoney(f.net)}</b></div>
+      <div class="kv"><span>المحوَّل حتى هذا السند</span><b>${pmMoney(upTo)}</b></div>
+      <div class="kv"><span>المتبقي للمالك</span><b class="${after>0.5?"red":"grn"}">${after>0.5?pmMoney(after):"لا يوجد"}</b></div>
+      <div class="kv"><span>طريقة الصرف / البيان</span><b>${pmEsc(t.note||"—")}</b></div>`;
+  } else {
+    const m=M.maint.find(y=>y.id===id); if(!m) return null; x=m;
+    const p=M.props.find(y=>y.id===m.pid);
+    no=m.vno; date=m.paidDate||m.date; to=m.provider; amount=m.cost;
+    rows=`<div class="kv"><span>وذلك عن</span><b>${pmEsc(m.title)}</b></div>
+      <div class="kv"><span>العقار / الوحدة</span><b>${pmEsc(p?.name||"")} — ${pmEsc(m.unit)}</b></div>
+      <div class="kv"><span>تاريخ الطلب</span><b>${pmFmt(pmD(m.date))}</b></div>
+      <div class="kv"><span>على حساب</span><b>${m.payer==="owner"?"المالك ("+pmEsc(p?.owner||"")+")":"المؤسسة"}</b></div>`;
+  }
+  return `<div class="pmpr">${pmHead(M,"سند صرف",pmEsc(no))}
+    ${pmVoidBanner(x)}
+    <div class="kv"><span>التاريخ</span><b>${pmFmt(pmD(date))}</b></div>
+    <div class="kv"><span>صرفنا إلى</span><b>${pmEsc(to)}</b></div>
+    <div class="big">${pmMoney(amount)}</div>
+    ${rows}
+    <div class="sign"><span>المستلم: ____________</span><span>المحاسب: ____________</span></div>
+    ${pmFoot()}</div>`;
+}
+
+function pmGeneralHTML(M,id){
+  const v=M.raw.vouchers.find(y=>y.id===id); if(!v) return null;
+  const isIn=v.kind==="in";
+  return `<div class="pmpr">${pmHead(M,isIn?"سند قبض":"سند صرف",pmEsc(v.no||v.vno))}
+    ${pmVoidBanner(v)}
+    <div class="kv"><span>التاريخ</span><b>${pmFmt(pmD(v.date))}</b></div>
+    <div class="kv"><span>${isIn?"استلمنا من":"صرفنا إلى"}</span><b>${pmEsc(v.party)}</b></div>
+    <div class="big">${pmMoney(v.amount)}</div>
+    <div class="kv"><span>وذلك عن</span><b>${pmEsc(v.desc)}</b></div>
+    <div class="kv"><span>التصنيف</span><b>${pmEsc(v.cat)}</b></div>
+    <div class="kv"><span>طريقة ${isIn?"الدفع":"الصرف"}</span><b>${pmEsc(v.method)}</b></div>
+    <div class="kv"><span>طبيعة المبلغ</span><b>${pmNatureText(v)}</b></div>
+    <div class="sign"><span>${isIn?"المستلم":"المحاسب"}: ____________</span><span>${isIn?"الدافع":"المستلم"}: ____________</span></div>
+    ${pmFoot()}</div>`;
+}
+
+function pmOfficeHTML(M,from,to){
+  const d=M.officeData(from,to);
+  const per=`من ${from?pmFmt(pmD(from)):"البداية"} إلى ${to?pmFmt(pmD(to)):"اليوم"}`;
+  const tbl=(rows,total,label)=>`<table><thead><tr><th>السند</th><th>التاريخ</th><th>عن</th><th>المبلغ</th></tr></thead><tbody>
+    ${rows.length?rows.map(l=>`<tr><td>${pmEsc(l.no)}</td><td>${l.date?pmFmt(pmD(l.date)):"—"}</td><td><b>${pmEsc(l.cat)}</b> — ${pmEsc(l.desc)}</td><td>${pmMoney(l.amount)}</td></tr>`).join(""):'<tr><td colspan="4" style="text-align:center;color:#8899bb">لا يوجد</td></tr>'}
+    <tr style="font-weight:900"><td colspan="3">${label}</td><td>${pmMoney(total)}</td></tr></tbody></table>`;
+  return `<div class="pmpr">${pmHead(M,"كشف دخل المكتب",per)}
+    <div class="sum" style="grid-template-columns:repeat(3,1fr)">
+      <div><small>إجمالي الدخل</small><b class="grn">${pmMoney(d.tin)}</b></div>
+      <div><small>إجمالي المصروفات</small><b class="red">${pmMoney(d.tout)}</b></div>
+      <div class="hl"><small>صافي دخل المكتب</small><b>${pmMoney(d.net)}</b></div></div>
+    <h4>الدخل</h4>${tbl(d.inc,d.tin,"إجمالي الدخل")}
+    <h4>المصروفات</h4>${tbl(d.exp,d.tout,"إجمالي المصروفات")}
+    <h4>الصيانة — التكلفة والربح وصافي الربح</h4>
+    <table><thead><tr><th>السند</th><th>التاريخ</th><th>العمل</th><th>التكلفة</th><th>المحمّل</th><th>الربح / الخسارة</th></tr></thead><tbody>
+    ${d.mj.length?d.mj.map(m=>{const pf=M.mProfit(m);return `<tr><td>${pmEsc(m.vno||"—")}</td><td>${pmFmt(pmD(m.paidDate||m.date))}</td><td><b>${pmEsc(m.title)}</b> — ${pmEsc(M.pname(m.pid))} • ${pmEsc(m.unit)} (على ${m.payer==="owner"?"المالك":"المؤسسة"})</td><td>${pmMoney(m.cost)}</td><td>${pmMoney(M.mChg(m))}</td><td class="${pf>=0?"grn":"red"}">${pf<0?"−":""}${pmMoney(Math.abs(pf))}</td></tr>`;}).join(""):'<tr><td colspan="6" style="text-align:center;color:#8899bb">لا يوجد</td></tr>'}
+    <tr style="font-weight:900"><td colspan="3">الإجمالي (صافي ربح الصيانة بعد خصم صيانة على المؤسسة)</td><td>${pmMoney(d.mCost)}</td><td>${pmMoney(d.mChgT)}</td><td class="${d.mNet>=0?"grn":"red"}">${d.mNet<0?"−":""}${pmMoney(Math.abs(d.mNet))}</td></tr></tbody></table>
+    <div class="kv" style="margin-top:10px"><span>أمانات محتجزة (غير محتسبة في الدخل)</span><b>${pmMoney(d.trust)}</b></div>
+    ${pmFoot()}</div>`;
+}
+
+function pmViewHTML(M,v){
+  if(!v) return null;
+  if(v.k==="r") return pmReceiptHTML(M,v.cid,v.id);
+  if(v.k==="t") return pmDisbHTML(M,"t",v.id);
+  if(v.k==="m") return pmDisbHTML(M,"m",v.id);
+  if(v.k==="g") return pmGeneralHTML(M,v.id);
+  return null;
+}
+
+// ── مكوّنات النوافذ ─────────────────────────────────────────────────────────
+const pmUseForm = init => {
+  const [f,setF]=useState(init);
+  const set=k=>e=>{ const v=e.target.value; setF(s=>({...s,[k]:v})); };
+  return [f,set,setF];
+};
+const PMDbErr = e => { console.error(e); alert("تعذّر الحفظ — تحقق من الاتصال ثم أعد المحاولة"); };
+const pmNow = () => new Date().toISOString();
+
+function PMModal({onClose,wide,children}){
+  return (
+    <div className="modal on" onMouseDown={e=>{ if(e.target===e.currentTarget) onClose(); }}>
+      <div className="mbox" style={wide?{maxWidth:840}:undefined}>{children}</div>
+    </div>
+  );
+}
+function PMBtns({onSave,saveText,onClose,busy,extra}){
+  return (
+    <div style={{display:"flex",gap:10}}>
+      <button className="btn blue" style={{flex:1}} disabled={busy} onClick={onSave}>{busy?"جاري الحفظ...":saveText}</button>
+      {extra}
+      <button className="btn ghost" onClick={onClose}>إلغاء</button>
+    </div>
+  );
+}
+
+function PMContractModal({M,pre,onClose,toast}){
+  const p0=pre||{}, today=M.today;
+  const [f,set,setF]=pmUseForm({
+    pid:p0.pid||M.props[0]?.id||"", unit:p0.unit||"", ejar:"", ten:p0.ten||"", phone:p0.phone||"",
+    tid:p0.tid||"", tdob:p0.tdob||"", start:p0.start||pmIso(today), end:p0.end||pmIso(pmAddMonths(today,12)),
+    rent:p0.rent||"", freq:String(p0.freq||4),
+  });
+  const [busy,setBusy]=useState(false);
+  const prop=M.props.find(x=>x.id===f.pid);
+  const fillTen=e=>{
+    const v=e.target.value;
+    setF(s=>{ const t=M.tenants.find(x=>x.name===v.trim()); return t?{...s,ten:v,phone:t.phone||"",tid:t.idNo||"",tdob:t.dob||""}:{...s,ten:v}; });
+  };
+  const save=async()=>{
+    if(busy) return;
+    const unit=f.unit.trim(), name=f.ten.trim(), rent=+f.rent, tid=f.tid.trim(), tdob=f.tdob, phone=f.phone.trim();
+    if(!f.pid) return alert("أضف عقاراً أولاً");
+    if(!unit||!name||!(rent>0)||!f.start||!f.end) return alert("الوحدة والمستأجر والتواريخ والإيجار مطلوبة");
+    if(f.end<=f.start) return alert("تاريخ نهاية العقد يجب أن يكون بعد تاريخ البداية");
+    if(tdob&&tdob>pmIso(today)) return alert("تاريخ الميلاد لا يمكن أن يكون في المستقبل");
+    const other=tid&&M.tenants.find(x=>x.idNo===tid&&x.name!==name);
+    if(other) return alert("هذه الهوية مسجلة للمستأجر «"+other.name+"» — اكتب نفس الاسم لربط العقد به");
+    if(!pmOkId("هوية المستأجر",tid)) return;
+    const overlap=M.raw.contracts.find(c=>c.pid===f.pid&&c.unit===unit&&c.start<=f.end&&c.end>=f.start);
+    if(overlap&&!confirm("الوحدة عليها عقد ("+overlap.cno+") في نفس الفترة. هل تريد المتابعة؟")) return;
+    setBusy(true);
+    try{
+      const t=M.tenants.find(x=>x.name===name); let tenantId;
+      if(!t){ const r=await addDoc(collection(db,"pm_tenants"),{name,phone,idNo:tid,dob:tdob,createdAt:pmNow()}); tenantId=r.id; }
+      else {
+        tenantId=t.id; const upd={}; if(phone) upd.phone=phone; if(tid) upd.idNo=tid; if(tdob) upd.dob=tdob;
+        if(Object.keys(upd).length) await updateDoc(doc(db,"pm_tenants",t.id),upd);
+      }
+      const ref=doc(collection(db,"pm_contracts"));
+      await pmTx("cno",(n,tx)=>tx.set(ref,{cno:"C-"+(100+n),pid:f.pid,unit,tid:tenantId,ejar:f.ejar.trim(),start:f.start,end:f.end,rent,freq:+f.freq,createdAt:pmNow()}));
+      toast("✔ تم حفظ العقد وإنشاء جدول الأقساط"); onClose();
+    }catch(e){ PMDbErr(e); setBusy(false); }
+  };
+  return (
+    <PMModal onClose={onClose}>
+      <h3>{pre?.renew?"🔄 تجديد عقد":"📄 إضافة عقد جديد"}</h3>
+      {!M.props.length?<div className="info">أضف عقاراً من تبويب «العقارات» قبل إنشاء العقود.</div>:(
+        <>
+          <div className="fg">
+            <div className="full"><label>العقار</label>
+              <select value={f.pid} onChange={set("pid")}>{M.props.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+            <div><label>الوحدة</label><input value={f.unit} onChange={set("unit")} list="pm-units" placeholder="اختر أو اكتب"/>
+              <datalist id="pm-units">{(prop?.units||[]).map(u=><option key={u} value={u}/>)}</datalist></div>
+            <div><label>رقم عقد إيجار</label><input value={f.ejar} onChange={set("ejar")} placeholder="اختياري"/></div>
+            <div><label>المستأجر</label><input value={f.ten} onChange={fillTen} list="pm-tens" placeholder="اسم المستأجر"/>
+              <datalist id="pm-tens">{M.tenants.map(t=><option key={t.id} value={t.name}/>)}</datalist></div>
+            <div><label>الجوال</label><input value={f.phone} onChange={set("phone")} placeholder="05xxxxxxxx"/></div>
+            <div><label>هوية المستأجر</label><input value={f.tid} onChange={set("tid")} inputMode="numeric" maxLength={10} placeholder="10 أرقام"/></div>
+            <div><label>تاريخ ميلاد المستأجر</label><input type="date" value={f.tdob} onChange={set("tdob")}/></div>
+            <div><label>بداية العقد</label><input type="date" value={f.start} onChange={set("start")}/></div>
+            <div><label>نهاية العقد</label><input type="date" value={f.end} onChange={set("end")}/></div>
+            <div><label>الإيجار السنوي (﷼)</label><input type="number" value={f.rent} onChange={set("rent")}/></div>
+            <div><label>عدد الدفعات</label>
+              <select value={f.freq} onChange={set("freq")}><option value="1">دفعة واحدة</option><option value="2">دفعتين</option><option value="4">4 دفعات</option><option value="12">شهري</option></select></div>
+          </div>
+          <PMBtns onSave={save} saveText="✅ حفظ العقد" onClose={onClose} busy={busy}/>
+        </>
+      )}
+    </PMModal>
+  );
+}
+
+function PMPayModal({M,cid,idx,onClose,onSaved}){
+  const c=M.contracts.find(x=>x.id===cid), inst=c?M.instOf(c)[idx]:null;
+  const [f,set,setF]=pmUseForm({amt:inst?String(Math.round(inst.rem)):"",date:pmIso(M.today),method:"نقد",note:""});
+  const [busy,setBusy]=useState(false);
+  if(!inst) return null;
+  const a=+f.amt||0, r=inst.rem-a;
+  const save=async()=>{
+    if(busy) return;
+    if(!(a>0)) return alert("أدخل مبلغاً صحيحاً");
+    if(a>inst.rem+0.5) return alert("المبلغ أكبر من المتبقي على القسط");
+    setBusy(true);
+    try{
+      const ref=doc(collection(db,"pm_payments"));
+      await pmTx("seq",(n,tx)=>tx.set(ref,{cid,idx,amount:a,date:f.date||pmIso(M.today),method:f.method,note:f.note.trim(),seq:n,no:"R-"+(1000+n),createdAt:pmNow()}));
+      onSaved(cid,ref.id);
+    }catch(e){ PMDbErr(e); setBusy(false); }
+  };
+  return (
+    <PMModal onClose={onClose}>
+      <h3>💰 تسجيل دفعة</h3>
+      <div className="info">
+        <b>{inst.t.name}</b> — {c.unit} • {M.pname(c.pid)}<br/>
+        قسط {idx+1} من {c.freq} • استحقاق {pmFmt(inst.due)}<br/>
+        قيمة القسط {pmMoney(inst.amt)} • المدفوع سابقاً {pmMoney(inst.paidAmt)} • <b style={{color:"var(--red)"}}>المتبقي {pmMoney(inst.rem)}</b>
+      </div>
+      <div className="fg">
+        <div className="full"><label>المبلغ المستلم (﷼)</label><input type="number" min="0" step="any" value={f.amt} onChange={set("amt")}/></div>
+        <div className="full"><button type="button" className="btn ghost" style={{width:"100%"}} onClick={()=>setF(s=>({...s,amt:String(Math.round(inst.rem))}))}>تعبئة المتبقي كاملاً</button></div>
+        <div><label>تاريخ الاستلام</label><input type="date" value={f.date} onChange={set("date")}/></div>
+        <div><label>طريقة الدفع</label><select value={f.method} onChange={set("method")}><option>نقد</option><option>تحويل بنكي</option><option>شيك</option></select></div>
+        <div className="full"><label>ملاحظة (اختياري)</label><input value={f.note} onChange={set("note")} placeholder="مثال: وعد بسداد الباقي نهاية الشهر"/></div>
+      </div>
+      <div className="pnote">
+        {a<=0?"أدخل المبلغ المستلم":r>0.5?<>⚠ دفعة جزئية — يبقى على القسط <b>{pmMoney(r)}</b> مفتوحاً</>:r<-0.5?<span style={{color:"var(--red)"}}>المبلغ أكبر من المتبقي بـ {pmMoney(-r)}</span>:"✔ سداد كامل للقسط"}
+      </div>
+      <PMBtns onSave={save} saveText="✅ حفظ الدفعة" onClose={onClose} busy={busy}/>
+    </PMModal>
+  );
+}
+
+function PMHistModal({M,cid,idx,onClose,onPay,onView,onVoid}){
+  const c=M.contracts.find(x=>x.id===cid); if(!c) return null;
+  const i=M.instOf(c)[idx];
+  const list=M.raw.payments.filter(p=>p.cid===cid&&p.idx===idx).sort((a,b)=>a.seq-b.seq);
+  return (
+    <PMModal onClose={onClose}>
+      <h3>🧾 سجل دفعات القسط</h3>
+      <div className="info"><b>{i.t.name}</b> — {c.unit} • قسط {idx+1}/{c.freq}<br/>القيمة {pmMoney(i.amt)} • المدفوع {pmMoney(i.paidAmt)} • المتبقي <b>{pmMoney(i.rem)}</b></div>
+      {list.length?list.map(p=>(
+        <div className="hrow" key={p.id} style={p.void?{opacity:.55}:undefined}>
+          <div className="hm"><b style={p.void?{textDecoration:"line-through"}:undefined}>{pmMoney(p.amount)}</b> <span className="badge b-gray">{p.no}</span>{p.void&&<span className="badge b-red" style={{marginRight:4}}>ملغي</span>}
+            <small>{pmFmt(pmD(p.date))} • {p.method}{p.note?" • "+p.note:""}</small></div>
+          <button className="btn ghost sm" onClick={()=>onView({k:"r",cid,id:p.id})}>🧾 سند القبض</button>
+          {!p.void&&<button className="btn ghost sm" style={{color:"var(--red)"}} onClick={()=>onVoid("pm_payments",p.id,p.no)}>إلغاء</button>}
+        </div>
+      )):<div className="empty">لا توجد دفعات</div>}
+      <div style={{display:"flex",gap:10,marginTop:14}}>
+        {i.rem>0.5&&<button className="btn blue" style={{flex:1}} onClick={()=>onPay(cid,idx)}>+ دفعة أخرى</button>}
+        <button className="btn ghost" onClick={onClose}>إغلاق</button>
+      </div>
+    </PMModal>
+  );
+}
+
+function PMMaintModal({M,providers,onClose,toast}){
+  const [f,set]=pmUseForm({pid:M.props[0]?.id||"",unit:"",date:pmIso(M.today),title:"",prov:""});
+  const [busy,setBusy]=useState(false);
+  const prop=M.props.find(x=>x.id===f.pid);
+  const units=prop?[...prop.units,"المبنى"]:[];
+  const save=async()=>{
+    if(busy) return;
+    if(!f.pid) return alert("أضف عقاراً أولاً");
+    if(!f.title.trim()) return alert("اكتب وصف العطل");
+    setBusy(true);
+    try{
+      await addDoc(collection(db,"pm_maint"),{pid:f.pid,unit:f.unit||units[0]||"المبنى",title:f.title.trim(),provider:f.prov.trim()||"—",status:"جديد",cost:0,payer:"owner",date:f.date||pmIso(M.today),createdAt:pmNow()});
+      toast("✔ تم إنشاء طلب الصيانة"); onClose();
+    }catch(e){ PMDbErr(e); setBusy(false); }
+  };
+  return (
+    <PMModal onClose={onClose}>
+      <h3>🔧 طلب صيانة جديد</h3>
+      <div className="fg">
+        <div className="full"><label>العقار</label><select value={f.pid} onChange={set("pid")}>{M.props.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+        <div><label>الوحدة</label><select value={f.unit||units[0]||""} onChange={set("unit")}>{units.map(u=><option key={u}>{u}</option>)}</select></div>
+        <div><label>التاريخ</label><input type="date" value={f.date} onChange={set("date")}/></div>
+        <div className="full"><label>وصف العطل</label><input value={f.title} onChange={set("title")} placeholder="مثال: تسرب مياه"/></div>
+        <div className="full"><label>المزود (اختر من صفحة مزودي الخدمات أو اكتب اسماً)</label>
+          <input value={f.prov} onChange={set("prov")} list="pm-provs" placeholder="اسم المزود"/>
+          <datalist id="pm-provs">{providers.map(p=><option key={p} value={p}/>)}</datalist></div>
+      </div>
+      <PMBtns onSave={save} saveText="✅ حفظ الطلب" onClose={onClose} busy={busy}/>
+    </PMModal>
+  );
+}
+
+function PMCostModal({M,id,onClose,toast,onView}){
+  const m=M.maint.find(x=>x.id===id);
+  const [f,set,setF]=pmUseForm({cost:"",payer:"owner",charge:""});
+  const [touched,setTouched]=useState(false);
+  const [busy,setBusy]=useState(false);
+  if(!m) return null;
+  const firm=f.payer==="firm", c=+f.cost||0;
+  const chg=firm?0:(f.charge===""?c:+f.charge), pf=chg-c;
+  const onCost=e=>{ const v=e.target.value; setF(s=>({...s,cost:v,charge:(!touched&&s.payer==="owner")?v:s.charge})); };
+  const onPayer=e=>{ const v=e.target.value; setF(s=>({...s,payer:v,charge:(v==="owner"&&!touched)?s.cost:s.charge})); };
+  const save=async()=>{
+    if(busy) return;
+    if(f.cost===""||!(c>=0)) return alert("أدخل التكلفة");
+    setBusy(true);
+    try{
+      const upd={cost:c,payer:f.payer,charge:f.payer==="owner"?(f.charge===""?c:+f.charge):0,status:"مكتمل",paidDate:pmIso(M.today)};
+      if(c>0){
+        await pmTx("vseq",(n,tx)=>tx.update(doc(db,"pm_maint",id),{...upd,vseq:n,vno:"S-"+(2000+n)}));
+      } else await updateDoc(doc(db,"pm_maint",id),upd);
+      toast("✔ تم إتمام الطلب"+(c>0?" وإصدار سند الصرف":"")+(f.payer==="owner"&&c>0?" وخصم "+pmMoney(upd.charge)+" من كشف المالك":""));
+      onClose(); if(c>0) onView({k:"m",id});
+    }catch(e){ PMDbErr(e); setBusy(false); }
+  };
+  return (
+    <PMModal onClose={onClose}>
+      <h3>✅ إتمام طلب الصيانة</h3>
+      <div className="info"><b>{m.title}</b><br/>{M.pname(m.pid)} • {m.unit} • {m.provider}</div>
+      <div className="fg">
+        <div><label>التكلفة — المدفوع للمزود (﷼)</label><input type="number" min="0" value={f.cost} onChange={onCost}/></div>
+        <div><label>على حساب</label><select value={f.payer} onChange={onPayer}><option value="owner">المالك</option><option value="firm">المؤسسة</option></select></div>
+        {!firm&&<div className="full"><label>المبلغ المحمّل على المالك (﷼)</label><input type="number" min="0" value={f.charge} onChange={e=>{setTouched(true);set("charge")(e);}}/></div>}
+      </div>
+      <div className="pnote">
+        {firm?`على المؤسسة: تُسجَّل ${pmMoney(c)} مصروفاً (خسارة صيانة) في دخل المكتب`
+          :<>الربح = {pmMoney(chg)} − {pmMoney(c)} = <b style={{color:pf>=0?"var(--green)":"var(--red)"}}>{pmMoney(pf)}</b> {pf<0?"(خسارة على المكتب)":"(يُضاف لدخل المكتب)"}</>}
+      </div>
+      <PMBtns onSave={save} saveText="✅ تأكيد الإتمام" onClose={onClose} busy={busy}/>
+    </PMModal>
+  );
+}
+
+function PMTransModal({M,pid0,onClose,toast,onView}){
+  const first=pid0||M.props[0]?.id||"";
+  const [f,set,setF]=pmUseForm({pid:first,amt:"",date:pmIso(M.today),note:"تحويل بنكي"});
+  const [busy,setBusy]=useState(false);
+  const [touched,setTouched]=useState(false);
+  const fin=f.pid?M.ownerFin(f.pid):null;
+  const amt=touched?f.amt:String(fin?Math.max(0,Math.round(fin.balance)):"");
+  const save=async()=>{
+    if(busy||!fin||!fin.p) return;
+    const a=+amt; if(!(a>0)) return alert("أدخل مبلغاً صحيحاً");
+    if(a>fin.balance+0.5&&!confirm("المبلغ أكبر من المتبقي للمالك. هل تريد المتابعة؟")) return;
+    setBusy(true);
+    try{
+      const ref=doc(collection(db,"pm_transfers"));
+      await pmTx("vseq",(n,tx)=>tx.set(ref,{pid:f.pid,amount:a,date:f.date||pmIso(M.today),note:f.note.trim(),vseq:n,vno:"S-"+(2000+n),createdAt:pmNow()}));
+      toast("✔ تم تسجيل التحويل وإصدار سند الصرف"); onClose(); onView({k:"t",id:ref.id});
+    }catch(e){ PMDbErr(e); setBusy(false); }
+  };
+  return (
+    <PMModal onClose={onClose}>
+      <h3>💸 تسجيل تحويل للمالك</h3>
+      {!M.props.length?<div className="info">أضف عقاراً أولاً.</div>:(
+        <>
+          {fin&&fin.p&&<div className="info">المالك: <b>{fin.p.owner}</b><br/>صافي المالك {pmMoney(fin.net)} • حُوِّل سابقاً {pmMoney(fin.transferred)} • <b style={{color:"var(--green)"}}>المتبقي {pmMoney(fin.balance)}</b></div>}
+          <div className="fg">
+            <div className="full"><label>العقار</label><select value={f.pid} onChange={e=>{set("pid")(e);setTouched(false);}}>{M.props.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+            <div><label>المبلغ (﷼)</label><input type="number" min="0" value={amt} onChange={e=>{setTouched(true);set("amt")(e);}}/></div>
+            <div><label>التاريخ</label><input type="date" value={f.date} onChange={set("date")}/></div>
+            <div className="full"><label>البيان</label><input value={f.note} onChange={set("note")} placeholder="مثال: تحويل بنكي"/></div>
+          </div>
+          <PMBtns onSave={save} saveText="✅ حفظ التحويل" onClose={onClose} busy={busy}/>
+        </>
+      )}
+    </PMModal>
+  );
+}
+
+function PMTenantModal({M,id,onClose,toast}){
+  const t=M.tenants.find(x=>x.id===id);
+  const [f,set]=pmUseForm({name:t?.name||"",phone:t?.phone||"",idNo:t?.idNo||"",dob:t?.dob||""});
+  const [busy,setBusy]=useState(false);
+  if(!t) return null;
+  const save=async()=>{
+    if(busy) return;
+    const name=f.name.trim(), idNo=f.idNo.trim();
+    if(!name) return alert("الاسم مطلوب");
+    if(f.dob&&f.dob>pmIso(M.today)) return alert("تاريخ الميلاد لا يمكن أن يكون في المستقبل");
+    const other=idNo&&M.tenants.find(x=>x.idNo===idNo&&x.id!==id);
+    if(other) return alert("هذه الهوية مسجلة للمستأجر «"+other.name+"»");
+    const dupName=M.tenants.find(x=>x.name===name&&x.id!==id);
+    if(dupName) return alert("يوجد مستأجر آخر بنفس الاسم");
+    if(!pmOkId("هوية المستأجر",idNo)) return;
+    setBusy(true);
+    try{ await updateDoc(doc(db,"pm_tenants",id),{name,phone:f.phone.trim(),idNo,dob:f.dob}); toast("✔ تم تحديث بيانات المستأجر"); onClose(); }
+    catch(e){ PMDbErr(e); setBusy(false); }
+  };
+  return (
+    <PMModal onClose={onClose}>
+      <h3>✏️ بيانات المستأجر</h3>
+      <div className="fg">
+        <div className="full"><label>الاسم</label><input value={f.name} onChange={set("name")}/></div>
+        <div><label>الجوال</label><input value={f.phone} onChange={set("phone")} placeholder="05xxxxxxxx"/></div>
+        <div><label>رقم الهوية / الإقامة</label><input value={f.idNo} onChange={set("idNo")} inputMode="numeric" maxLength={10} placeholder="10 أرقام"/></div>
+        <div className="full"><label>تاريخ الميلاد</label><input type="date" value={f.dob} onChange={set("dob")}/></div>
+      </div>
+      <PMBtns onSave={save} saveText="✅ حفظ" onClose={onClose} busy={busy}/>
+    </PMModal>
+  );
+}
+
+const pmParseUnits = s => [...new Set(s.split(/[,،\n]+/).map(x=>x.trim()).filter(Boolean))];
+function PMPropModal({M,id,onClose,toast}){
+  const p=id?M.props.find(x=>x.id===id):null;
+  const [f,set,setF]=pmUseForm({name:p?.name||"",area:p?.area||"",owner:p?.owner||"",ownerPhone:p?.ownerPhone||"",ownerId:p?.ownerId||"",ownerDob:p?.ownerDob||"",
+    fee:String(p?p.fee:5),icon:p?.icon||"🏢",units:p?p.units.join("، "):"",pre:"شقة",cnt:"6"});
+  const [busy,setBusy]=useState(false);
+  const gen=()=>{ const pre=f.pre.trim()||"وحدة", n=Math.min(200,Math.max(1,+f.cnt||1)); setF(s=>({...s,units:Array.from({length:n},(_,i)=>pre+" "+(i+1)).join("، ")})); };
+  const save=async()=>{
+    if(busy) return;
+    const name=f.name.trim(), units=pmParseUnits(f.units), fee=+f.fee, ownerId=f.ownerId.trim();
+    if(!name||!units.length) return alert("اسم العقار والوحدات مطلوبة");
+    if(!(fee>=0)||fee>100) return alert("نسبة رسوم الإدارة غير صحيحة");
+    if(f.ownerDob&&f.ownerDob>pmIso(M.today)) return alert("تاريخ الميلاد لا يمكن أن يكون في المستقبل");
+    if(!pmOkId("هوية المالك",ownerId)) return;
+    if(p){
+      const used=[...new Set(M.raw.contracts.filter(c=>c.pid===id).map(c=>c.unit).filter(u=>!units.includes(u)))];
+      if(used.length) return alert("لا يمكن إزالة وحدات عليها عقود: "+used.join("، "));
+    }
+    const data={name,area:f.area.trim(),owner:f.owner.trim()||"—",ownerPhone:f.ownerPhone.trim(),ownerId,ownerDob:f.ownerDob,fee,icon:f.icon,units};
+    setBusy(true);
+    try{
+      if(p) await updateDoc(doc(db,"pm_props",id),data); else await addDoc(collection(db,"pm_props"),{...data,createdAt:pmNow()});
+      toast(p?"✔ تم تحديث العقار":"✔ تمت إضافة العقار — أضف له عقداً من تبويب العقود"); onClose();
+    }catch(e){ PMDbErr(e); setBusy(false); }
+  };
+  const del=async()=>{
+    if(!p||M.propHasData(id)) return alert("لا يمكن حذف عقار عليه عقود أو حركات");
+    if(!confirm("حذف هذا العقار؟")) return;
+    try{ await deleteDoc(doc(db,"pm_props",id)); toast("✔ تم حذف العقار"); onClose(); }catch(e){ PMDbErr(e); }
+  };
+  return (
+    <PMModal onClose={onClose}>
+      <h3>{p?"✏️ تعديل العقار":"🏢 إضافة عقار جديد"}</h3>
+      <div className="fg">
+        <div className="full"><label>اسم العقار</label><input value={f.name} onChange={set("name")} placeholder="مثال: عمارة النخيل"/></div>
+        <div className="full"><label>الموقع</label><input value={f.area} onChange={set("area")} placeholder="مثال: الخبر - العليا"/></div>
+        <div><label>اسم المالك</label><input value={f.owner} onChange={set("owner")} placeholder="اسم المالك"/></div>
+        <div><label>جوال المالك</label><input value={f.ownerPhone} onChange={set("ownerPhone")} placeholder="05xxxxxxxx"/></div>
+        <div><label>هوية المالك</label><input value={f.ownerId} onChange={set("ownerId")} inputMode="numeric" maxLength={10} placeholder="10 أرقام"/></div>
+        <div><label>تاريخ ميلاد المالك</label><input type="date" value={f.ownerDob} onChange={set("ownerDob")}/></div>
+        <div><label>رسوم الإدارة (%)</label><input type="number" min="0" max="100" step="0.5" value={f.fee} onChange={set("fee")}/></div>
+        <div><label>نوع العقار</label>
+          <select value={f.icon} onChange={set("icon")}><option value="🏢">🏢 عمارة</option><option value="🏘️">🏘️ مجمع سكني</option><option value="🏬">🏬 محلات / مبنى تجاري</option><option value="🏡">🏡 فيلا</option><option value="🏗️">🏗️ أرض / أخرى</option></select></div>
+        <div className="full"><label>الوحدات (افصل بينها بفاصلة أو سطر جديد)</label><textarea rows={3} value={f.units} onChange={set("units")} placeholder="شقة 1، شقة 2، شقة 3"/></div>
+        <div><label>توليد سريع — البادئة</label><input value={f.pre} onChange={set("pre")}/></div>
+        <div><label>العدد</label><input type="number" min="1" max="200" value={f.cnt} onChange={set("cnt")}/></div>
+        <div className="full"><button type="button" className="btn ghost" style={{width:"100%"}} onClick={gen}>⚡ توليد الوحدات تلقائياً</button></div>
+      </div>
+      <PMBtns onSave={save} saveText="✅ حفظ العقار" onClose={onClose} busy={busy}
+        extra={p&&!M.propHasData(id)?<button className="btn ghost" style={{color:"var(--red)"}} onClick={del}>🗑️ حذف</button>:null}/>
+    </PMModal>
+  );
+}
+
+function PMGenModal({M,kind,onClose,toast,onView}){
+  const isIn=kind==="in";
+  const [f,set,setF]=pmUseForm({date:pmIso(M.today),amt:"",party:"",cat:PM_GCATS[kind][0],method:"نقد",desc:"",nature:"office"});
+  const [busy,setBusy]=useState(false);
+  const onCat=e=>{ const v=e.target.value; setF(s=>({...s,cat:v,nature:["عربون","تأمين","رد أمانة"].includes(v)?"trust":"office"})); };
+  const save=async()=>{
+    if(busy) return;
+    const amt=+f.amt, party=f.party.trim(), desc=f.desc.trim();
+    if(!(amt>0)||!party||!desc) return alert('المبلغ والاسم وبيان "وذلك عن" مطلوبة');
+    setBusy(true);
+    try{
+      const ref=doc(collection(db,"pm_vouchers"));
+      const base={kind,date:f.date||pmIso(M.today),party,amount:amt,cat:f.cat,desc,method:f.method,nature:f.nature,createdAt:pmNow()};
+      const n=await pmTx(isIn?"seq":"vseq",(n,tx)=>tx.set(ref,isIn?{...base,seq:n,no:"R-"+(1000+n)}:{...base,vseq:n,vno:"S-"+(2000+n)}));
+      toast("✔ تم إصدار "+(isIn?"سند القبض ":"سند الصرف ")+(isIn?"R-"+(1000+n):"S-"+(2000+n))); onClose(); onView({k:"g",id:ref.id});
+    }catch(e){ PMDbErr(e); setBusy(false); }
+  };
+  return (
+    <PMModal onClose={onClose}>
+      <h3>{isIn?"📥 سند قبض عام":"📤 سند صرف عام"}</h3>
+      <div className="fg">
+        <div><label>التاريخ</label><input type="date" value={f.date} onChange={set("date")}/></div>
+        <div><label>المبلغ (﷼)</label><input type="number" min="0" value={f.amt} onChange={set("amt")}/></div>
+        <div className="full"><label>{isIn?"استلمنا من":"صرفنا إلى"}</label><input value={f.party} onChange={set("party")} placeholder="الاسم"/></div>
+        <div><label>التصنيف</label><select value={f.cat} onChange={onCat}>{PM_GCATS[kind].map(c=><option key={c}>{c}</option>)}</select></div>
+        <div><label>{isIn?"طريقة الدفع":"طريقة الصرف"}</label><select value={f.method} onChange={set("method")}><option>نقد</option><option>تحويل بنكي</option><option>شيك</option></select></div>
+        <div className="full"><label>وذلك عن</label><input value={f.desc} onChange={set("desc")} placeholder="مثال: عمولة تأجير شقة في العليا"/></div>
+        <div className="full"><label>طبيعة المبلغ</label><select value={f.nature} onChange={set("nature")}>{PM_GNAT[kind].map(n=><option key={n[0]} value={n[0]}>{n[1]}</option>)}</select></div>
+      </div>
+      <div className="pnote">{f.nature==="trust"?"ℹ "+pmNatureText({kind,nature:f.nature}):"✔ سيُحتسب ضمن "+(isIn?"دخل المكتب":"مصروفات المكتب")}</div>
+      <PMBtns onSave={save} saveText="✅ حفظ وإصدار السند" onClose={onClose} busy={busy}/>
+    </PMModal>
+  );
+}
+
+function PMVoucherModal({html,onClose}){
+  return (
+    <PMModal onClose={onClose} wide>
+      <div className="stmtWrap">{html?<div dangerouslySetInnerHTML={{__html:html}}/>:<div className="empty">جاري تحميل السند...</div>}</div>
+      <div style={{display:"flex",gap:10,marginTop:14}}>
+        <button className="btn blue" style={{flex:1}} disabled={!html} onClick={()=>pmPrint(html)}>🖨️ طباعة السند</button>
+        <button className="btn ghost" onClick={onClose}>إغلاق</button>
+      </div>
+      <div className="pnote" style={{marginTop:12}}>💡 زر الطباعة يفتح نافذة طباعة المتصفح: اختر منها «حفظ كـ PDF» إذا تبغى تعاين الشكل قبل الطباعة على الورق.</div>
+    </PMModal>
+  );
+}
+
+// ── الصفحة الرئيسية لإدارة الأملاك ─────────────────────────────────────────────
+const PM_TABS = [["dash","📊 لوحة التحكم"],["props","🏢 العقارات"],["tenants","👥 المستأجرين"],["contracts","📄 العقود"],["collect","💰 التحصيل"],["vouchers","📑 السندات"],["office","💼 دخل المكتب"],["maint","🔧 الصيانة"],["owners","🧾 كشوف الملاك"]];
+const PM_COLLS = ["props","tenants","contracts","payments","maint","transfers","vouchers"];
+
+function PropertyMgmtPage({ lang, T, darkMode }) {
+  const [data,setData]       = useState({props:[],tenants:[],contracts:[],payments:[],maint:[],transfers:[],vouchers:[]});
+  const [ready,setReady]     = useState({});
+  const [loadErr,setLoadErr] = useState(false);
+  const [providers,setProviders] = useState([]);
+  const [tab,setTab]         = useState("dash");
+  const [mod,setMod]         = useState(null);   // {t:"contract"|"pay"|"hist"|"maint"|"cost"|"trans"|"tenant"|"prop"|"gen", ...}
+  const [view,setView]       = useState(null);   // السند المعروض {k,id,cid?}
+  const [toastMsg,setToastMsg] = useState("");
+  const toastT = useRef(null);
+  const [filt,setFilt]       = useState("all");
+  const [mfilt,setMfilt]     = useState("all");
+  const [vfilt,setVfilt]     = useState("all");
+  const [vq,setVq]           = useState("");
+  const [stPid,setStPid]     = useState("");
+  const [oPreset,setOPreset] = useState("year");
+  const [oFrom,setOFrom]     = useState(()=>new Date().getFullYear()+"-01-01");
+  const [oTo,setOTo]         = useState(()=>new Date().getFullYear()+"-12-31");
+
+  const todayKey = pmIso(new Date());
+  const today = useMemo(()=>pmToday(),[todayKey]);
+  const M = useMemo(()=>pmModel(data,today),[data,today]);
+
+  useEffect(()=>{
+    const unsubs = PM_COLLS.map(n=>onSnapshot(collection(db,"pm_"+n),snap=>{
+      setData(d=>({...d,[n]:snap.docs.map(x=>({id:x.id,...x.data()}))}));
+      setReady(r=>({...r,[n]:true}));
+    },err=>{ console.error(err); setLoadErr(true); setReady(r=>({...r,[n]:true})); }));
+    const u2 = onSnapshot(collection(db,"providers"),snap=>setProviders(snap.docs.map(x=>x.data().name).filter(Boolean)),()=>{});
+    return ()=>{ unsubs.forEach(u=>u()); u2(); };
+  },[]);
+
+  const toast = useCallback(m=>{ setToastMsg(m); clearTimeout(toastT.current); toastT.current=setTimeout(()=>setToastMsg(""),2600); },[]);
+  const closeMod = ()=>setMod(null);
+  const openView = v=>{ setView(v); };
+
+  const voidItem = async (coll,id,no)=>{
+    if(!confirm(`إلغاء السند ${no||""}؟\nسيُستبعد من الحسابات ويبقى رقمه ظاهراً كسند ملغي.`)) return;
+    const reason = prompt("سبب الإلغاء (اختياري)");
+    if(reason===null) return;
+    try{ await updateDoc(doc(db,coll,id),{void:true,voidAt:pmNow(),voidReason:reason.trim()}); toast("✔ تم إلغاء السند"); }
+    catch(e){ PMDbErr(e); }
+  };
+  const setMaintStatus = async (id,status)=>{ try{ await updateDoc(doc(db,"pm_maint",id),{status}); }catch(e){ PMDbErr(e); } };
+  const openRenew = c=>{
+    const t=M.tenantOf(c), s=pmD(c.end); s.setDate(s.getDate()+1);
+    const e=pmAddMonths(s,12); e.setDate(e.getDate()-1);
+    setMod({t:"contract",pre:{renew:1,pid:c.pid,unit:c.unit,ten:t.name,phone:t.phone,tid:t.idNo,tdob:t.dob,start:pmIso(s),end:pmIso(e),rent:c.rent,freq:c.freq}});
+  };
+  const remind = t=>{
+    const f=M.tenantFin(t);
+    const units=f.cs.map(c=>c.unit+" ("+M.pname(c.pid)+")").join("، ");
+    const msg=`السلام عليكم ${t.name}،\nنذكّركم بوجود مبلغ متأخر قدره ${pmMoney(f.arrears)} على ${units}.\nنأمل التكرم بالسداد، وشاكرين لكم تعاونكم.\n${PM_FIRM} — ${PHONE}`;
+    const a=document.createElement("a");
+    a.href="https://wa.me/966"+String(t.phone||"").replace(/^0/,"")+"?text="+encodeURIComponent(msg);
+    a.target="_blank"; a.rel="noopener"; a.click();
+  };
+  const setPreset = k=>{
+    const y=today.getFullYear(), m=today.getMonth();
+    setOPreset(k);
+    if(k==="all"){ setOFrom(""); setOTo(""); }
+    else if(k==="year"){ setOFrom(y+"-01-01"); setOTo(y+"-12-31"); }
+    else if(k==="month"){ setOFrom(pmIso(new Date(y,m,1))); setOTo(pmIso(new Date(y,m+1,0))); }
+    else if(k==="q3"){ setOFrom(pmIso(pmAddMonths(today,-3))); setOTo(pmIso(today)); }
+  };
+  const sel = M.props.some(p=>p.id===stPid) ? stPid : (M.props[0]?.id||"");
+
+  const allReady = PM_COLLS.every(n=>ready[n]);
+
+  // ───────── لوحة التحكم ─────────
+  const renderDash = ()=>{
+    const yr=today.getFullYear(), ins=M.allInst(), late=ins.filter(i=>M.st(i)==="late");
+    const collectedY=pmSum(M.contracts.flatMap(c=>c.payments).filter(p=>p.date.startsWith(String(yr))),p=>p.amount);
+    const owed=pmSum(M.props,p=>Math.max(0,M.ownerFin(p.id).balance));
+    const endingN=M.contracts.filter(c=>M.left(c)>=0&&M.left(c)<=90).length;
+    const ofc=M.officeData(yr+"-01-01",yr+"-12-31");
+    const al=[];
+    late.forEach(i=>{ const dl=-pmDays(today,i.due);
+      al.push({pr:3000+dl,k:"late",ic:"⚠️",t:`متأخر ${dl} يوم — ${i.t.name}`,
+        s:`${i.c.unit} • ${M.pname(i.c.pid)} • متبقي ${pmMoney(i.rem)}${i.paidAmt>0?` (دفع ${pmMoney(i.paidAmt)} من ${pmMoney(i.amt)})`:""}`,
+        b:"تسجيل دفعة",fn:()=>setMod({t:"pay",cid:i.cid,idx:i.idx})}); });
+    ins.filter(i=>["soon","part"].includes(M.st(i))).forEach(i=>{ const dl=pmDays(today,i.due);
+      al.push({pr:1500-dl,k:"soon",ic:"🔔",t:`قسط مستحق بعد ${dl} يوم — ${i.t.name}`,
+        s:`${i.c.unit} • ${pmMoney(i.rem)} بتاريخ ${pmFmt(i.due)}${i.paidAmt>0?" • دفع جزءاً مسبقاً":""}`,
+        b:"تسجيل دفعة",fn:()=>setMod({t:"pay",cid:i.cid,idx:i.idx})}); });
+    M.contracts.filter(c=>M.left(c)>=0&&M.left(c)<=90).forEach(c=>{
+      al.push({pr:2000-M.left(c),k:"end",ic:"📄",t:`عقد ينتهي بعد ${M.left(c)} يوم — ${M.tenantOf(c).name}`,
+        s:`${c.unit} • ${M.pname(c.pid)} • ينتهي ${pmFmt(pmD(c.end))}`,b:"تجديد",fn:()=>openRenew(c)}); });
+    M.maint.filter(m=>m.status==="جديد").forEach(m=>{
+      al.push({pr:1000,k:"mnt",ic:"🔧",t:`طلب صيانة جديد — ${m.title}`,s:`${m.unit} • ${M.pname(m.pid)}`,b:"عرض",fn:()=>setTab("maint")}); });
+    al.sort((a,b)=>b.pr-a.pr);
+    const months=["ينا","فبر","مار","أبر","ماي","يون","يول","أغس","سبت","أكت","نوف","ديس"];
+    const per=Array(12).fill(0);
+    M.contracts.flatMap(c=>c.payments).filter(p=>p.date.startsWith(String(yr))).forEach(p=>{ per[+p.date.slice(5,7)-1]+=p.amount; });
+    const mx=Math.max(...per,1);
+    const totalUnits=pmSum(M.props,p=>p.units.length), occ=pmSum(M.props,p=>M.occupiedUnits(p).length);
+    const pct=totalUnits?Math.round(occ/totalUnits*100):0;
+    return (
+      <div>
+        <h2 className="title">لوحة التحكم</h2>
+        <p className="sub">ملخص الأملاك المُدارة حتى {pmFmt(today)}</p>
+        {!M.props.length&&<div className="card" style={{marginBottom:16}}><b>ابدأ من هنا 👋</b><div style={{fontSize:12,color:"var(--muted)",marginTop:6,lineHeight:1.9}}>1) من تبويب «العقارات» أضف العقار وبيانات المالك والوحدات.<br/>2) من تبويب «العقود» أضف عقد المستأجر — يُنشأ جدول الأقساط تلقائياً.<br/>3) من تبويب «التحصيل» سجّل الدفعات وستُصدر سندات القبض تلقائياً.</div></div>}
+        <div className="gridS">
+          <div className="card stat"><div className="ic">🏢</div><div className="v">{M.props.length}</div><div className="l">عقارات مُدارة</div></div>
+          <div className="card stat green"><div className="ic">💰</div><div className="v">{pmMoney(collectedY)}</div><div className="l">المحصّل في {yr}</div></div>
+          <div className="card stat red"><div className="ic">⚠️</div><div className="v">{pmMoney(pmSum(late,i=>i.rem))}</div><div className="l">متأخرات ({late.length} أقساط)</div></div>
+          <div className="card stat"><div className="ic">💸</div><div className="v">{pmMoney(owed)}</div><div className="l">مستحق للملاك (لم يُحوَّل)</div></div>
+          <div className="card stat amber"><div className="ic">📄</div><div className="v">{endingN}</div><div className="l">عقود تنتهي خلال 90 يوم</div></div>
+          <div className={"card stat "+(ofc.net>=0?"green":"red")}><div className="ic">💼</div><div className="v">{pmMoney(ofc.net)}</div><div className="l">صافي دخل المكتب {yr}</div></div>
+        </div>
+        <div className="cols">
+          <div className="card"><div className="ch">🔔 التنبيهات <span className="badge b-blue">{al.length}</span></div>
+            <div className="alerts">{al.length?al.map((a,i)=>(
+              <div className={"alert "+a.k} key={i}><div className="d">{a.ic}</div><div className="t">{a.t}<small>{a.s}</small></div><button onClick={a.fn}>{a.b}</button></div>
+            )):<div className="empty">لا توجد تنبيهات 🎉</div>}</div></div>
+          <div className="card">
+            <div className="ch">📈 المحصّل شهرياً ({yr}) <small style={{fontWeight:400,color:"var(--muted)",fontSize:10}}>بالآلاف</small></div>
+            <div className="bars">{per.map((v,i)=>(<div className="bar" key={i} title={pmMoney(v)}><em>{v?Math.round(v/1000):""}</em><i style={{height:(v?Math.max(4,v/mx*100):0)+"%"}}/><span>{months[i]}</span></div>))}</div>
+            <div className="occ"><div className="ch" style={{marginBottom:0}}>🏠 نسبة الإشغال <span style={{fontSize:13}}>{occ} من {totalUnits} وحدة ({pct}%)</span></div>
+              <div className="prog"><i style={{width:pct+"%"}}/></div></div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ───────── العقارات ─────────
+  const renderProps = ()=>(
+    <div>
+      <div className="row"><div><h2 className="title">العقارات المُدارة</h2><p className="sub">العقارات التي تديرها المؤسسة نيابة عن الملاك — الوحدات وحالة الإشغال والرصيد المستحق للمالك</p></div>
+        <button className="btn blue" onClick={()=>setMod({t:"prop"})}>+ إضافة عقار</button></div>
+      {!M.props.length&&<div className="empty">لم تُضف عقارات بعد</div>}
+      <div className="pgrid">{M.props.map(p=>{
+        const occ=M.occupiedUnits(p), f=M.ownerFin(p.id);
+        const monthly=pmSum(M.contracts.filter(c=>c.pid===p.id&&M.left(c)>=0),c=>c.rent/12);
+        return (
+          <div className="card pc" key={p.id}>
+            <div className="head"><div className="pi">{p.icon}</div><div><div className="pn">{p.name}</div><div className="pa">📍 {p.area} • {p.owner}</div></div></div>
+            <div className="units">{p.units.map(u=><span key={u} className={"uc "+(occ.includes(u)?"occ":"vac")}>{u}{occ.includes(u)?"":" • شاغرة"}</span>)}</div>
+            <div className="prog"><i style={{width:Math.round(occ.length/p.units.length*100)+"%"}}/></div>
+            <div className="kv"><span>🪪 هوية المالك</span><b>{p.ownerId||"—"}{p.ownerDob?" • "+M.dobTxt(p.ownerDob):""}</b></div>
+            <div className="kv"><span>📞 جوال المالك</span><b>{p.ownerPhone||"—"}</b></div>
+            <div className="kv"><span>💵 الدخل الشهري المتعاقد</span><b>{pmMoney(monthly)}</b></div>
+            <div className="kv"><span>✅ المحصّل الفعلي</span><b>{pmMoney(f.collected)}</b></div>
+            <div className="kv"><span>⚠️ متأخرات المستأجرين</span><b style={{color:f.arrears?"var(--red)":"inherit"}}>{pmMoney(f.arrears)}</b></div>
+            <div className="kv"><span>📋 رسوم الإدارة</span><b>{p.fee}%</b></div>
+            <div className="kv"><span>💸 المتبقي للمالك</span><b style={{color:"var(--green)"}}>{pmMoney(f.balance)}</b></div>
+            <div className="btns">
+              <button className="btn ghost" onClick={()=>{setStPid(p.id);setTab("owners");}}>🧾 الكشف</button>
+              <button className="btn" onClick={()=>setMod({t:"trans",pid:p.id})}>💸 تحويل</button>
+              <button className="btn ghost" onClick={()=>setMod({t:"prop",id:p.id})}>✏️ تعديل</button>
+            </div>
+          </div>);
+      })}</div>
+    </div>
+  );
+
+  // ───────── المستأجرين ─────────
+  const renderTenants = ()=>(
+    <div>
+      <h2 className="title">المستأجرين</h2><p className="sub">رصيد كل مستأجر وكشف حسابه وتذكير واتساب بالمتأخرات</p>
+      {!M.tenants.length&&<div className="empty">لا يوجد مستأجرون — يُضافون تلقائياً عند إنشاء العقود</div>}
+      <div className="tgrid">{M.tenants.map(t=>{
+        const f=M.tenantFin(t);
+        return (
+          <div className="card tc" key={t.id}>
+            <div className="tn">{t.name}</div><div className="tp">📞 {t.phone||"—"}</div>
+            <div className="kv"><span>🪪 الهوية</span><b>{t.idNo||"—"}</b></div>
+            <div className="kv"><span>🎂 تاريخ الميلاد</span><b>{M.dobTxt(t.dob)}</b></div>
+            {f.cs.map(c=><div className="kv" key={c.id}><span>{c.unit} • {M.pname(c.pid)}</span><b>{pmMoney(c.rent)}/سنة</b></div>)}
+            <div className="kv"><span>المستحق حتى اليوم</span><b>{pmMoney(f.dueTo)}</b></div>
+            <div className="kv"><span>إجمالي المدفوع</span><b style={{color:"var(--green)"}}>{pmMoney(f.paid)}</b></div>
+            <div className="kv"><span>المتأخر</span><b style={{color:f.arrears?"var(--red)":"inherit"}}>{pmMoney(f.arrears)}</b></div>
+            <div className="btns">
+              <button className="btn ghost sm" onClick={()=>setMod({t:"tenant",id:t.id})}>✏️ تعديل</button>
+              <button className="btn ghost sm" onClick={()=>pmPrint(pmTenantStmtHTML(M,t.id))}>🖨️ كشف حساب</button>
+              {f.arrears>0&&<button className="btn wa sm" onClick={()=>remind(t)}>💬 تذكير واتساب</button>}
+            </div>
+          </div>);
+      })}</div>
+    </div>
+  );
+
+  // ───────── العقود ─────────
+  const renderContracts = ()=>(
+    <div>
+      <div className="row"><div><h2 className="title">عقود الإيجار</h2><p className="sub">العقود مرتبة حسب أقرب انتهاء — مع التحصيل الفعلي لكل عقد وزر التجديد</p></div>
+        <button className="btn blue" onClick={()=>setMod({t:"contract"})}>+ إضافة عقد</button></div>
+      <div className="card"><div className="tw"><table>
+        <thead><tr><th>العقد</th><th>رقم إيجار</th><th>المستأجر</th><th>العقار / الوحدة</th><th>المدة</th><th>الإيجار السنوي</th><th>المحصّل</th><th>الحالة</th><th></th></tr></thead>
+        <tbody>{M.contracts.length?M.contracts.slice().sort((a,b)=>M.left(a)-M.left(b)).map(c=>{
+          const l=M.left(c);
+          const b=l<0?["b-red","منتهي"]:l<=30?["b-red",`ينتهي بعد ${l} يوم`]:l<=90?["b-amber",`ينتهي بعد ${l} يوم`]:["b-green","ساري"];
+          const got=pmSum(c.payments,p=>p.amount), pct=Math.min(100,Math.round(got/c.rent*100));
+          return (
+            <tr key={c.id}><td><b>{c.cno}</b></td><td>{c.ejar||"—"}</td><td>{M.tenantOf(c).name}</td>
+              <td>{c.unit}<br/><small style={{color:"var(--muted)"}}>{M.pname(c.pid)}</small></td>
+              <td>{pmFmt(pmD(c.start))} ← {pmFmt(pmD(c.end))}</td><td><b>{pmMoney(c.rent)}</b></td>
+              <td style={{minWidth:130}}><b>{pmMoney(got)}</b><div className="prog sm"><i style={{width:pct+"%"}}/></div><small style={{color:"var(--muted)"}}>{pct}% من العقد</small></td>
+              <td><span className={"badge "+b[0]}>{b[1]}</span></td>
+              <td>{l<=90&&<button className="btn ghost sm" onClick={()=>openRenew(c)}>تجديد</button>}</td></tr>);
+        }):<tr><td colSpan={9} className="empty">لا توجد عقود</td></tr>}</tbody></table></div></div>
+    </div>
+  );
+
+  // ───────── التحصيل ─────────
+  const renderCollect = ()=>{
+    const ins=M.allInst();
+    const order=i=>M.st(i)==="paid"?1:0;
+    ins.sort((a,b)=>order(a)-order(b)||(order(a)?b.due-a.due:a.due-b.due));
+    const cnt={all:ins.length}; ["late","part","soon","up","paid"].forEach(k=>{ cnt[k]=ins.filter(i=>M.st(i)===k).length; });
+    const labels={all:"الكل",late:"متأخرة",part:"جزئية",soon:"مستحقة قريباً",up:"قادمة",paid:"مدفوعة"};
+    const list=ins.filter(i=>filt==="all"||M.st(i)===filt);
+    return (
+      <div>
+        <h2 className="title">التحصيل</h2><p className="sub">سجّل الدفعة كاملة أو جزئية — الباقي يبقى مفتوحاً على الدفعة، ولكل دفعة سند قبض</p>
+        <div className="chips">{Object.keys(labels).map(k=><button key={k} className={"chip"+(filt===k?" on":"")} onClick={()=>setFilt(k)}>{labels[k]} ({cnt[k]})</button>)}</div>
+        {list.length?list.map(i=>{
+          const s=M.st(i), m=PM_ST_META[s], dl=pmDays(today,i.due), pct=Math.min(100,Math.round(i.paidAmt/i.amt*100));
+          const note=s==="paid"?"":dl<0?`متأخر ${-dl} يوم`:`بعد ${dl} يوم`;
+          return (
+            <div className="crow" key={i.cid+"-"+i.idx}>
+              <div className="who"><b>{i.t.name}</b><small>{i.c.unit} • {M.pname(i.c.pid)} • قسط {i.idx+1}/{i.c.freq}</small></div>
+              <div className="due">📅 {pmFmt(i.due)}<br/><small>{note}</small></div>
+              <div className="amtbox"><div className="amt">{pmMoney(i.amt)}</div><div className="prog sm"><i style={{width:pct+"%"}}/></div>
+                <small>مدفوع {pmMoney(i.paidAmt)}{i.rem>0.5&&<> • متبقي <b>{pmMoney(i.rem)}</b></>}</small></div>
+              <span className={"badge "+m[0]}>{m[1]}</span>
+              <div className="acts">
+                {i.rem>0.5&&<button className="btn blue sm" onClick={()=>setMod({t:"pay",cid:i.cid,idx:i.idx})}>تسجيل دفعة</button>}
+                {i.c.payments.some(p=>p.idx===i.idx)&&<button className="btn ghost sm" onClick={()=>setMod({t:"hist",cid:i.cid,idx:i.idx})}>السجل</button>}
+              </div>
+            </div>);
+        }):<div className="empty">لا توجد أقساط</div>}
+      </div>
+    );
+  };
+
+  // ───────── السندات ─────────
+  const renderVouchers = ()=>{
+    const all=M.voucherList(), live=all.filter(v=>!v.void);
+    const inn=live.filter(v=>v.kind==="in"), out=live.filter(v=>v.kind==="out");
+    const tin=pmSum(inn,v=>v.amount), tout=pmSum(out,v=>v.amount);
+    const labels={all:["الكل",all.length],in:["سندات القبض",all.filter(v=>v.kind==="in").length],out:["سندات الصرف",all.filter(v=>v.kind==="out").length]};
+    const q=vq.trim().toLowerCase();
+    const list=all.filter(v=>(vfilt==="all"||v.kind===vfilt)&&(!q||`${v.no} ${v.party} ${v.desc}`.toLowerCase().includes(q)));
+    return (
+      <div>
+        <h2 className="title">السندات</h2><p className="sub">سندات القبض (من المستأجرين + عامة) وسندات الصرف (للملاك ولمزودي الخدمات + عامة) — اضغط "عرض" لمعاينة السند ثم اطبعه</p>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
+          <button className="btn blue" onClick={()=>setMod({t:"gen",kind:"in"})}>+ سند قبض عام</button>
+          <button className="btn" onClick={()=>setMod({t:"gen",kind:"out"})}>+ سند صرف عام</button>
+        </div>
+        <div className="gridS">
+          <div className="card stat green"><div className="ic">📥</div><div className="v">{pmMoney(tin)}</div><div className="l">سندات القبض ({inn.length})</div></div>
+          <div className="card stat red"><div className="ic">📤</div><div className="v">{pmMoney(tout)}</div><div className="l">سندات الصرف ({out.length})</div></div>
+          <div className="card stat"><div className="ic">⚖️</div><div className="v">{pmMoney(tin-tout)}</div><div className="l">الفرق (مقبوض − مصروف)</div></div>
+        </div>
+        <div className="chips">{Object.keys(labels).map(k=><button key={k} className={"chip"+(vfilt===k?" on":"")} onClick={()=>setVfilt(k)}>{labels[k][0]} ({labels[k][1]})</button>)}</div>
+        <div style={{marginBottom:12}}><input value={vq} onChange={e=>setVq(e.target.value)} placeholder="🔍 ابحث برقم السند أو الاسم أو البيان..."/></div>
+        <div className="card"><div className="tw"><table>
+          <thead><tr><th>رقم السند</th><th>النوع</th><th>التاريخ</th><th>الطرف</th><th>البيان</th><th>المبلغ</th><th></th></tr></thead>
+          <tbody>{list.length?list.map((v,i)=>(
+            <tr key={v.kind+v.no+i} className={v.void?"void-row":""}>
+              <td><b>{v.no}</b></td>
+              <td><span className={"badge "+(v.kind==="in"?"b-green":"b-amber")}>{v.gen?(v.kind==="in"?"قبض عام":"صرف عام"):(v.kind==="in"?"سند قبض":"سند صرف")}</span>{v.trust&&<> <span className="badge b-gray">أمانة</span></>}{v.void&&<> <span className="badge b-red">ملغي</span></>}</td>
+              <td>{pmFmt(pmD(v.date))}</td><td>{v.party}</td><td>{v.desc}</td>
+              <td><b style={{color:v.kind==="in"?"var(--green)":"var(--red)"}}>{v.kind==="in"?"+":"−"} {pmMoney(v.amount)}</b></td>
+              <td style={{whiteSpace:"nowrap"}}>
+                <button className="btn ghost sm" onClick={()=>openView(v.view)}>👁 عرض / طباعة</button>
+                {v.voidRef&&!v.void&&<> <button className="btn ghost sm" style={{color:"var(--red)"}} onClick={()=>voidItem(v.voidRef[0],v.voidRef[1],v.no)}>إلغاء</button></>}
+              </td></tr>
+          )):<tr><td colSpan={7} className="empty">لا توجد سندات</td></tr>}</tbody></table></div></div>
+      </div>
+    );
+  };
+
+  // ───────── دخل المكتب ─────────
+  const renderOffice = ()=>{
+    const d=M.officeData(oFrom,oTo);
+    const labels={month:"هذا الشهر",q3:"آخر 3 أشهر",year:"هذه السنة",all:"الكل"};
+    const rows=(arr,total,label,cls)=>(
+      <>
+        {arr.length?arr.map((l,i)=>(
+          <tr key={i}><td><span className={"badge "+(l.auto?"b-blue":cls)}>{l.no}</span></td><td>{l.date?pmFmt(pmD(l.date)):"—"}</td>
+            <td><b>{l.cat}</b><br/><small style={{color:"var(--muted)"}}>{l.desc}</small></td><td><b>{pmMoney(l.amount)}</b></td></tr>
+        )):<tr><td colSpan={4} className="empty">لا توجد بنود في هذه الفترة</td></tr>}
+        <tr style={{background:"var(--soft)"}}><td colSpan={3}><b>{label}</b></td><td><b style={{fontSize:14}}>{pmMoney(total)}</b></td></tr>
+      </>
+    );
+    return (
+      <div>
+        <div className="row"><div><h2 className="title">دخل المكتب</h2><p className="sub">دخل المؤسسة نفسها: رسوم الإدارة (تلقائي من تحصيل الملاك) + السندات العامة — بسند ومبلغ وبيان، والإجمالي</p></div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            <button className="btn blue" onClick={()=>setMod({t:"gen",kind:"in"})}>+ سند قبض عام</button>
+            <button className="btn" onClick={()=>setMod({t:"gen",kind:"out"})}>+ سند صرف عام</button>
+            <button className="btn ghost" onClick={()=>pmPrint(pmOfficeHTML(M,oFrom,oTo))}>🖨️ طباعة الكشف</button>
+          </div></div>
+        <div className="chips">{Object.keys(labels).map(k=><button key={k} className={"chip"+(oPreset===k?" on":"")} onClick={()=>setPreset(k)}>{labels[k]}</button>)}</div>
+        <div className="fg" style={{maxWidth:440}}>
+          <div><label>من تاريخ</label><input type="date" value={oFrom} onChange={e=>{setOFrom(e.target.value);setOPreset("custom");}}/></div>
+          <div><label>إلى تاريخ</label><input type="date" value={oTo} onChange={e=>{setOTo(e.target.value);setOPreset("custom");}}/></div>
+        </div>
+        <div className="gridS">
+          <div className="card stat green"><div className="ic">📥</div><div className="v">{pmMoney(d.tin)}</div><div className="l">إجمالي الدخل ({d.inc.length} بنود)</div></div>
+          <div className="card stat red"><div className="ic">📤</div><div className="v">{pmMoney(d.tout)}</div><div className="l">إجمالي المصروفات ({d.exp.length} بنود)</div></div>
+          <div className={"card stat "+(d.net>=0?"green":"red")}><div className="ic">💼</div><div className="v">{pmMoney(d.net)}</div><div className="l">صافي دخل المكتب</div></div>
+          <div className="card stat"><div className="ic">🔒</div><div className="v">{pmMoney(d.trust)}</div><div className="l">أمانات محتجزة (غير محتسبة في الدخل)</div></div>
+        </div>
+        <div className="card" style={{marginBottom:14}}><div className="ch">📥 الدخل</div><div className="tw"><table style={{minWidth:560}}>
+          <thead><tr><th>السند</th><th>التاريخ</th><th>عن</th><th>المبلغ</th></tr></thead><tbody>{rows(d.inc,d.tin,"إجمالي الدخل","b-green")}</tbody></table></div></div>
+        <div className="card"><div className="ch">📤 المصروفات</div><div className="tw"><table style={{minWidth:560}}>
+          <thead><tr><th>السند</th><th>التاريخ</th><th>عن</th><th>المبلغ</th></tr></thead><tbody>{rows(d.exp,d.tout,"إجمالي المصروفات","b-amber")}</tbody></table></div></div>
+        <div className="card" style={{marginTop:14}}><div className="ch">🔧 الصيانة — التكلفة والربح وصافي الربح</div>
+          <div className="gridS" style={{marginBottom:12}}>
+            <div className="card stat"><div className="ic">🔧</div><div className="v">{pmMoney(d.mCost)}</div><div className="l">إجمالي التكلفة (المدفوع للمزودين)</div></div>
+            <div className="card stat"><div className="ic">🏷️</div><div className="v">{pmMoney(d.mChgT)}</div><div className="l">المحمّل على الملاك</div></div>
+            <div className="card stat green"><div className="ic">📈</div><div className="v">{pmMoney(d.mProfit)}</div><div className="l">الربح (من أعمال الملاك)</div></div>
+            <div className={"card stat "+(d.mNet>=0?"green":"red")}><div className="ic">💼</div><div className="v">{pmMoney(d.mNet)}</div><div className="l">صافي الربح بعد صيانة على المؤسسة ({pmMoney(d.mFirm)})</div></div>
+          </div>
+          <div className="tw"><table style={{minWidth:680}}>
+            <thead><tr><th>السند</th><th>التاريخ</th><th>العمل</th><th>التكلفة</th><th>المحمّل</th><th>الربح / الخسارة</th></tr></thead>
+            <tbody>
+              {d.mj.length?d.mj.map(m=>{ const pf=M.mProfit(m); return (
+                <tr key={m.id}><td><span className="badge b-amber">{m.vno||"—"}</span></td><td>{pmFmt(pmD(m.paidDate||m.date))}</td>
+                  <td><b>{m.title}</b><br/><small style={{color:"var(--muted)"}}>{M.pname(m.pid)} • {m.unit} • على {m.payer==="owner"?"المالك":"المؤسسة"}</small></td>
+                  <td>{pmMoney(m.cost)}</td><td>{pmMoney(M.mChg(m))}</td>
+                  <td><b style={{color:pf>=0?"var(--green)":"var(--red)"}}>{pf<0?"−":""}{pmMoney(Math.abs(pf))}</b></td></tr>); })
+                :<tr><td colSpan={6} className="empty">لا توجد أعمال صيانة مكتملة في هذه الفترة</td></tr>}
+              <tr style={{background:"var(--soft)"}}><td colSpan={3}><b>الإجمالي (صافي الربح)</b></td><td><b>{pmMoney(d.mCost)}</b></td><td><b>{pmMoney(d.mChgT)}</b></td>
+                <td><b style={{fontSize:14,color:d.mNet>=0?"var(--green)":"var(--red)"}}>{d.mNet<0?"−":""}{pmMoney(Math.abs(d.mNet))}</b></td></tr>
+            </tbody></table></div></div>
+      </div>
+    );
+  };
+
+  // ───────── الصيانة ─────────
+  const renderMaint = ()=>{
+    const labels={all:"الكل","جديد":"جديد","جاري":"جاري","مكتمل":"مكتمل"};
+    const bc={"جديد":"b-blue","جاري":"b-amber","مكتمل":"b-green"};
+    const list=M.maint.filter(m=>mfilt==="all"||m.status===mfilt).sort((a,b)=>b.date.localeCompare(a.date));
+    return (
+      <div>
+        <div className="row"><div><h2 className="title">طلبات الصيانة</h2><p className="sub">عند إتمام الطلب وإدخال التكلفة تُخصم تلقائياً من كشف المالك (إذا كانت عليه)</p></div>
+          <button className="btn blue" onClick={()=>setMod({t:"maint"})}>+ طلب صيانة</button></div>
+        <div className="chips">{Object.keys(labels).map(k=><button key={k} className={"chip"+(mfilt===k?" on":"")} onClick={()=>setMfilt(k)}>{labels[k]} ({k==="all"?M.maint.length:M.maint.filter(m=>m.status===k).length})</button>)}</div>
+        <div className="mgrid">{list.length?list.map(m=>(
+          <div className="card mc" key={m.id}>
+            <div className="row" style={{marginBottom:6}}><span className={"badge "+bc[m.status]}>{m.status}</span><small style={{color:"var(--muted)"}}>{pmFmt(pmD(m.date))}</small></div>
+            <div className="mt">{m.title}</div><div className="ms">{M.pname(m.pid)} • {m.unit}</div>
+            <div className="kv"><span>🔧 المزود</span><b>{m.provider}</b></div>
+            {m.status==="مكتمل"?(<>
+              <div className="kv"><span>💵 التكلفة (للمزود)</span><b>{pmMoney(m.cost)}</b></div>
+              <div className="kv"><span>🏷️ المحمّل على {m.payer==="owner"?"المالك":"المؤسسة"}</span><b>{pmMoney(M.mChg(m))}</b></div>
+              <div className="kv"><span>{M.mProfit(m)>=0?"📈 الربح":"📉 الخسارة"}</span><b style={{color:M.mProfit(m)>=0?"var(--green)":"var(--red)"}}>{pmMoney(Math.abs(M.mProfit(m)))}</b></div>
+            </>):<div className="kv"><span>💵 التكلفة</span><b>—</b></div>}
+            <div className="btns">
+              {m.status==="جديد"&&<button className="btn ghost sm" onClick={()=>setMaintStatus(m.id,"جاري")}>▶ بدء التنفيذ</button>}
+              {m.status!=="مكتمل"&&<button className="btn blue sm" onClick={()=>setMod({t:"cost",id:m.id})}>✔ إتمام</button>}
+              {m.status==="مكتمل"&&m.cost>0&&<button className="btn ghost sm" onClick={()=>openView({k:"m",id:m.id})}>🧾 سند الصرف</button>}
+            </div>
+          </div>
+        )):<div className="empty">لا توجد طلبات</div>}</div>
+      </div>
+    );
+  };
+
+  // ───────── كشوف الملاك ─────────
+  const renderOwners = ()=>(
+    <div>
+      <div className="row"><div><h2 className="title">كشوف الملاك</h2><p className="sub">الإيرادات والمصروفات ورسوم الإدارة والتحويلات — والمتبقي للمالك</p></div>
+        <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+          <select value={sel} onChange={e=>setStPid(e.target.value)} style={{minWidth:200}}>{M.props.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>
+          <button className="btn ghost" onClick={()=>setMod({t:"trans",pid:sel})}>💸 تسجيل تحويل للمالك</button>
+          <button className="btn" disabled={!sel} onClick={()=>pmPrint(pmStmtHTML(M,sel))}>🖨️ طباعة الكشف</button>
+        </div></div>
+      {sel?<div className="stmtWrap" dangerouslySetInnerHTML={{__html:pmStmtHTML(M,sel)}}/>:<div className="empty">أضف عقاراً لعرض كشف المالك</div>}
+    </div>
+  );
+
+  const body = { dash:renderDash, props:renderProps, tenants:renderTenants, contracts:renderContracts, collect:renderCollect, vouchers:renderVouchers, office:renderOffice, maint:renderMaint, owners:renderOwners }[tab];
+
+  return (
+    <div className={"pm"+(darkMode?" dark":"")} dir="rtl" style={{paddingTop:96,minHeight:"100vh"}}>
+      <style>{PM_CSS}</style>
+      <div style={{background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",padding:"22px 24px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
+        <div><div style={{color:"#fff",fontWeight:900,fontSize:20}}>🏛️ نظام إدارة الأملاك</div><div style={{color:"#7ab8ff",fontSize:12,marginTop:2}}>العقارات والمستأجرين والعقود والتحصيل والسندات وكشوف الملاك</div></div>
+        <span style={{background:"rgba(74,158,255,.18)",border:"1px solid rgba(74,158,255,.35)",color:"#7ab8ff",fontSize:10,fontWeight:700,borderRadius:20,padding:"4px 12px"}}>👑 المدير فقط</span>
+      </div>
+      <div className="pmtabs">{PM_TABS.map(([k,l])=><button key={k} className={"pmtab"+(tab===k?" on":"")} onClick={()=>{setTab(k);window.scrollTo(0,0);}}>{l}</button>)}</div>
+      <div className="wrap">
+        {loadErr&&<div className="card" style={{marginBottom:14,borderColor:"var(--red)"}}>⚠️ تعذّر تحميل بعض البيانات من Firebase — تحقق من الاتصال وقواعد Firestore.</div>}
+        {!allReady?<div className="empty">جاري التحميل...</div>:body()}
+      </div>
+
+      {mod?.t==="contract"&&<PMContractModal M={M} pre={mod.pre} onClose={closeMod} toast={toast}/>}
+      {mod?.t==="pay"&&<PMPayModal M={M} cid={mod.cid} idx={mod.idx} onClose={closeMod} onSaved={(cid,id)=>{ closeMod(); toast("✔ تم تسجيل الدفعة وإصدار سند القبض"); openView({k:"r",cid,id}); }}/>}
+      {mod?.t==="hist"&&<PMHistModal M={M} cid={mod.cid} idx={mod.idx} onClose={closeMod} onPay={(cid,idx)=>setMod({t:"pay",cid,idx})} onView={openView} onVoid={voidItem}/>}
+      {mod?.t==="maint"&&<PMMaintModal M={M} providers={providers} onClose={closeMod} toast={toast}/>}
+      {mod?.t==="cost"&&<PMCostModal M={M} id={mod.id} onClose={closeMod} toast={toast} onView={openView}/>}
+      {mod?.t==="trans"&&<PMTransModal M={M} pid0={mod.pid} onClose={closeMod} toast={toast} onView={openView}/>}
+      {mod?.t==="tenant"&&<PMTenantModal M={M} id={mod.id} onClose={closeMod} toast={toast}/>}
+      {mod?.t==="prop"&&<PMPropModal M={M} id={mod.id} onClose={closeMod} toast={toast}/>}
+      {mod?.t==="gen"&&<PMGenModal M={M} kind={mod.kind} onClose={closeMod} toast={toast} onView={openView}/>}
+      {view&&<PMVoucherModal html={pmViewHTML(M,view)} onClose={()=>setView(null)}/>}
+      {toastMsg&&<div className="pmtoast">{toastMsg}</div>}
+    </div>
+  );
+}
+
 export default function App() {
   const [page,setPage]           = useState("home");
   const [lang,setLang]           = useState("ar");
@@ -2155,7 +3464,7 @@ export default function App() {
         </div>
       )}
 
-      <Navbar page={page} setPage={setPage} isAdmin={isAdmin} onLoginClick={()=>setShowLogin(true)} onLogout={()=>{setIsAdmin(false);setUserRole(null);setCurrentUser(null);showToast(isEn?"Logged out":"تم تسجيل الخروج");}} lang={lang} setLang={setLang} scrolled={scrolled} darkMode={darkMode} setDarkMode={setDarkMode} T={T} userRole={userRole}/>
+      <Navbar page={page} setPage={setPage} isAdmin={isAdmin} onLoginClick={()=>setShowLogin(true)} onLogout={()=>{setIsAdmin(false);setUserRole(null);setCurrentUser(null);setPage("home");showToast(isEn?"Logged out":"تم تسجيل الخروج");}} lang={lang} setLang={setLang} scrolled={scrolled} darkMode={darkMode} setDarkMode={setDarkMode} T={T} userRole={userRole}/>
 
       {page==="home"       && <HomePage setPage={setPage} lang={lang} darkMode={darkMode} T={T}/>}
       {page==="properties" && <PropertiesPage props={props} isAdmin={isAdmin} userRole={userRole} onEdit={openEdit} onDelete={id=>setDelId(id)} onChangeStatus={changeStatus} setLightbox={setLightbox} onShare={setShareP} onOpenAdd={openAdd} lang={lang} darkMode={darkMode} T={T}/>}
@@ -2164,6 +3473,7 @@ export default function App() {
       {page==="clients"    && <ClientsPage lang={lang} darkMode={darkMode} T={T} userRole={userRole} currentUser={currentUser}/>}
       {page==="providers"  && <ProvidersPage lang={lang} darkMode={darkMode} T={T}/>}
       {page==="employees"  && <EmployeesPage lang={lang} darkMode={darkMode} T={T}/>}
+      {page==="pm"         && userRole==="admin" && <PropertyMgmtPage lang={lang} darkMode={darkMode} T={T}/>}
 
       {/* ── Floating WhatsApp Button ── */}
       <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer"
