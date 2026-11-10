@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { db } from "./firebase";
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, runTransaction } from "firebase/firestore";
+import { initializeApp, deleteApp } from "firebase/app";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, createUserWithEmailAndPassword, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
+import { collection, getDocs, getDoc, setDoc, addDoc, updateDoc, deleteDoc, deleteField, doc, onSnapshot, runTransaction, query, where } from "firebase/firestore";
 
-const USERS = [
-  { username: "Khalil", password: "Khalilks1997", role: "admin", displayName: "خليل" },
-];
+// Firebase Authentication — يستخدم نفس تطبيق Firebase الذي أنشأه ./firebase
+const auth = getAuth(db.app);
+const hesc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
 const WA_NUMBER = "966568300022";
 const PHONE = "0568300022";
 
@@ -387,6 +390,10 @@ function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang,
                 <div style={{width:36,height:36,borderRadius:10,background:darkMode?"rgba(255,255,255,.06)":"#edf1fb",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0}}>🏛️</div>
                 <span>{isEn?"Property Mgmt":"إدارة الأملاك"}</span>
               </button>}
+              {userRole==="admin"&&<button onClick={()=>go("security")} style={{display:"flex",alignItems:"center",gap:12,padding:"11px 12px",borderRadius:12,border:"none",background:page==="security"?(darkMode?"rgba(74,158,255,.15)":"rgba(74,158,255,.08)"):"none",color:page==="security"?(darkMode?"#7ab8ff":"#1e3a7a"):(darkMode?"rgba(255,255,255,.6)":"#5a6a90"),fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",width:"100%",textAlign:"right",marginBottom:2}}>
+                <div style={{width:36,height:36,borderRadius:10,background:darkMode?"rgba(255,255,255,.06)":"#edf1fb",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0}}>🛡️</div>
+                <span>{isEn?"Security":"الأمان"}</span>
+              </button>}
             </>
           )}
 
@@ -475,20 +482,31 @@ function Navbar({ page, setPage, isAdmin, onLoginClick, onLogout, lang, setLang,
 }
 
 // ── Login Modal ───────────────────────────────────────────────────────────────
-function LoginModal({ onSuccess, onClose, lang }) {
+function LoginModal({ onAttempt, onClose, lang }) {
   const isEn=lang==="en";
-  const [un,setUn]=useState(""); const [pw,setPw]=useState(""); const [show,setShow]=useState(false); const [err,setErr]=useState(""); const [loading,setLoading]=useState(false);
-  const login=()=>{ 
-    setLoading(true); 
-    // Check hardcoded admin first
-    const hardcoded = USERS.find(u=>u.username===un&&u.password===pw);
-    if(hardcoded) { onSuccess(hardcoded); return; }
-    // Check Firebase employees
-    getDocs(collection(db,"employees")).then(snap=>{
-      const emp = snap.docs.map(d=>({id:d.id,...d.data()})).find(e=>e.username===un&&e.password===pw);
-      if(emp) { onSuccess({username:emp.username, displayName:emp.displayName, role:"employee"}); }
-      else { setErr(isEn?"Incorrect credentials":"بيانات الدخول غير صحيحة"); setLoading(false); }
-    }).catch(()=>{ setErr("خطأ في الاتصال"); setLoading(false); });
+  const [em,setEm]=useState(""); const [pw,setPw]=useState(""); const [show,setShow]=useState(false);
+  const [err,setErr]=useState(""); const [info,setInfo]=useState(""); const [loading,setLoading]=useState(false);
+  const login=async()=>{
+    if(loading) return;
+    setErr(""); setInfo("");
+    if(!em.trim()||!pw) return setErr(isEn?"Enter email and password":"اكتب البريد وكلمة السر");
+    setLoading(true);
+    try{
+      onAttempt();
+      await signInWithEmailAndPassword(auth,em.trim(),pw);
+      onClose();
+    }catch(e){
+      setErr(e?.code==="auth/too-many-requests"
+        ? (isEn?"Too many attempts — try again later":"محاولات كثيرة — انتظر قليلاً ثم أعد المحاولة")
+        : (isEn?"Incorrect credentials":"بيانات الدخول غير صحيحة"));
+      setLoading(false);
+    }
+  };
+  const forgot=async()=>{
+    setErr(""); setInfo("");
+    if(!em.trim()) return setErr(isEn?"Enter your email first":"اكتب بريدك أولاً ثم اضغط «نسيت كلمة السر»");
+    try{ await sendPasswordResetEmail(auth,em.trim()); }catch(e){}
+    setInfo(isEn?"If the email is registered, a reset link was sent.":"إذا كان البريد مسجلاً فسيصلك رابط لإعادة تعيين كلمة السر.");
   };
   const IST={width:"100%",boxSizing:"border-box",background:"#f0f4fc",border:"1px solid rgba(74,158,255,.2)",borderRadius:10,padding:"10px 13px",color:"#1e3a7a",fontFamily:"'Cairo',sans-serif",fontSize:14};
   return (
@@ -496,15 +514,22 @@ function LoginModal({ onSuccess, onClose, lang }) {
       <div style={{background:"linear-gradient(160deg,#ffffff,#f5f8ff)",border:"2px solid #2563c7",borderRadius:22,padding:32,maxWidth:380,width:"100%",boxShadow:"0 24px 60px #1a4faa33"}} onClick={e=>e.stopPropagation()}>
         <div style={{textAlign:"center",marginBottom:24}}>
           <div style={{width:60,height:60,borderRadius:16,background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",margin:"0 auto 14px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28}}>🏛️</div>
-          <div style={{fontWeight:900,fontSize:18,color:"#fff",marginBottom:4}}>{isEn?"Admin Login":"دخول الإدارة"}</div>
+          <div style={{fontWeight:900,fontSize:18,color:"#1e3a7a",marginBottom:4}}>{isEn?"Staff Login":"دخول الإدارة والموظفين"}</div>
           <div style={{fontSize:11,color:"#5a6a90"}}>Khalid M. A. Ghafour Al-Shaikh Est.</div>
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:14,marginBottom:16}}>
-          <div><div style={{fontSize:12,color:"#5a6a90",marginBottom:6,fontWeight:600}}>{isEn?"Username":"اسم المستخدم"}</div><input value={un} onChange={e=>setUn(e.target.value)} onKeyDown={e=>e.key==="Enter"&&login()} style={IST}/></div>
-          <div><div style={{fontSize:12,color:"#5a6a90",marginBottom:6,fontWeight:600}}>{isEn?"Password":"كلمة السر"}</div><div style={{position:"relative"}}><input type={show?"text":"password"} value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&login()} style={{...IST,paddingLeft:42}}/><button onClick={()=>setShow(s=>!s)} style={{position:"absolute",top:"50%",left:12,transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:16,padding:0}}>{show?"🙈":"👁️"}</button></div></div>
+          <div><div style={{fontSize:12,color:"#5a6a90",marginBottom:6,fontWeight:600}}>{isEn?"Email":"البريد الإلكتروني"}</div>
+            <input type="email" autoComplete="username" dir="ltr" value={em} onChange={e=>setEm(e.target.value)} onKeyDown={e=>e.key==="Enter"&&login()} style={IST}/></div>
+          <div><div style={{fontSize:12,color:"#5a6a90",marginBottom:6,fontWeight:600}}>{isEn?"Password":"كلمة السر"}</div>
+            <div style={{position:"relative"}}>
+              <input type={show?"text":"password"} autoComplete="current-password" dir="ltr" value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&login()} style={{...IST,paddingLeft:40}}/>
+              <button type="button" onClick={()=>setShow(s=>!s)} style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:16}}>{show?"🙈":"👁️"}</button>
+            </div></div>
         </div>
-        {err&&<div style={{background:"#ef444418",border:"1px solid #ef444430",color:"#f87171",borderRadius:10,padding:"9px 14px",fontSize:13,fontWeight:600,marginBottom:14,textAlign:"center"}}>⚠️ {err}</div>}
-        <button onClick={login} disabled={loading} style={{width:"100%",background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",color:"#fff",border:"none",borderRadius:12,padding:"13px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:15,cursor:"pointer",opacity:loading?.7:1}}>{loading?(isEn?"Verifying...":"⏳ جاري التحقق..."):(isEn?"Login 🔓":"دخول 🔓")}</button>
+        {err&&<div style={{background:"#ef444418",border:"1px solid #ef444430",color:"#ef4444",borderRadius:10,padding:"9px 14px",fontSize:13,fontWeight:600,marginBottom:14,textAlign:"center"}}>⚠️ {err}</div>}
+        {info&&<div style={{background:"#16a34a14",border:"1px solid #16a34a30",color:"#16a34a",borderRadius:10,padding:"9px 14px",fontSize:12,fontWeight:600,marginBottom:14,textAlign:"center"}}>✔ {info}</div>}
+        <button onClick={login} disabled={loading} style={{width:"100%",background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",color:"#fff",border:"none",borderRadius:12,padding:"13px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:15,cursor:"pointer",opacity:loading?.7:1}}>{loading?(isEn?"Verifying...":"⏳ جاري التحقق..."):(isEn?"Login":"🔐 دخول")}</button>
+        <button onClick={forgot} style={{width:"100%",background:"none",border:"none",color:"#2a4d9b",fontFamily:"'Cairo',sans-serif",fontWeight:600,fontSize:12,cursor:"pointer",marginTop:12}}>{isEn?"Forgot password?":"نسيت كلمة السر؟"}</button>
       </div>
     </div>
   );
@@ -1100,18 +1125,23 @@ function ClientsPage({ lang, T, darkMode, userRole, currentUser }) {
   const [form, setForm] = useState(emptyClient);
 
   useEffect(()=>{
-    const unsub = onSnapshot(collection(db,"clients"), snap=>{
+    // الموظف يقرأ فقط العملاء المحوّلين له — والقواعد في Firestore تفرض ذلك أيضاً
+    const base = collection(db,"clients");
+    const q = isManager ? base : query(base, where("assignedTo","==",currentUser?.uid||"__none__"));
+    const unsub = onSnapshot(q, snap=>{
       const data = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.createdAt?.localeCompare?.(a.createdAt)||0);
       setClients(data); setLoaded(true);
     }, ()=>setLoaded(true));
     return ()=>unsub();
-  },[]);
+  },[isManager,currentUser?.uid]);
 
   useEffect(()=>{
-    getDocs(collection(db,"employees")).then(snap=>{
+    if(!isManager) return;
+    const unsub = onSnapshot(query(collection(db,"users"),where("role","==","employee")), snap=>{
       setDbEmployees(snap.docs.map(d=>({id:d.id,...d.data()})));
-    });
-  },[]);
+    }, ()=>{});
+    return ()=>unsub();
+  },[isManager]);
 
   const openAdd = () => { setForm(emptyClient); setEditClientId(null); setShowForm(true); };
   const openEdit = (c) => { 
@@ -1122,33 +1152,49 @@ function ClientsPage({ lang, T, darkMode, userRole, currentUser }) {
 
   const save = async () => {
     if(!form.name||!form.phone) return alert("الاسم ورقم الجوال مطلوبان");
-    const duplicate = clients.find(c=>c.phone===form.phone&&c.id!==editClientId);
+    const pk = normPhone(form.phone);
+    let duplicate = null;
+    try{
+      if(pk){ const ps = await getDoc(doc(db,"client_phones",pk)); if(ps.exists()&&ps.data().clientId!==editClientId) duplicate = ps.data(); }
+    }catch(e){}
     if(duplicate) { const ok=window.confirm(`⚠️ رقم الجوال مكرر!\nمسجل للعميل: "${duplicate.name}" — #${duplicate.clientNo}\nهل تريد الحفظ رغم التكرار؟`); if(!ok) return; }
-    if(editClientId) {
-      const existing = clients.find(c=>c.id===editClientId);
-      const saveData = {...form};
-      // الموظف لا يعدل جوال المالك — يُحفظ الرقم الأصلي
-      if(!isManager && form.clientType==="مالك" && existing?.phone) {
-        saveData.phone = existing.phone;
+    try{
+      if(editClientId) {
+        const existing = clients.find(c=>c.id===editClientId);
+        const saveData = {...form}; delete saveData.id;
+        // الموظف لا يعدل جوال المالك — يُحفظ الرقم الأصلي
+        if(!isManager && form.clientType==="مالك" && existing?.phone) saveData.phone = existing.phone;
+        await updateDoc(doc(db,"clients",editClientId),{...saveData, updatedAt:new Date().toISOString(), isDuplicate:!!duplicate});
+        const oldK = normPhone(existing?.phone);
+        if(isManager && pk!==oldK){
+          if(oldK){ const o=await getDoc(doc(db,"client_phones",oldK)); if(o.exists()&&o.data().clientId===editClientId) await deleteDoc(doc(db,"client_phones",oldK)); }
+          if(pk&&!duplicate) await setDoc(doc(db,"client_phones",pk),{clientId:editClientId,clientNo:existing?.clientNo||0,name:form.name});
+        }
+      } else {
+        const ref = doc(collection(db,"clients"));
+        const localMax = clients.reduce((max,c)=>Math.max(max,c.clientNo||0),0);
+        await runTransaction(db, async tx=>{
+          const cref = doc(db,"meta","counters"), pref = pk?doc(db,"client_phones",pk):null;
+          const cs = await tx.get(cref);
+          const ps = pref ? await tx.get(pref) : null;
+          const base = cs.exists() ? (cs.data().clientNo||0) : (isManager ? localMax : null);
+          if(base===null) throw new Error("NO_COUNTER");
+          const n = base+1;
+          tx.set(cref,{clientNo:n},{merge:true});
+          tx.set(ref,{...form, clientNo:n, createdAt:new Date().toISOString(), createdDate:new Date().toLocaleDateString("en-GB"), comments:[], isDuplicate:!!duplicate, assignedTo:currentUser?.uid||"", assignedToName:currentUser?.displayName||""});
+          if(pref && !ps.exists()) tx.set(pref,{clientId:ref.id,clientNo:n,name:form.name});
+        });
       }
-      await updateDoc(doc(db,"clients",editClientId),{...saveData, updatedAt:new Date().toISOString(), isDuplicate:!!duplicate});
-    } else {
-      const maxNum = clients.reduce((max,c)=>Math.max(max,c.clientNo||0),0);
-      await addDoc(collection(db,"clients"),{
-        ...form, clientNo:maxNum+1,
-        createdAt:new Date().toISOString(),
-        createdDate:new Date().toLocaleDateString("en-GB"),
-        comments:[], isDuplicate:!!duplicate,
-        assignedTo: currentUser?.username||"",
-        assignedToName: currentUser?.displayName||""
-      });
+    }catch(e){
+      if(e?.message==="NO_COUNTER") return alert("يجب على المدير تشغيل «تجهيز الأمان» من صفحة الأمان قبل إضافة العملاء.");
+      console.error(e); return alert("تعذّر الحفظ — تحقق من الاتصال أو الصلاحيات");
     }
     setForm(emptyClient); setShowForm(false); setEditClientId(null);
   };
 
   const assignClient = async () => {
     if(!assignTo||!assignModal) return;
-    const emp = dbEmployees.find(u=>u.username===assignTo);
+    const emp = dbEmployees.find(u=>u.id===assignTo);
     const comment = { text:`📋 تم تحويل العميل إلى ${emp?.displayName||assignTo}${assignMsg?` — رسالة: ${assignMsg}`:""}`, date:new Date().toLocaleDateString("en-GB"), time:new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}), system:true };
     const existing = clients.find(c=>c.id===assignModal);
     const comments = [...(existing?.comments||[]), comment];
@@ -1156,7 +1202,12 @@ function ClientsPage({ lang, T, darkMode, userRole, currentUser }) {
     setAssignModal(null); setAssignTo(""); setAssignMsg("");
   };
 
-  const del = async (id) => { await deleteDoc(doc(db,"clients",id)); setDelId(null); };
+  const del = async (id) => {
+    const c = clients.find(x=>x.id===id);
+    await deleteDoc(doc(db,"clients",id));
+    try{ const k=normPhone(c?.phone); if(k){ const p=await getDoc(doc(db,"client_phones",k)); if(p.exists()&&p.data().clientId===id) await deleteDoc(doc(db,"client_phones",k)); } }catch(e){}
+    setDelId(null);
+  };
 
   const printClientCard = (c) => {
     const ratingColor = {"مستأجر":"#16a34a","مشتري":"#b45309","مالك":"#2a4d9b","مستثمر":"#7c3aed"};
@@ -1201,24 +1252,24 @@ function ClientsPage({ lang, T, darkMode, userRole, currentUser }) {
         </div>
         <div class="client-num">
           <div>
-            <div class="client-name">${c.name||""}</div>
-            <div class="client-phone">📞 ${c.phone||""}</div>
-            <div class="type-badge" style="background:${(ratingColor[c.clientType]||"#2a4d9b")}18;color:${ratingColor[c.clientType]||"#2a4d9b"};border:1px solid ${ratingColor[c.clientType]||"#2a4d9b"}33">${c.clientType||""}</div>
+            <div class="client-name">${hesc(c.name||"")}</div>
+            <div class="client-phone">📞 ${hesc(c.phone||"")}</div>
+            <div class="type-badge" style="background:${(ratingColor[c.clientType]||"#2a4d9b")}18;color:${ratingColor[c.clientType]||"#2a4d9b"};border:1px solid ${ratingColor[c.clientType]||"#2a4d9b"}33">${hesc(c.clientType||"")}</div>
           </div>
-          <div class="num-badge">#${c.clientNo||"—"}</div>
+          <div class="num-badge">#${hesc(c.clientNo||"—")}</div>
         </div>
         <div class="divider"></div>
         <div class="info-grid">
-          <div class="info-box"><div class="info-lbl">📍 الحي / الموقع</div><div class="info-val">${c.area||"—"}</div></div>
+          <div class="info-box"><div class="info-lbl">📍 الحي / الموقع</div><div class="info-val">${hesc(c.area||"—")}</div></div>
           <div class="info-box"><div class="info-lbl">💰 الميزانية</div><div class="info-val">${c.budget?Number(c.budget).toLocaleString()+" ﷼":"—"}</div></div>
-          <div class="info-box"><div class="info-lbl">📋 الحالة</div><div class="info-val">${c.clientStatus||"معلق"}</div></div>
-          <div class="info-box"><div class="info-lbl">📅 تاريخ التسجيل</div><div class="info-val">${c.createdDate||"—"}</div></div>
-          ${c.ownerPropertyType?`<div class="info-box"><div class="info-lbl">🏠 نوع العقار</div><div class="info-val">${c.ownerPropertyType}</div></div>`:""}
-          ${c.investorType?`<div class="info-box"><div class="info-lbl">📈 الاستثمار</div><div class="info-val">${c.investorType}</div></div>`:""}
-          ${c.paymentType?`<div class="info-box"><div class="info-lbl">💳 طريقة الدفع</div><div class="info-val">${c.paymentType}</div></div>`:""}
-          ${c.contactDate?`<div class="info-box"><div class="info-lbl">📞 تاريخ التواصل</div><div class="info-val">${c.contactDate}</div></div>`:""}
+          <div class="info-box"><div class="info-lbl">📋 الحالة</div><div class="info-val">${hesc(c.clientStatus||"معلق")}</div></div>
+          <div class="info-box"><div class="info-lbl">📅 تاريخ التسجيل</div><div class="info-val">${hesc(c.createdDate||"—")}</div></div>
+          ${c.ownerPropertyType?`<div class="info-box"><div class="info-lbl">🏠 نوع العقار</div><div class="info-val">${hesc(c.ownerPropertyType)}</div></div>`:""}
+          ${c.investorType?`<div class="info-box"><div class="info-lbl">📈 الاستثمار</div><div class="info-val">${hesc(c.investorType)}</div></div>`:""}
+          ${c.paymentType?`<div class="info-box"><div class="info-lbl">💳 طريقة الدفع</div><div class="info-val">${hesc(c.paymentType)}</div></div>`:""}
+          ${c.contactDate?`<div class="info-box"><div class="info-lbl">📞 تاريخ التواصل</div><div class="info-val">${hesc(c.contactDate)}</div></div>`:""}
         </div>
-        ${c.notes?`<div class="info-box" style="margin-bottom:14px;background:#f5f8ff;border-radius:8px;padding:10px 12px;"><div class="info-lbl">💬 ملاحظات</div><div style="font-size:11px;color:#1e3a7a;line-height:1.7;margin-top:3px">${c.notes}</div></div>`:""}
+        ${c.notes?`<div class="info-box" style="margin-bottom:14px;background:#f5f8ff;border-radius:8px;padding:10px 12px;"><div class="info-lbl">💬 ملاحظات</div><div style="font-size:11px;color:#1e3a7a;line-height:1.7;margin-top:3px">${hesc(c.notes)}</div></div>`:""}
         <div class="footer-bar">
           <div class="footer-txt">khalid-realestate.com | 🏛️ مرخصون من الهيئة العامة للعقار</div>
           <div class="footer-phone">📞 0568300022</div>
@@ -1265,7 +1316,7 @@ function ClientsPage({ lang, T, darkMode, userRole, currentUser }) {
   // الموظف يشوف فقط العملاء المحوّلين له صراحةً — المدير يشوف الكل
   const myClients = isManager 
     ? clients 
-    : (currentUser ? clients.filter(c => c.assignedTo === currentUser.username) : []);
+    : (currentUser ? clients.filter(c => c.assignedTo === currentUser.uid) : []);
 
   const filtered = myClients.filter(c=>
     (typeFilter==="الكل"||c.clientType===typeFilter) &&
@@ -1336,7 +1387,7 @@ function ClientsPage({ lang, T, darkMode, userRole, currentUser }) {
                     </div>
                     <div>
                       <div style={{fontWeight:900,fontSize:15,color:darkMode?"#e8eeff":"#1e3a7a"}}>{c.name}</div>
-                      {(isManager || c.clientType!=="مالك" || c.assignedTo===currentUser?.username) ? (
+                      {(isManager || c.clientType!=="مالك" || c.assignedTo===currentUser?.uid) ? (
                         <div style={{fontSize:12,color:darkMode?"#7ab8ff":"#5a6a90"}}>📞 {c.phone}</div>
                       ) : (
                         <div style={{fontSize:11,color:"#ef4444"}}>🔒 جوال المالك محجوب</div>
@@ -1420,7 +1471,7 @@ function ClientsPage({ lang, T, darkMode, userRole, currentUser }) {
                   // موظف يعدل مالك موجود
                   (() => {
                     const existingClient = clients.find(c=>c.id===editClientId);
-                    const addedByMe = existingClient?.assignedTo === currentUser?.username;
+                    const addedByMe = existingClient?.assignedTo === currentUser?.uid;
                     return addedByMe ? (
                       // هو اللي أضافه — يشوف الرقم بس ما يعدله
                       <div style={{background:darkMode?"#0a1538":"#f0f4fc",border:"1px solid rgba(74,158,255,.2)",borderRadius:10,padding:"9px 12px",fontSize:13,color:darkMode?"#e8eeff":"#1e3a7a",fontWeight:700,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -1521,13 +1572,13 @@ function ClientsPage({ lang, T, darkMode, userRole, currentUser }) {
                 {dbEmployees.length===0 ? (
                   <div style={{textAlign:"center",padding:"20px",color:darkMode?"#7ab8ff":"#5a6a90",fontSize:13}}>لا يوجد موظفين — أضف موظفين أولاً من صفحة إدارة الموظفين</div>
                 ) : dbEmployees.map(emp=>(
-                  <button key={emp.username} onClick={()=>setAssignTo(emp.username)} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,border:`2px solid ${assignTo===emp.username?"#4a9eff":"rgba(74,158,255,.2)"}`,background:assignTo===emp.username?"rgba(74,158,255,.1)":"transparent",color:darkMode?"#e8eeff":"#1e3a7a",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer",textAlign:"right",width:"100%"}}>
+                  <button key={emp.id} onClick={()=>setAssignTo(emp.id)} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,border:`2px solid ${assignTo===emp.id?"#4a9eff":"rgba(74,158,255,.2)"}`,background:assignTo===emp.id?"rgba(74,158,255,.1)":"transparent",color:darkMode?"#e8eeff":"#1e3a7a",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer",textAlign:"right",width:"100%"}}>
                     <div style={{width:34,height:34,borderRadius:9,background:"rgba(74,158,255,.12)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0}}>👤</div>
                     <div style={{flex:1}}>
                       <div>{emp.displayName}</div>
-                      <div style={{fontSize:10,color:darkMode?"rgba(122,184,255,.6)":"#8899bb",fontWeight:400}}>{emp.username}</div>
+                      <div style={{fontSize:10,color:darkMode?"rgba(122,184,255,.6)":"#8899bb",fontWeight:400}}>{emp.email||emp.username}</div>
                     </div>
-                    {assignTo===emp.username&&<span style={{color:"#4a9eff",fontSize:18}}>✓</span>}
+                    {assignTo===emp.id&&<span style={{color:"#4a9eff",fontSize:18}}>✓</span>}
                   </button>
                 ))}
               </div>
@@ -1650,19 +1701,19 @@ function ProvidersPage({ lang, T, darkMode }) {
         <div class="provider-info">
           <div class="prov-icon">🔧</div>
           <div>
-            <div class="prov-name">${p.name||""}</div>
-            <div class="prov-phone">📞 ${p.phone||""}</div>
+            <div class="prov-name">${hesc(p.name||"")}</div>
+            <div class="prov-phone">📞 ${hesc(p.phone||"")}</div>
             <div class="badges">
-              <span class="badge" style="background:rgba(74,158,255,.1);color:#2a4d9b;border:1px solid rgba(74,158,255,.25)">${p.specialty||""}</span>
-              <span class="badge" style="background:${ratingColor[p.rating]||"#2a4d9b"}18;color:${ratingColor[p.rating]||"#2a4d9b"};border:1px solid ${ratingColor[p.rating]||"#2a4d9b"}33">${p.rating||""}</span>
+              <span class="badge" style="background:rgba(74,158,255,.1);color:#2a4d9b;border:1px solid rgba(74,158,255,.25)">${hesc(p.specialty||"")}</span>
+              <span class="badge" style="background:${ratingColor[p.rating]||"#2a4d9b"}18;color:${ratingColor[p.rating]||"#2a4d9b"};border:1px solid ${ratingColor[p.rating]||"#2a4d9b"}33">${hesc(p.rating||"")}</span>
             </div>
           </div>
         </div>
         <div class="divider"></div>
-        ${p.notes?`<div class="info-row"><div><div class="info-lbl">📝 ملاحظات</div><div class="info-val">${p.notes}</div></div></div>`:""}
+        ${p.notes?`<div class="info-row"><div><div class="info-lbl">📝 ملاحظات</div><div class="info-val">${hesc(p.notes)}</div></div></div>`:""}
         ${p.works&&p.works.length>0?`
           <div class="works-title">🛠️ الأعمال المنجزة (${p.works.length})</div>
-          ${p.works.slice(0,5).map(w=>`<div class="work-item"><span>${w.text}</span><span style="color:#8899bb;font-size:10px">${w.date}</span></div>`).join("")}
+          ${p.works.slice(0,5).map(w=>`<div class="work-item"><span>${hesc(w.text)}</span><span style="color:#8899bb;font-size:10px">${hesc(w.date)}</span></div>`).join("")}
           ${p.works.length>5?`<div style="font-size:10px;color:#8899bb;text-align:center;margin-top:6px">و ${p.works.length-5} أعمال أخرى...</div>`:""}
         `:""}
         <div class="footer-bar">
@@ -1826,46 +1877,67 @@ function ProvidersPage({ lang, T, darkMode }) {
   );
 }
 
-// ── Employees Page ────────────────────────────────────────────────────────────
-function EmployeesPage({ lang, T, darkMode }) {
-  const [employees, setEmployees] = useState([]);
+// ── Employees Page (Firebase Auth accounts) ───────────────────────────────────
+const PW_MIN = 10;
+function EmployeesPage({ lang, T, darkMode, currentUser }) {
+  const [users, setUsers] = useState([]);
+  const [legacy, setLegacy] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [editId, setEditId] = useState(null);
-  const [delId, setDelId] = useState(null);
-  const [showPwd, setShowPwd] = useState({});
-  const emptyForm = { displayName:"", username:"", password:"" };
+  const emptyForm = { displayName:"", email:"", password:"", username:"" };
   const [form, setForm] = useState(emptyForm);
   const [err, setErr] = useState("");
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
 
   useEffect(()=>{
-    const unsub = onSnapshot(collection(db,"employees"), snap=>{
-      setEmployees(snap.docs.map(d=>({id:d.id,...d.data()})));
+    const unsub = onSnapshot(query(collection(db,"users"),where("role","==","employee")), snap=>{
+      setUsers(snap.docs.map(d=>({id:d.id,...d.data()})));
       setLoaded(true);
     }, ()=>setLoaded(true));
     return ()=>unsub();
   },[]);
+  const loadLegacy = ()=>getDocs(collection(db,"employees")).then(s=>setLegacy(s.docs.map(d=>{ const x=d.data(); return {id:d.id,displayName:x.displayName||"",username:x.username||""}; }))).catch(()=>setLegacy([]));
+  useEffect(()=>{ loadLegacy(); },[]);
 
-  const save = async () => {
+  const flash = m => { setMsg(m); setTimeout(()=>setMsg(""),4000); };
+  const create = async () => {
+    if(busy) return;
     setErr("");
-    if(!form.displayName||!form.username||!form.password) return setErr("جميع الحقول مطلوبة");
-    if(form.username==="Khalil") return setErr("هذا اليوزر محجوز");
-    if(form.password.length<6) return setErr("الباسورد لازم 6 أحرف على الأقل");
-    // Check duplicate username
-    const dup = employees.find(e=>e.username===form.username&&e.id!==editId);
-    if(dup) return setErr("اليوزر مستخدم مسبقاً");
-    if(editId) {
-      await updateDoc(doc(db,"employees",editId),{...form});
-    } else {
-      await addDoc(collection(db,"employees"),{...form, role:"employee", createdAt:new Date().toISOString()});
+    const displayName=form.displayName.trim(), email=form.email.trim().toLowerCase(), password=form.password;
+    if(!displayName||!email||!password) return setErr("الاسم والبريد وكلمة السر مطلوبة");
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setErr("البريد الإلكتروني غير صحيح");
+    if(password.length<PW_MIN) return setErr(`كلمة السر لازم ${PW_MIN} أحرف على الأقل`);
+    if(/^\d+$/.test(password)) return setErr("كلمة السر لا يجوز أن تكون أرقاماً فقط");
+    setBusy(true);
+    let sec=null;
+    try{
+      // تطبيق ثانوي حتى لا يخرج المدير من حسابه أثناء إنشاء حساب الموظف
+      sec = initializeApp(db.app.options, "sec-"+Date.now());
+      const sa = getAuth(sec);
+      const cred = await createUserWithEmailAndPassword(sa,email,password);
+      const uid = cred.user.uid;
+      await signOut(sa);
+      await setDoc(doc(db,"users",uid),{role:"employee",active:true,displayName,email,username:form.username.trim(),createdAt:new Date().toISOString()});
+      setForm(emptyForm); setShowForm(false);
+      flash("✔ تم إنشاء حساب الموظف — سلّمه البريد وكلمة السر المؤقتة، ويقدر يغيّرها بعد الدخول");
+    }catch(e){
+      setErr(e?.code==="auth/email-already-in-use"?"هذا البريد مسجل مسبقاً. إذا كان موظفاً سابقاً فعّل حسابه من القائمة أو أرسل له رابط إعادة تعيين."
+        :e?.code==="auth/weak-password"?"كلمة السر ضعيفة":"تعذّر إنشاء الحساب — تحقق من الاتصال وصلاحياتك");
     }
-    setForm(emptyForm); setShowForm(false); setEditId(null); setErr("");
+    try{ if(sec) await deleteApp(sec); }catch(e){}
+    setBusy(false);
   };
-
-  const del = async (id) => { await deleteDoc(doc(db,"employees",id)); setDelId(null); };
+  const toggle = async u => { try{ await updateDoc(doc(db,"users",u.id),{active:u.active===false}); }catch(e){ flash("تعذّر التحديث"); } };
+  const reset = async u => { try{ await sendPasswordResetEmail(auth,u.email); flash("✔ أُرسل رابط إعادة تعيين كلمة السر إلى "+u.email); }catch(e){ flash("تعذّر الإرسال"); } };
+  const delLegacy = async l => {
+    if(!window.confirm(`حذف الحساب القديم «${l.displayName}»؟ (هذا الحساب القديم كلمة سره محفوظة نصاً)`)) return;
+    try{ await deleteDoc(doc(db,"employees",l.id)); loadLegacy(); }catch(e){ flash("تعذّر الحذف"); }
+  };
   const f = key => e => setForm(p=>({...p,[key]:e.target.value}));
   const IST = {width:"100%",boxSizing:"border-box",background:darkMode?"#0a1538":"#f5f8ff",border:"1px solid rgba(74,158,255,.2)",borderRadius:10,padding:"9px 12px",color:darkMode?"#e8eeff":"#1e3a7a",fontFamily:"'Cairo',sans-serif",fontSize:13};
   const Lbl = ({c})=><div style={{fontSize:11,color:darkMode?"#7ab8ff":"#5a6a90",marginBottom:5,fontWeight:600}}>{c}</div>;
+  const rowBtn = (c)=>({background:`${c}14`,border:`1px solid ${c}33`,color:c,borderRadius:9,padding:"7px 12px",cursor:"pointer",fontSize:12,fontFamily:"'Cairo',sans-serif",fontWeight:600});
 
   return (
     <div style={{paddingTop:96,minHeight:"100vh",background:T.bg}}>
@@ -1873,50 +1945,54 @@ function EmployeesPage({ lang, T, darkMode }) {
         <div style={{maxWidth:900,margin:"0 auto",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
           <div>
             <div style={{fontWeight:900,fontSize:22,color:"#fff",marginBottom:3}}>👨‍💼 إدارة الموظفين</div>
-            <div style={{fontSize:12,color:"rgba(255,255,255,.5)"}}>للمدير فقط — إضافة وتعديل حسابات الموظفين</div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,.5)"}}>للمدير فقط — حسابات الموظفين بتسجيل دخول مشفّر (Firebase Authentication)</div>
           </div>
-          <button onClick={()=>{setForm(emptyForm);setEditId(null);setErr("");setShowForm(true);}} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:11,padding:"10px 22px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ إضافة موظف</button>
+          <button onClick={()=>{setForm(emptyForm);setErr("");setShowForm(true);}} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:11,padding:"10px 22px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ إضافة موظف</button>
         </div>
       </div>
 
       <div style={{maxWidth:900,margin:"0 auto",padding:"24px 22px"}}>
-        {/* Admin account info */}
+        {msg&&<div style={{background:"#16a34a14",border:"1px solid #16a34a30",color:"#16a34a",borderRadius:10,padding:"10px 14px",fontSize:12,fontWeight:700,marginBottom:14}}>{msg}</div>}
         <div style={{background:darkMode?"rgba(74,158,255,.08)":"rgba(74,158,255,.06)",border:"1px solid rgba(74,158,255,.2)",borderRadius:14,padding:"16px 18px",marginBottom:20,display:"flex",alignItems:"center",gap:14}}>
           <div style={{width:44,height:44,borderRadius:12,background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>👑</div>
           <div>
-            <div style={{fontWeight:900,fontSize:14,color:darkMode?"#e8eeff":"#1e3a7a"}}>خليل — المدير</div>
-            <div style={{fontSize:11,color:darkMode?"#7ab8ff":"#5a6a90"}}>يوزر: Khalil | حساب ثابت لا يمكن تعديله من هنا</div>
+            <div style={{fontWeight:900,fontSize:14,color:darkMode?"#e8eeff":"#1e3a7a"}}>{currentUser?.displayName} — المدير</div>
+            <div style={{fontSize:11,color:darkMode?"#7ab8ff":"#5a6a90"}} dir="ltr">{currentUser?.email}</div>
           </div>
         </div>
 
-        {!loaded ? <div style={{textAlign:"center",padding:40,color:T.text3}}>جاري التحميل...</div> : employees.length===0 ? (
-          <div style={{textAlign:"center",padding:60,color:T.text3}}>
-            <div style={{fontSize:46,marginBottom:10}}>👤</div>
-            <div style={{fontSize:13}}>لا يوجد موظفين بعد</div>
+        {legacy.length>0&&(
+          <div style={{background:"#ef444410",border:"1px solid #ef444440",borderRadius:14,padding:"14px 16px",marginBottom:20}}>
+            <div style={{fontWeight:900,fontSize:13,color:"#ef4444",marginBottom:4}}>⚠️ حسابات قديمة غير آمنة ({legacy.length})</div>
+            <div style={{fontSize:12,color:darkMode?"#fca5a5":"#b91c1c",marginBottom:10,lineHeight:1.8}}>هذه الحسابات كلمات سرها محفوظة نصاً في قاعدة البيانات. أنشئ لكل موظف حساباً جديداً ثم احذف القديم.</div>
+            {legacy.map(l=>(
+              <div key={l.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,padding:"8px 0",borderTop:"1px dashed #ef444430",flexWrap:"wrap"}}>
+                <div style={{fontSize:13,color:darkMode?"#e8eeff":"#1e3a7a",fontWeight:700}}>{l.displayName} <span style={{fontWeight:400,fontSize:11,color:darkMode?"#7ab8ff":"#5a6a90"}}>({l.username})</span></div>
+                <div style={{display:"flex",gap:6}}>
+                  <button onClick={()=>{setForm({displayName:l.displayName,email:"",password:"",username:l.username});setErr("");setShowForm(true);}} style={rowBtn("#2a4d9b")}>إنشاء حساب جديد</button>
+                  <button onClick={()=>delLegacy(l)} style={rowBtn("#ef4444")}>🗑️ حذف القديم</button>
+                </div>
+              </div>
+            ))}
           </div>
+        )}
+
+        {!loaded ? <div style={{textAlign:"center",padding:40,color:T.text3}}>جاري التحميل...</div> : users.length===0 ? (
+          <div style={{textAlign:"center",padding:60,color:T.text3}}><div style={{fontSize:46,marginBottom:10}}>👤</div><div style={{fontSize:13}}>لا يوجد موظفون بعد</div></div>
         ) : (
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
-            {employees.map(emp=>(
-              <div key={emp.id} style={{background:darkMode?"linear-gradient(160deg,#0f1f4a,#1a2d6b)":"white",border:"1px solid rgba(74,158,255,.12)",borderRadius:14,padding:"16px 18px",boxShadow:"0 2px 8px rgba(30,58,122,.06)",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
+            {users.map(u=>(
+              <div key={u.id} style={{background:darkMode?"linear-gradient(160deg,#0f1f4a,#1a2d6b)":"white",border:"1px solid rgba(74,158,255,.12)",borderRadius:14,padding:"16px 18px",boxShadow:"0 2px 8px rgba(30,58,122,.06)",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap",opacity:u.active===false?.6:1}}>
                 <div style={{display:"flex",alignItems:"center",gap:14}}>
                   <div style={{width:46,height:46,borderRadius:12,background:"rgba(74,158,255,.1)",border:"1px solid rgba(74,158,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>👤</div>
                   <div>
-                    <div style={{fontWeight:900,fontSize:15,color:darkMode?"#e8eeff":"#1e3a7a",marginBottom:2}}>{emp.displayName}</div>
-                    <div style={{fontSize:11,color:darkMode?"#7ab8ff":"#5a6a90",marginBottom:3}}>👤 يوزر: <strong>{emp.username}</strong></div>
-                    <div style={{fontSize:11,color:darkMode?"#7ab8ff":"#5a6a90",display:"flex",alignItems:"center",gap:6}}>
-                      🔑 باسورد: 
-                      <span style={{fontFamily:"monospace",letterSpacing:showPwd[emp.id]?"normal":"2px"}}>
-                        {showPwd[emp.id] ? emp.password : "••••••••"}
-                      </span>
-                      <button onClick={()=>setShowPwd(p=>({...p,[emp.id]:!p[emp.id]}))} style={{background:"none",border:"none",cursor:"pointer",fontSize:12,color:darkMode?"#7ab8ff":"#5a6a90",padding:0}}>
-                        {showPwd[emp.id]?"🙈":"👁️"}
-                      </button>
-                    </div>
+                    <div style={{fontWeight:900,fontSize:15,color:darkMode?"#e8eeff":"#1e3a7a",marginBottom:2}}>{u.displayName} {u.active===false&&<span style={{fontSize:10,color:"#ef4444",fontWeight:700}}>• موقوف</span>}</div>
+                    <div style={{fontSize:11,color:darkMode?"#7ab8ff":"#5a6a90"}} dir="ltr">{u.email}</div>
                   </div>
                 </div>
-                <div style={{display:"flex",gap:8}}>
-                  <button onClick={()=>{setForm({displayName:emp.displayName,username:emp.username,password:emp.password});setEditId(emp.id);setErr("");setShowForm(true);}} style={{background:"rgba(74,158,255,.1)",border:"1px solid rgba(74,158,255,.2)",color:darkMode?"#7ab8ff":"#2a4d9b",borderRadius:9,padding:"7px 14px",cursor:"pointer",fontSize:12,fontFamily:"'Cairo',sans-serif",fontWeight:600}}>✏️ تعديل</button>
-                  <button onClick={()=>setDelId(emp.id)} style={{background:"#ef444410",border:"1px solid #ef444425",color:"#ef4444",borderRadius:9,padding:"7px 14px",cursor:"pointer",fontSize:12,fontFamily:"'Cairo',sans-serif",fontWeight:600}}>🗑️ حذف</button>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                  <button onClick={()=>reset(u)} style={rowBtn("#2a4d9b")}>🔑 رابط تغيير كلمة السر</button>
+                  <button onClick={()=>toggle(u)} style={rowBtn(u.active===false?"#16a34a":"#ef4444")}>{u.active===false?"✔ تفعيل":"⏸ إيقاف"}</button>
                 </div>
               </div>
             ))}
@@ -1924,38 +2000,161 @@ function EmployeesPage({ lang, T, darkMode }) {
         )}
       </div>
 
-      {/* Add/Edit Modal */}
       {showForm&&(
-        <div style={{position:"fixed",inset:0,background:"#000b",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>{setShowForm(false);setEditId(null);}}>
+        <div style={{position:"fixed",inset:0,background:"#000b",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setShowForm(false)}>
           <div style={{background:darkMode?"linear-gradient(160deg,#0f1f4a,#1a2d6b)":"white",border:"1px solid rgba(74,158,255,.25)",borderRadius:22,padding:24,maxWidth:420,width:"100%"}} onClick={e=>e.stopPropagation()}>
-            <div style={{fontWeight:900,fontSize:16,color:darkMode?"#e8eeff":"#1e3a7a",marginBottom:20,paddingBottom:14,borderBottom:"1px solid rgba(74,158,255,.1)"}}>{editId?"✏️ تعديل الموظف":"👤 إضافة موظف جديد"}</div>
+            <div style={{fontWeight:900,fontSize:16,color:darkMode?"#e8eeff":"#1e3a7a",marginBottom:20,paddingBottom:14,borderBottom:"1px solid rgba(74,158,255,.1)"}}>👤 إضافة موظف جديد</div>
             <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:16}}>
               <div><Lbl c="الاسم الظاهر (مثال: محمد)"/><input value={form.displayName} onChange={f("displayName")} style={IST} placeholder="اسم الموظف"/></div>
-              <div><Lbl c="اسم المستخدم (يوزر)"/><input value={form.username} onChange={f("username")} style={IST} placeholder="مثال: emp2" dir="ltr"/></div>
-              <div><Lbl c="كلمة المرور (6 أحرف على الأقل)"/><input value={form.password} onChange={f("password")} style={IST} placeholder="كلمة المرور" dir="ltr"/></div>
+              <div><Lbl c="البريد الإلكتروني (يستخدمه للدخول)"/><input type="email" value={form.email} onChange={f("email")} style={IST} placeholder="name@example.com" dir="ltr" autoComplete="off"/></div>
+              <div><Lbl c={`كلمة سر مؤقتة (${PW_MIN} أحرف على الأقل، ليست أرقاماً فقط)`}/><input type="text" value={form.password} onChange={f("password")} style={IST} dir="ltr" autoComplete="new-password"/></div>
+              <div><Lbl c="اليوزر القديم (اختياري — لربط عملائه السابقين به)"/><input value={form.username} onChange={f("username")} style={IST} placeholder="مثال: emp2" dir="ltr"/></div>
             </div>
             {err&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#ef4444",marginBottom:12}}>⚠️ {err}</div>}
             <div style={{display:"flex",gap:10}}>
-              <button onClick={save} style={{flex:1,background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",color:"#fff",border:"none",borderRadius:11,padding:"12px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer"}}>{editId?"💾 حفظ التعديلات":"✅ إضافة الموظف"}</button>
-              <button onClick={()=>{setShowForm(false);setEditId(null);}} style={{background:darkMode?"#0a1538":"#f5f8ff",border:"1px solid rgba(74,158,255,.2)",color:darkMode?"#7ab8ff":"#5a6a90",borderRadius:11,padding:"12px 18px",fontFamily:"'Cairo',sans-serif",cursor:"pointer"}}>إلغاء</button>
+              <button onClick={create} disabled={busy} style={{flex:1,background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",color:"#fff",border:"none",borderRadius:11,padding:"12px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",opacity:busy?.7:1}}>{busy?"جاري الإنشاء...":"✅ إنشاء الحساب"}</button>
+              <button onClick={()=>setShowForm(false)} style={{background:darkMode?"#0a1538":"#f5f8ff",border:"1px solid rgba(74,158,255,.2)",color:darkMode?"#7ab8ff":"#5a6a90",borderRadius:11,padding:"12px 18px",fontFamily:"'Cairo',sans-serif",cursor:"pointer"}}>إلغاء</button>
             </div>
           </div>
         </div>
       )}
+    </div>
+  );
+}
 
-      {delId&&(
-        <div style={{position:"fixed",inset:0,background:"#000c",zIndex:700,display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <div style={{background:darkMode?"linear-gradient(160deg,#0f1f4a,#1a2d6b)":"white",border:"1px solid #ef444440",borderRadius:20,padding:28,maxWidth:300,textAlign:"center"}}>
-            <div style={{fontSize:36,marginBottom:10}}>⚠️</div>
-            <div style={{fontWeight:900,fontSize:15,color:darkMode?"#e8eeff":"#1e3a7a",marginBottom:6}}>حذف الموظف</div>
-            <div style={{color:darkMode?"#7ab8ff":"#5a6a90",marginBottom:20,fontSize:13}}>سيتم حذف الحساب نهائياً</div>
-            <div style={{display:"flex",gap:10}}>
-              <button onClick={()=>del(delId)} style={{flex:1,background:"#ef4444",color:"#fff",border:"none",borderRadius:11,padding:"10px",fontFamily:"'Cairo',sans-serif",fontWeight:700,cursor:"pointer"}}>احذف</button>
-              <button onClick={()=>setDelId(null)} style={{flex:1,background:darkMode?"#0a1538":"#f5f8ff",border:"1px solid rgba(74,158,255,.2)",color:darkMode?"#7ab8ff":"#5a6a90",borderRadius:11,padding:"10px",fontFamily:"'Cairo',sans-serif",cursor:"pointer"}}>إلغاء</button>
-            </div>
-          </div>
+// ── Security Page (admin) ─────────────────────────────────────────────────────
+const normPhone = p => String(p||"").replace(/\D/g,"");
+function SecurityPage({ lang, T, darkMode, currentUser, rawProps }) {
+  const [cur,setCur]=useState(""); const [np,setNp]=useState(""); const [np2,setNp2]=useState(""); const [pwMsg,setPwMsg]=useState(null);
+  const [stat,setStat]=useState(null); const [log,setLog]=useState([]); const [busy,setBusy]=useState(false);
+  const txt=darkMode?"#e8eeff":"#1e3a7a", sub=darkMode?"#7ab8ff":"#5a6a90";
+  const IST = {width:"100%",boxSizing:"border-box",background:darkMode?"#0a1538":"#f5f8ff",border:"1px solid rgba(74,158,255,.2)",borderRadius:10,padding:"9px 12px",color:txt,fontFamily:"'Cairo',sans-serif",fontSize:13};
+  const card = {background:darkMode?"linear-gradient(160deg,#0f1f4a,#1a2d6b)":"white",border:"1px solid rgba(74,158,255,.15)",borderRadius:16,padding:"18px 20px",marginBottom:16};
+  const btn = {background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",color:"#fff",border:"none",borderRadius:11,padding:"11px 20px",fontFamily:"'Cairo',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"};
+
+  const changePw = async () => {
+    setPwMsg(null);
+    if(np.length<PW_MIN) return setPwMsg({ok:false,t:`كلمة السر الجديدة لازم ${PW_MIN} أحرف على الأقل`});
+    if(/^\d+$/.test(np)) return setPwMsg({ok:false,t:"لا يجوز أن تكون أرقاماً فقط"});
+    if(np!==np2) return setPwMsg({ok:false,t:"التأكيد لا يطابق كلمة السر الجديدة"});
+    try{
+      const u=auth.currentUser;
+      await reauthenticateWithCredential(u,EmailAuthProvider.credential(u.email,cur));
+      await updatePassword(u,np);
+      setCur(""); setNp(""); setNp2(""); setPwMsg({ok:true,t:"✔ تم تغيير كلمة السر"});
+    }catch(e){ setPwMsg({ok:false,t:e?.code==="auth/invalid-credential"||e?.code==="auth/wrong-password"?"كلمة السر الحالية غير صحيحة":"تعذّر التغيير — أعد المحاولة"}); }
+  };
+
+  const scan = async () => {
+    setBusy(true);
+    try{
+      const [cs,ps,us,ctr] = await Promise.all([
+        getDocs(collection(db,"clients")), getDocs(collection(db,"client_phones")), getDocs(collection(db,"users")), getDoc(doc(db,"meta","counters")),
+      ]);
+      let legacy=0; try{ legacy=(await getDocs(collection(db,"employees"))).size; }catch(e){}
+      const clients=cs.docs.map(d=>({id:d.id,...d.data()})), phones=new Set(ps.docs.map(d=>d.id)), uids=new Set(us.docs.map(d=>d.id));
+      const maxNo=clients.reduce((m,c)=>Math.max(m,c.clientNo||0),0);
+      setStat({
+        legacy,
+        ownerExposed:(rawProps||[]).filter(p=>p.ownerName||p.ownerPhone).length,
+        noIndex:clients.filter(c=>normPhone(c.phone)&&!phones.has(normPhone(c.phone))).length,
+        counterOk:ctr.exists()&&(ctr.data().clientNo||0)>=maxNo,
+        unmapped:clients.filter(c=>c.assignedTo&&!uids.has(c.assignedTo)).length,
+        clients:clients.length,
+      });
+    }catch(e){ setLog(l=>[...l,"تعذّر الفحص: "+(e?.code||e?.message||"")]); }
+    setBusy(false);
+  };
+  useEffect(()=>{ scan(); /* eslint-disable-next-line */ },[]);
+
+  const migrate = async () => {
+    if(busy) return;
+    if(!window.confirm("تشغيل تجهيز الأمان؟ العملية آمنة ويمكن تكرارها.")) return;
+    setBusy(true); setLog([]);
+    const L = m=>setLog(l=>[...l,m]);
+    try{
+      // 1) بيانات الملاك من الوثيقة العامة إلى مجموعة خاصة
+      let n1=0;
+      for(const p of (rawProps||[])){
+        if(!(p.ownerName||p.ownerPhone)) continue;
+        await setDoc(doc(db,"properties_private",p.id),{ownerName:p.ownerName||"",ownerPhone:p.ownerPhone||""},{merge:true});
+        await updateDoc(doc(db,"properties",p.id),{ownerName:deleteField(),ownerPhone:deleteField()});
+        n1++;
+      }
+      L(`✔ نُقلت بيانات ${n1} عقار إلى مكان خاص`);
+      // 2) فهرس الجوالات وعدّاد العملاء + ربط العملاء بالموظفين
+      const [cs,us]=await Promise.all([getDocs(collection(db,"clients")),getDocs(collection(db,"users"))]);
+      const clients=cs.docs.map(d=>({id:d.id,...d.data()})), users=us.docs.map(d=>({id:d.id,...d.data()}));
+      let n2=0, dup=0;
+      for(const c of clients){
+        const k=normPhone(c.phone); if(!k) continue;
+        const ref=doc(db,"client_phones",k), ex=await getDoc(ref);
+        if(ex.exists()){ if(ex.data().clientId!==c.id) dup++; continue; }
+        await setDoc(ref,{clientId:c.id,clientNo:c.clientNo||0,name:c.name||""}); n2++;
+      }
+      const maxNo=clients.reduce((m,c)=>Math.max(m,c.clientNo||0),0);
+      const ctrRef=doc(db,"meta","counters"), ctr=await getDoc(ctrRef);
+      if(!ctr.exists()||(ctr.data().clientNo||0)<maxNo) await setDoc(ctrRef,{clientNo:maxNo},{merge:true});
+      L(`✔ فهرس الجوالات: أُضيف ${n2} (مكرر مسبقاً: ${dup}) — عدّاد العملاء: ${maxNo}`);
+      let n3=0;
+      for(const c of clients){
+        if(!c.assignedTo||users.some(u=>u.id===c.assignedTo)) continue;
+        const target = c.assignedTo==="Khalil" ? {id:currentUser.uid,displayName:currentUser.displayName}
+          : users.find(u=>u.username&&u.username===c.assignedTo);
+        if(!target) continue;
+        await updateDoc(doc(db,"clients",c.id),{assignedTo:target.id,assignedToName:target.displayName||""}); n3++;
+      }
+      L(`✔ رُبط ${n3} عميل بحسابات الموظفين الجديدة`);
+    }catch(e){ L("⚠️ توقفت العملية: "+(e?.code||e?.message||"خطأ")); }
+    setBusy(false); scan();
+  };
+
+  const Row = ({ok,t,hint}) => (
+    <div style={{display:"flex",gap:10,alignItems:"flex-start",padding:"9px 0",borderBottom:"1px dashed rgba(74,158,255,.15)"}}>
+      <span style={{fontSize:16}}>{ok?"✅":"⚠️"}</span>
+      <div style={{flex:1}}><div style={{fontSize:13,color:txt,fontWeight:700}}>{t}</div>{!ok&&hint&&<div style={{fontSize:11,color:sub,marginTop:2}}>{hint}</div>}</div>
+    </div>
+  );
+
+  return (
+    <div style={{paddingTop:96,minHeight:"100vh",background:T.bg}}>
+      <div style={{background:"linear-gradient(135deg,#1e3a7a,#2a4d9b)",padding:"28px 24px 24px"}}>
+        <div style={{maxWidth:900,margin:"0 auto"}}>
+          <div style={{fontWeight:900,fontSize:22,color:"#fff",marginBottom:3}}>🛡️ الأمان</div>
+          <div style={{fontSize:12,color:"rgba(255,255,255,.5)"}}>للمدير فقط — كلمة السر وتجهيز البيانات للحماية</div>
         </div>
-      )}
+      </div>
+      <div style={{maxWidth:900,margin:"0 auto",padding:"24px 22px"}}>
+        <div style={card}>
+          <div style={{fontWeight:900,fontSize:15,color:txt,marginBottom:4}}>🔑 تغيير كلمة سر حسابي</div>
+          <div style={{fontSize:11,color:sub,marginBottom:12}} dir="ltr">{currentUser?.email}</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:10,marginBottom:12}}>
+            <input type="password" autoComplete="current-password" placeholder="كلمة السر الحالية" value={cur} onChange={e=>setCur(e.target.value)} style={IST} dir="ltr"/>
+            <input type="password" autoComplete="new-password" placeholder={`الجديدة (${PW_MIN}+ أحرف)`} value={np} onChange={e=>setNp(e.target.value)} style={IST} dir="ltr"/>
+            <input type="password" autoComplete="new-password" placeholder="تأكيد الجديدة" value={np2} onChange={e=>setNp2(e.target.value)} style={IST} dir="ltr"/>
+          </div>
+          {pwMsg&&<div style={{fontSize:12,fontWeight:700,color:pwMsg.ok?"#16a34a":"#ef4444",marginBottom:10}}>{pwMsg.t}</div>}
+          <button onClick={changePw} style={btn}>تغيير كلمة السر</button>
+        </div>
+
+        <div style={card}>
+          <div style={{fontWeight:900,fontSize:15,color:txt,marginBottom:10}}>🧰 حالة تجهيز الأمان</div>
+          {!stat?<div style={{fontSize:12,color:sub}}>جاري الفحص...</div>:(
+            <>
+              <Row ok={stat.legacy===0} t={stat.legacy===0?"لا توجد حسابات موظفين قديمة (كلمات سر نصية)":`${stat.legacy} حساب موظف قديم بكلمة سر نصية`} hint="من صفحة «إدارة الموظفين» أنشئ حسابات جديدة ثم احذف القديمة."/>
+              <Row ok={stat.ownerExposed===0} t={stat.ownerExposed===0?"بيانات الملاك غير ظاهرة في الوثائق العامة":`${stat.ownerExposed} عقار ببيانات مالك ظاهرة للعامة`} hint="اضغط «تشغيل تجهيز الأمان»."/>
+              <Row ok={stat.noIndex===0} t={stat.noIndex===0?"فهرس منع تكرار الجوالات جاهز":`${stat.noIndex} عميل غير مفهرس لمنع التكرار`} hint="اضغط «تشغيل تجهيز الأمان»."/>
+              <Row ok={stat.counterOk} t={stat.counterOk?"عدّاد أرقام العملاء جاهز":"عدّاد أرقام العملاء غير مهيأ"} hint="اضغط «تشغيل تجهيز الأمان» — بدونه قد تتكرر أرقام العملاء."/>
+              <Row ok={stat.unmapped===0} t={stat.unmapped===0?"كل العملاء مرتبطون بحسابات حالية":`${stat.unmapped} عميل مرتبط بموظف غير موجود`} hint="أنشئ حساب الموظف باليوزر القديم نفسه ثم شغّل التجهيز، أو أعد تحويل العميل يدوياً."/>
+            </>
+          )}
+          <div style={{display:"flex",gap:10,marginTop:14,flexWrap:"wrap"}}>
+            <button onClick={migrate} disabled={busy} style={{...btn,opacity:busy?.7:1}}>{busy?"جاري التنفيذ...":"🛠️ تشغيل تجهيز الأمان"}</button>
+            <button onClick={scan} disabled={busy} style={{...btn,background:darkMode?"#0a1538":"#f5f8ff",color:sub,border:"1px solid rgba(74,158,255,.2)"}}>🔄 إعادة الفحص</button>
+          </div>
+          {log.length>0&&<div style={{marginTop:12,fontSize:12,color:txt,lineHeight:2}}>{log.map((l,i)=><div key={i}>{l}</div>)}</div>}
+        </div>
+      </div>
     </div>
   );
 }
@@ -3365,6 +3564,8 @@ export default function App() {
   const [delId,setDelId]         = useState(null);
   const [toast,setToast]         = useState(null);
   const [shareP,setShareP]       = useState(null);
+  const [privMap,setPrivMap]     = useState({});
+  const justLogged = useRef(false);
 
   // ── Firebase real-time listener ──
   useEffect(()=>{
@@ -3381,6 +3582,40 @@ export default function App() {
   const showToast=(msg,type="ok")=>{ setToast({msg,type}); setTimeout(()=>setToast(null),3000); };
   const isEn=lang==="en";
 
+  // ── Firebase Authentication: الدور يُقرأ من users/{uid} ──
+  useEffect(()=>onAuthStateChanged(auth, async (u)=>{
+    if(!u){ setIsAdmin(false); setUserRole(null); setCurrentUser(null); return; }
+    try{
+      const snap = await getDoc(doc(db,"users",u.uid));
+      const d = snap.exists() ? snap.data() : null;
+      if(!d || d.active===false || !["admin","employee"].includes(d.role)){
+        await signOut(auth);
+        showToast("هذا الحساب لا يملك صلاحية دخول","err");
+        return;
+      }
+      setCurrentUser({uid:u.uid,email:u.email,displayName:d.displayName||u.email,role:d.role,username:d.username||""});
+      setUserRole(d.role); setIsAdmin(true);
+      if(justLogged.current){ justLogged.current=false; showToast(d.role==="admin"?`مرحباً ${d.displayName||""}! 👑`:`مرحباً ${d.displayName||""}! 👤`); }
+    }catch(e){ console.error(e); try{ await signOut(auth); }catch(_){} showToast("تعذّر التحقق من الحساب","err"); }
+  }),[]);
+
+  // خروج تلقائي بعد 30 دقيقة بلا نشاط
+  useEffect(()=>{
+    if(!isAdmin) return;
+    let t; const reset=()=>{ clearTimeout(t); t=setTimeout(()=>{ signOut(auth); showToast("تم تسجيل الخروج لعدم النشاط","err"); },30*60*1000); };
+    const ev=["mousemove","keydown","click","touchstart","scroll"];
+    ev.forEach(e=>window.addEventListener(e,reset,{passive:true})); reset();
+    return ()=>{ clearTimeout(t); ev.forEach(e=>window.removeEventListener(e,reset)); };
+  },[isAdmin]);
+
+  // بيانات المالك الخاصة (للمدير فقط) تُدمج مع العقار للعرض
+  useEffect(()=>{
+    if(userRole!=="admin"){ setPrivMap({}); return; }
+    const unsub = onSnapshot(collection(db,"properties_private"), snap=>{ const m={}; snap.docs.forEach(d=>{ m[d.id]=d.data(); }); setPrivMap(m); }, ()=>{});
+    return ()=>unsub();
+  },[userRole]);
+  const propsView = useMemo(()=>props.map(p=>privMap[p.id]?{...p,...privMap[p.id]}:p),[props,privMap]);
+
   const openAdd=()=>{ setForm({...emptyForm,createdAt:today(),refNo:"REF-"+String(props.length+1).padStart(3,"0")}); setEditId(null); setShowForm(true); };
   const openEdit=p=>{ 
     const fd={...p,images:p.images||[],mapUrl:p.mapUrl||""};
@@ -3392,12 +3627,16 @@ export default function App() {
     if(!form.name) return showToast(isEn?"Enter property name":"أدخل اسم العقار","err");
     setSaving(true);
     try {
-      const data={...form,updatedAt:today()};
+      const { ownerName="", ownerPhone="", id:_id, ...pub } = { ...form, updatedAt:today() };
       if(editId){
-        await updateDoc(doc(db,"properties",editId),data);
+        // بيانات المالك تُحفظ في مجموعة خاصة (المدير فقط) — الوثيقة العامة لا تحملها
+        if(userRole==="admin") await setDoc(doc(db,"properties_private",editId),{ownerName,ownerPhone},{merge:true});
+        await updateDoc(doc(db,"properties",editId),{...pub,ownerName:deleteField(),ownerPhone:deleteField()});
         showToast(isEn?"Updated ✓":"تم التحديث ✓");
       } else {
-        await addDoc(collection(db,"properties"),{...data,views:0,createdAt:today()});
+        const ref = doc(collection(db,"properties"));
+        if(userRole==="admin"&&(ownerName||ownerPhone)) await setDoc(doc(db,"properties_private",ref.id),{ownerName,ownerPhone});
+        await setDoc(ref,{...pub,views:0,createdAt:today()});
         showToast(isEn?"Added ✓":"تم الإضافة ✓");
       }
     } catch(e){ showToast(isEn?"Error saving":"خطأ في الحفظ","err"); }
@@ -3443,7 +3682,7 @@ export default function App() {
       <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"/>
 
       {lightbox&&<Lightbox images={lightbox.images} startIndex={lightbox.idx} onClose={()=>setLightbox(null)}/>}
-      {showLogin&&<LoginModal onSuccess={(user)=>{setIsAdmin(true);setUserRole(user.role);setCurrentUser(user);setShowLogin(false);showToast(user.role==="admin"?`مرحباً ${user.displayName}! 👑`:`مرحباً ${user.displayName}! 👤`);}} onClose={()=>setShowLogin(false)} lang={lang}/>}
+      {showLogin&&<LoginModal onAttempt={()=>{justLogged.current=true;}} onClose={()=>setShowLogin(false)} lang={lang}/>}
       {showForm&&<PropForm form={form} setForm={setForm} onSave={save} onClose={()=>setShowForm(false)} editId={editId} T={T} userRole={userRole}/>}
       {shareP&&<ShareModal p={shareP} onClose={()=>setShareP(null)}/>}
 
@@ -3464,15 +3703,16 @@ export default function App() {
         </div>
       )}
 
-      <Navbar page={page} setPage={setPage} isAdmin={isAdmin} onLoginClick={()=>setShowLogin(true)} onLogout={()=>{setIsAdmin(false);setUserRole(null);setCurrentUser(null);setPage("home");showToast(isEn?"Logged out":"تم تسجيل الخروج");}} lang={lang} setLang={setLang} scrolled={scrolled} darkMode={darkMode} setDarkMode={setDarkMode} T={T} userRole={userRole}/>
+      <Navbar page={page} setPage={setPage} isAdmin={isAdmin} onLoginClick={()=>setShowLogin(true)} onLogout={()=>{signOut(auth);setPage("home");showToast(isEn?"Logged out":"تم تسجيل الخروج");}} lang={lang} setLang={setLang} scrolled={scrolled} darkMode={darkMode} setDarkMode={setDarkMode} T={T} userRole={userRole}/>
 
       {page==="home"       && <HomePage setPage={setPage} lang={lang} darkMode={darkMode} T={T}/>}
-      {page==="properties" && <PropertiesPage props={props} isAdmin={isAdmin} userRole={userRole} onEdit={openEdit} onDelete={id=>setDelId(id)} onChangeStatus={changeStatus} setLightbox={setLightbox} onShare={setShareP} onOpenAdd={openAdd} lang={lang} darkMode={darkMode} T={T}/>}
+      {page==="properties" && <PropertiesPage props={propsView} isAdmin={isAdmin} userRole={userRole} onEdit={openEdit} onDelete={id=>setDelId(id)} onChangeStatus={changeStatus} setLightbox={setLightbox} onShare={setShareP} onOpenAdd={openAdd} lang={lang} darkMode={darkMode} T={T}/>}
       {page==="services"   && <HomePage setPage={setPage} lang={lang} darkMode={darkMode} T={T}/>}
       {page==="about"      && <AboutPage lang={lang} darkMode={darkMode} T={T}/>}
-      {page==="clients"    && <ClientsPage lang={lang} darkMode={darkMode} T={T} userRole={userRole} currentUser={currentUser}/>}
-      {page==="providers"  && <ProvidersPage lang={lang} darkMode={darkMode} T={T}/>}
-      {page==="employees"  && <EmployeesPage lang={lang} darkMode={darkMode} T={T}/>}
+      {page==="clients"    && isAdmin && <ClientsPage lang={lang} darkMode={darkMode} T={T} userRole={userRole} currentUser={currentUser}/>}
+      {page==="providers"  && userRole==="admin" && <ProvidersPage lang={lang} darkMode={darkMode} T={T}/>}
+      {page==="employees"  && userRole==="admin" && <EmployeesPage lang={lang} darkMode={darkMode} T={T} currentUser={currentUser}/>}
+      {page==="security"   && userRole==="admin" && <SecurityPage lang={lang} darkMode={darkMode} T={T} currentUser={currentUser} rawProps={props}/>}
       {page==="pm"         && userRole==="admin" && <PropertyMgmtPage lang={lang} darkMode={darkMode} T={T}/>}
 
       {/* ── Floating WhatsApp Button ── */}
